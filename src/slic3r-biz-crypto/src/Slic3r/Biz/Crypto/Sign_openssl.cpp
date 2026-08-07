@@ -71,7 +71,7 @@ template <HashBuilderDesc DescT>
 class SignatureBuilder : public ISignatureBuilder, EvpContextOwner
 {
 public:
-    explicit SignatureBuilder(const KeyPair& key) : m_key(key)
+    explicit SignatureBuilder(const KeyPair& key)
     {
         EVP_DigestSignInit(
             m_context.get(),
@@ -96,9 +96,6 @@ public:
         EVP_DigestSignFinal(m_context.get(), raw_sign.data(), &sign_len);
         return Signature{std::move(raw_sign)};
     }
-
-private:
-    const KeyPair& m_key;
 };
 
 ISignatureBuilderPtr create_signature_builder(HashType hash_type, const KeyPair& key_pair)
@@ -122,7 +119,7 @@ template <HashBuilderDesc DescT>
 class SignatureVerifier : public ISignatureVerifier, EvpContextOwner
 {
 public:
-    explicit SignatureVerifier(const KeyPair& key) : m_key(key)
+    explicit SignatureVerifier(const KeyPair& key)
     {
         auto result = EVP_DigestVerifyInit(m_context.get(), nullptr, DescT::get(), nullptr, key.internal_impl().get());
         m_failed = result <= 0;
@@ -145,7 +142,6 @@ public:
         return !m_failed;
     }
 private:
-    const KeyPair& m_key;
     bool m_failed{false};
 };
 

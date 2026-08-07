@@ -1,5 +1,5 @@
 info = {
-    id = "com.prusa3d.slicer.calibration.speed_tower",
+    id = "temp_tower",
     type = "project.plugin",
     title = "Temperature Tower",
     menu = "Calibration/Temperature Tower",

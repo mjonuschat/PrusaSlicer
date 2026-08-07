@@ -1,5 +1,7 @@
 #include "Slic3r/App/Lua/PluginRegistry.hpp"
 
+#include "Slic3r/Directories.hpp"
+#include "Slic3r/Biz/I18N/I18N.hpp"
 #include "spdlog/spdlog.h"
 
 #include <boost/filesystem/path.hpp>
@@ -8,39 +10,56 @@
 
 namespace Slic3r::App::Lua {
 
+namespace fs = boost::filesystem;
+
+PluginRegistry::PluginRegistry() :
+    m_author_registry(fs::path{data_dir()} / "authorized_authors")
+{}
+
+void PluginRegistry::clear()
+{
+    m_bundles.clear();
+    m_plugins.clear();
+}
+
 void PluginRegistry::scan(const std::string& path)
 {
-    namespace fs = boost::filesystem;
-
     fs::path p(path);
     if (!fs::exists(p)) {
         return;
     }
 
-    for (const auto& entry : fs::recursive_directory_iterator{p}) {
-        if (entry.path().extension() != ".lua") {
+    for (const auto& entry : fs::directory_iterator{p}) {
+        if (!entry.is_directory()) {
+            if (entry.path().extension() == ".lua") {
+                std::string file_path = entry.path().string();
+                SPDLOG_WARN(
+                    "File '{}' will be ignored as it is not located in plugin bundle directory",
+                    file_path
+                );
+            }
             continue;
         }
 
-        Biz::Lua::LuaEngine lua;
-        auto entry_path = entry.path().string();
-        sol::protected_function_result ret;
-        try {
-            ret = lua.run_file(entry_path);
-        } catch (std::exception& e) {
-            SPDLOG_ERROR("Failed loading plugin: {}", e.what());
+        auto bundle_path = entry.path().string();
+        if (!PluginBundle::is_plugin_bundle_dir(bundle_path)) {
+            SPDLOG_WARN("Directory '{}' is not a plugin bundle", bundle_path);
+            continue;
         }
-        if (!ret.valid()) {
-            sol::error err = ret;
-            SPDLOG_ERROR("Failed loading plugin {}: {}", entry_path, err.what());
-        }
-        auto result = Plugin::parse(lua, entry_path);
-        if (result) {
-            auto&& plugin = result.value();
-            std::string plugin_id{plugin.meta().id};
-            std::string plugin_path{plugin.path()};
 
-            auto [it, inserted] = m_plugins.emplace(plugin.meta().id, std::move(plugin));
+        PluginBundle bundle{Biz::Crypto::create_directory_source(bundle_path)};
+        auto result = bundle.load_meta();
+        if (!result.has_value()) {
+            SPDLOG_ERROR("Error loading plugin bundle '{}': {}", bundle_path, result.error());
+            continue;;
+        }
+
+        auto plugins = bundle.load_plugins();
+        for (auto& plugin : plugins) {
+            // make copy of metadata before moving plugin
+            const auto plugin_id = plugin.meta().id;
+            const auto plugin_path = plugin.path();
+            auto [it, inserted] = m_plugins.emplace(plugin_id, std::move(plugin));
             if (!inserted) {
                 SPDLOG_ERROR(
                     "Plugin ID: {} of {} already registered by {}",
@@ -49,16 +68,41 @@ void PluginRegistry::scan(const std::string& path)
                     it->second.path()
                 );
             }
-        } else {
-            SPDLOG_INFO(
-                "Parsing metadata of plugin {} unsuccessful: {}\n"
-                "This may not be an error if the .lua file is not a plugin but shared module.",
-                entry_path,
-                result.error()
-            );
         }
     }
 }
 
+PluginInstallResult PluginRegistry::install(PluginBundle& bundle)
+{
+    try {
+        auto author_key = m_author_registry.load_author_key(bundle.meta().author);
+        if (!bundle.verify(author_key)) {
+            return tl::unexpected(
+                Biz::_u8L("Plugin installation failed: Integrity verification failed for bundle ")
+                + bundle.meta().id
+            );
+        }
+    } catch (Biz::Crypto::CryptoException& e) {
+        return tl::unexpected(
+            fmt::format(
+                fmt::runtime(
+                    // TRN {} is an author username
+                    Biz::_u8L("Plugin installation failed: Cannot load public key for author {}")
+                ),
+                bundle.meta().author
+            )
+        );
+    }
+
+    auto dest_dir = fs::path{data_dir()} / "lua" / bundle.meta().id;
+    if (fs::exists(dest_dir)) {
+        fs::remove_all(dest_dir);
+    }
+    if (auto result = bundle.install(dest_dir.string()); !result.has_value()) {
+        return tl::unexpected{Biz::_u8L("Plugin installation failed: ") + result.error()};
+    }
+
+    return {};
+}
 
 } // namespace Slic3r::App::Lua

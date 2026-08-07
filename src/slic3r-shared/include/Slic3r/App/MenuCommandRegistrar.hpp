@@ -84,6 +84,8 @@ private:
     void save_project();
     void save_project_as();
 
+    void install_plugin(Lua::PluginSystem& plugin_system);
+
     void load_object(Wildcards::TypeFlag specific_type = Wildcards::TypeFlag::None);
 
     void load_volume(

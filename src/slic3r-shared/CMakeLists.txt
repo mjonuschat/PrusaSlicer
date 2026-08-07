@@ -1202,6 +1202,11 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Lua/PluginDialog.hpp
         src/Slic3r/App/Lua/PluginDialog.cpp
         include/Slic3r/App/Lua/IPluginRescanListener.hpp
+        include/Slic3r/App/Lua/PluginBundle.hpp
+        src/Slic3r/App/Lua/PluginBundle.cpp
+        include/Slic3r/App/Lua/AuthorRegistry.hpp
+        src/Slic3r/App/Lua/AuthorRegistry.cpp
+        include/Slic3r/App/Lua/IPluginInstallationListener.hpp
 
         include/Slic3r/App/CustomGCodeMigration.hpp
         src/Slic3r/App/CustomGCodeMigration.cpp
@@ -1336,6 +1341,7 @@ target_link_libraries(slic3r-shared PUBLIC
         slic3r-platform
         slic3r-render
         slic3r-biz-lua
+        slic3r-biz-crypto
         libvgcode
         libslic3r
         libpgcode

@@ -5,6 +5,7 @@
 
 #include "Slic3r/App/Lua/PluginRegistry.hpp"
 #include "Slic3r/App/Lua/IPluginRescanListener.hpp"
+#include "Slic3r/App/Lua/IPluginInstallationListener.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Emboss/IFontManager.hpp"
 #include "Slic3r/Biz/Platform//WithListeners.hpp"
@@ -14,7 +15,7 @@ namespace Slic3r::App::Lua {
 
 class PluginDialog;
 
-class PluginSystem : public WithListeners<IPluginRescanListener>
+class PluginSystem : public WithListeners<IPluginRescanListener, IPluginInstallationListener>
 {
 public:
     explicit PluginSystem(
@@ -26,6 +27,7 @@ public:
     void rescan();
     const auto& plugins() const { return m_registry.plugins(); }
 
+    void install(const std::string& zip_file_path);
 
     Yoga::Passthrough<PluginDialog>& init_dialog();
 private:

@@ -21,10 +21,10 @@ public:
     PopNotificationObservableList& operator=(PopNotificationObservableList&&)      = delete;
 
     using Matcher = std::function<bool(const PopNotificationPayload&, const PopNotificationPayload&)>;
-    void upsert_notifcation(PopNotificationData data, Matcher matcher);
+    void upsert_notification(PopNotificationData data, Matcher matcher);
 
     template <typename T>
-    const T* get_notifcation_payload(std::function<bool(const T&)> matcher);
+    const T* get_notification_payload(std::function<bool(const T&)> matcher);
 
     void close_notifications_of_type(PopNotificationType type);
 

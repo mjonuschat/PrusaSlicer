@@ -3,12 +3,16 @@
 
 #include <boost/filesystem/directory.hpp>
 #include <boost/filesystem/operations.hpp>
+#include <utility>
 
 namespace Slic3r::Biz::Crypto {
 class DirContentSource : public IContentProvider
 {
 public:
-    explicit DirContentSource(const std::string& dir_path) : m_dir_path(dir_path) {}
+    explicit DirContentSource(const std::string& dir_path) :
+        m_dir_path(dir_path),
+        m_dir_path_str(dir_path)
+    {}
 
     FileList list_files() override
     {
@@ -29,8 +33,14 @@ public:
         return Crypto::file_stream((m_dir_path / file_path).string(), kernel, buffer_size);
     }
 
+    const std::string& path() const override
+    {
+        return m_dir_path_str;
+    }
+
 private:
-    boost::filesystem::path m_dir_path;
+    const boost::filesystem::path m_dir_path;
+    const std::string m_dir_path_str;
 };
 
 IContentProviderPtr create_directory_source(const std::string& dir_path)
@@ -41,8 +51,12 @@ IContentProviderPtr create_directory_source(const std::string& dir_path)
 class ZipContentSource : public IContentProvider
 {
 public:
-    explicit ZipContentSource(std::unique_ptr<Biz::Algorithms::MZ_Archive>&& zip_archive) :
-        m_zip_archive(std::move(zip_archive))
+    ZipContentSource(
+        std::unique_ptr<Biz::Algorithms::MZ_Archive>&& zip_archive,
+        std::string  zip_path
+    ) :
+        m_zip_archive(std::move(zip_archive)),
+        m_zip_path(std::move(zip_path))
     {}
 
     static std::unique_ptr<ZipContentSource> create(const std::string& zip_path)
@@ -55,7 +69,7 @@ public:
         if (!success) {
             return nullptr;
         }
-        return std::make_unique<ZipContentSource>(std::move(zip_archive));
+        return std::make_unique<ZipContentSource>(std::move(zip_archive), zip_path);
     }
 
     FileList list_files() override
@@ -85,6 +99,12 @@ public:
         );
     }
 
+    const std::string& path() const override
+    {
+        return m_zip_path;
+    }
+
+
 private:
     static size_t pump_callback(void *pOpaque, mz_uint64 file_ofs, const void *pBuf, size_t n)
     {
@@ -95,6 +115,7 @@ private:
 
 private:
     std::unique_ptr<Algorithms::MZ_Archive> m_zip_archive;
+    std::string m_zip_path;
 };
 
 IContentProviderPtr create_zip_source(const std::string& zip_path)

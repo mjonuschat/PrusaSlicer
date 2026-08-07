@@ -95,6 +95,50 @@ PluginSystem::PluginSystem(
     m_font_manager(font_manager)
 {}
 
+void PluginSystem::install(const std::string& zip_file_path)
+{
+    auto zip_source = Biz::Crypto::create_zip_source(zip_file_path);
+    if (zip_source == nullptr) {
+        std::string error_message = fmt::format(
+            fmt::runtime(
+                // TRN {} Is a path to file that can't be opened
+                Biz::_u8L("Cannot open file: {}")
+            ),
+            zip_file_path
+        );
+        invoke_listeners<IPluginInstallationListener>(
+            [&error_message](auto* listener)
+            { listener->on_plugin_installation_error(error_message); }
+        );
+        return;
+
+    }
+    PluginBundle plugin_bundle{std::move(zip_source)};
+    if (auto load_meta_result = plugin_bundle.load_meta(); !load_meta_result.has_value()) {
+        invoke_listeners<IPluginInstallationListener>(
+            [&load_meta_result](auto* listener)
+            { listener->on_plugin_installation_error(load_meta_result.error()); }
+        );
+        return;
+    }
+
+    if (auto install_result = m_registry.install(plugin_bundle); !install_result.has_value()) {
+        invoke_listeners<IPluginInstallationListener>(
+            [&install_result](auto* listener)
+            { listener->on_plugin_installation_error(install_result.error()); }
+        );
+        return;
+    }
+
+    rescan();
+
+    invoke_listeners<IPluginInstallationListener>(
+        [&plugin_bundle](auto* listener)
+        { listener->on_plugin_installation_succeeded(plugin_bundle.meta()); }
+    );
+
+}
+
 Yoga::Passthrough<PluginDialog>& PluginSystem::init_dialog()
 {
     m_dialog = std::make_unique<PluginDialog>([this](const auto& meta, const auto& params)

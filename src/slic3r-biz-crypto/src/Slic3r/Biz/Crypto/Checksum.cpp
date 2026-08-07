@@ -67,7 +67,9 @@ DirChecksum DirChecksum::load_from_file(
             | std::views::transform(
                 [&path, hash_type](auto line) -> FileChecksum
                 {
-                    auto is_space = [](unsigned char c) { return std::isspace(c); };
+                    auto is_space             = [](unsigned char c) { return std::isspace(c); };
+                    auto is_space_or_asterisk = [](unsigned char c)
+                    { return c == '*' || std::isspace(c); };
                     auto check_not_line_end = [&](auto it)
                     {
                         if (it == line.end()) {
@@ -88,7 +90,8 @@ DirChecksum DirChecksum::load_from_file(
                         throw CryptoException(fmt::format("Failed loading file {}", path));
                     }
 
-                    auto token2_start = std::ranges::find_if_not(token1_end, line.end(), is_space);
+                    auto token2_start =
+                        std::ranges::find_if_not(token1_end, line.end(), is_space_or_asterisk);
                     check_not_line_end(token2_start);
 
                     auto token2_end = std::ranges::find_if(token2_start, line.end(), is_space);

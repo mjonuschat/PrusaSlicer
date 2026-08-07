@@ -29,6 +29,8 @@ public:
     virtual bool
     file_stream(const std::string& file_path, const StreamKernel& kernel, size_t buffer_size) = 0;
 
+    virtual const std::string& path() const = 0;
+
     bool file_stream(const std::string& file_path, const StreamKernel& kernel)
     {
         return file_stream(file_path, kernel, DEFAULT_BUFFER_SIZE);

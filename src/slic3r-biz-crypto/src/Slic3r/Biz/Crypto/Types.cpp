@@ -17,14 +17,19 @@ bool file_stream(const std::string& file_path, const StreamKernel& kernel, size_
     }
     buf.resize(buffer_size);
 
+    bool success = true;
+
     while (!feof(fp)) {
         if (const auto read = fread(buf.data(), 1, buf.size(), fp); read > 0) {
             kernel(BytesView{buf.data(), read});
+        } else {
+            success = false;
+            break;
         }
     }
 
     fclose(fp);
-    return true;
+    return success;
 }
 
 namespace {

@@ -46,9 +46,9 @@ PopNotificationCenter::PopNotificationCenter(Biz::ProjectInteractor& project_int
     m_list_sort_filter.set_sort_fn(sort_fn);
 }
 
-void PopNotificationCenter::upsert_notifcation(PopNotificationData data, PopNotificationObservableList::Matcher matcher)
+void PopNotificationCenter::upsert_notification(PopNotificationData data, PopNotificationObservableList::Matcher matcher)
 {
-    m_notification_list.upsert_notifcation(std::move(data), matcher);
+    m_notification_list.upsert_notification(std::move(data), matcher);
 }
 
 struct JobNotificationSpec
@@ -214,7 +214,7 @@ void PopNotificationCenter::on_job_progress(
     const auto matcher{cmp<Payload>( //
         [](const Payload& a, const Payload& b) { return a.job_name == b.job_name; }
     )};
-    m_notification_list.upsert_notifcation(std::move(notification), matcher);
+    m_notification_list.upsert_notification(std::move(notification), matcher);
 }
 
 void PopNotificationCenter::on_arrange_job_progress(
@@ -416,7 +416,7 @@ void PopNotificationCenter::on_download_job_status_changed(
     }
     }
 
-    m_notification_list.upsert_notifcation(
+    m_notification_list.upsert_notification(
         PopNotificationData{
             PopNotificationType::DownloadProgress,
             level,
@@ -509,7 +509,7 @@ void PopNotificationCenter::on_status_cache_status_code_changed(const SlicingId 
     const std::string header{m_project_interactor.get_project_name(slicing_id.project_id)};
     const std::string text{slicing_status_to_string(status.code)};
 
-    m_notification_list.upsert_notifcation(
+    m_notification_list.upsert_notification(
         PopNotificationData{
             PopNotificationType::SlicingProgress,
             status.code == SlicingStatusCode::Running ? PopNotificationLevel::ProgressNoClose : PopNotificationLevel::ProgressWithClose,
@@ -541,7 +541,7 @@ void PopNotificationCenter::on_status_cache_progress_changed(const Domain::Slici
     const std::string text{to_display_string(status.progress->progress_info)};
 
     const int progress{static_cast<int>(std::round(status.progress->progress.value))};
-    m_notification_list.upsert_notifcation(
+    m_notification_list.upsert_notification(
         PopNotificationData{
             PopNotificationType::SlicingProgress,
             status.code == SlicingStatusCode::Running ? PopNotificationLevel::ProgressNoClose : PopNotificationLevel::ProgressWithClose,
@@ -599,7 +599,7 @@ void PopNotificationCenter::on_status_cache_errors_changed(const Domain::Slicing
     const std::string header{m_project_interactor.get_project_name(slicing_id.project_id)};
     const Domain::Project& project{m_project_interactor.workbench().project(slicing_id.project_id)};
     for (const Error& error : errors) {
-        m_notification_list.upsert_notifcation(
+        m_notification_list.upsert_notification(
             PopNotificationData{
                 PopNotificationType::SlicingError,
                 PopNotificationLevel::Error,
@@ -674,7 +674,7 @@ void PopNotificationCenter::on_status_cache_warnings_changed(const Domain::Slici
     const std::string header{m_project_interactor.get_project_name(slicing_id.project_id)};
     const Domain::Project& project{m_project_interactor.workbench().project(slicing_id.project_id)};
     for (const Warning& warning : warnings) {
-        m_notification_list.upsert_notifcation(
+        m_notification_list.upsert_notification(
             PopNotificationData{
                 PopNotificationType::SlicingWarning,
                 warning.severity == WarningSeverity::LOW ? PopNotificationLevel::Warning : PopNotificationLevel::Error,
@@ -874,7 +874,7 @@ void PopNotificationCenter::on_print_host_progress(size_t print_host_id, int pro
     using namespace std::chrono_literals;
 
     using Payload = PrintHostProgressNotificationData;
-    const Payload* previous_payload{m_notification_list.get_notifcation_payload<Payload>(
+    const Payload* previous_payload{m_notification_list.get_notification_payload<Payload>(
         [=](const Payload& payload) { return payload.print_host_id == print_host_id; }
     )};
     Payload payload{previous_payload == nullptr ? Payload{print_host_id} : *previous_payload};
@@ -882,7 +882,7 @@ void PopNotificationCenter::on_print_host_progress(size_t print_host_id, int pro
     payload.progress = progress;
     auto layout{print_host_layout(payload)};
 
-    m_notification_list.upsert_notifcation(
+    m_notification_list.upsert_notification(
         PopNotificationData{
             PopNotificationType::PrintHostProgress,
             PopNotificationLevel::ProgressNoClose,
@@ -897,7 +897,7 @@ void PopNotificationCenter::on_print_host_progress(size_t print_host_id, int pro
 void PopNotificationCenter::on_print_host_error(size_t print_host_id, const std::string& msg)
 {
     using Payload = PrintHostProgressNotificationData;
-    const Payload* previous_payload{m_notification_list.get_notifcation_payload<Payload>(
+    const Payload* previous_payload{m_notification_list.get_notification_payload<Payload>(
         [=](const Payload& payload) { return payload.print_host_id == print_host_id; }
     )};
     Payload payload{previous_payload == nullptr ? Payload{print_host_id} : *previous_payload};
@@ -905,7 +905,7 @@ void PopNotificationCenter::on_print_host_error(size_t print_host_id, const std:
     payload.progress       = -1;
     payload.additional_msg = msg;
     auto layout            = print_host_layout(payload);
-    m_notification_list.upsert_notifcation(
+    m_notification_list.upsert_notification(
         PopNotificationData{
             PopNotificationType::PrintHostProgress,
             PopNotificationLevel::Error,
@@ -934,7 +934,7 @@ void PopNotificationCenter::on_print_host_cancel(size_t print_host_id)
 void PopNotificationCenter::on_print_host_done(size_t print_host_id)
 {
     using Payload = PrintHostProgressNotificationData;
-    const Payload* previous_payload{m_notification_list.get_notifcation_payload<Payload>(
+    const Payload* previous_payload{m_notification_list.get_notification_payload<Payload>(
         [=](const Payload& payload) { return payload.print_host_id == print_host_id; }
     )};
     Payload payload{previous_payload == nullptr ? Payload{print_host_id} : *previous_payload};
@@ -959,7 +959,7 @@ void PopNotificationCenter::on_print_host_done(size_t print_host_id)
     if (std::holds_alternative<PopNotificationLayoutText>(layout)) {
         simple = true;
     }
-    m_notification_list.upsert_notifcation(
+    m_notification_list.upsert_notification(
         PopNotificationData{
             PopNotificationType::PrintHostProgress,
             PopNotificationLevel::ProgressWithClose,
@@ -978,7 +978,7 @@ void PopNotificationCenter::on_print_host_info(
 )
 {
     using Payload = PrintHostProgressNotificationData;
-    const Payload* previous_payload{m_notification_list.get_notifcation_payload<Payload>(
+    const Payload* previous_payload{m_notification_list.get_notification_payload<Payload>(
         [=](const Payload& payload) { return payload.print_host_id == print_host_id; }
     )};
     Payload payload{previous_payload == nullptr ? Payload{print_host_id} : *previous_payload};
@@ -1002,7 +1002,7 @@ void PopNotificationCenter::on_print_host_info(
     }
     
     auto layout = print_host_layout(payload);
-    m_notification_list.upsert_notifcation(
+    m_notification_list.upsert_notification(
         PopNotificationData{
             PopNotificationType::PrintHostProgress,
             payload.status == PrintHostJobStatus::Started ? PopNotificationLevel::ProgressNoClose : PopNotificationLevel::ProgressWithClose,
@@ -1053,7 +1053,7 @@ void PopNotificationCenter::on_removable_drive_status_changed(
     const auto matcher{cmp<Payload>( //
         [](const Payload& a, const Payload& b) { return a.drive_path == b.drive_path; }
     )};
-    m_notification_list.upsert_notifcation(
+    m_notification_list.upsert_notification(
         PopNotificationData{
             PopNotificationType::Eject,
             status != Slic3r::Biz::RemovableDrive::RemovableDriveStatus::Failed ?
@@ -1082,7 +1082,7 @@ void PopNotificationCenter::on_user_account_id_success(bool is_refresh, const st
     const boost::filesystem::path avatar{m_project_interactor.user_account_interactor().avatar()};
     const std::string image_path{boost::filesystem::exists(avatar) ? avatar.string() : std::string{}};
 
-    m_notification_list.upsert_notifcation(
+    m_notification_list.upsert_notification(
         PopNotificationData{
             PopNotificationType::UserAccountLogin,
             PopNotificationLevel::Regular,
@@ -1106,7 +1106,7 @@ void PopNotificationCenter::on_avatar_downloaded()
     // avatar is re-downloaded outside of a fresh login (e.g. during a token refresh).
     std::function<bool(const UserAccountLoginNotificationData&)> any =
         [](const UserAccountLoginNotificationData&) { return true; };
-    if (!m_notification_list.get_notifcation_payload<UserAccountLoginNotificationData>(any)) {
+    if (!m_notification_list.get_notification_payload<UserAccountLoginNotificationData>(any)) {
         return;
     }
 
@@ -1115,7 +1115,7 @@ void PopNotificationCenter::on_avatar_downloaded()
         return;
     }
 
-    m_notification_list.upsert_notifcation(
+    m_notification_list.upsert_notification(
         PopNotificationData{
             PopNotificationType::UserAccountLogin,
             PopNotificationLevel::Regular,
@@ -1137,7 +1137,7 @@ void PopNotificationCenter::on_user_account_logged_out()
     const boost::filesystem::path avatar{m_project_interactor.user_account_interactor().avatar()};
     const std::string image_path{boost::filesystem::exists(avatar) ? avatar.string() : std::string{}};
 
-    m_notification_list.upsert_notifcation(
+    m_notification_list.upsert_notification(
         PopNotificationData{
             PopNotificationType::UserAccountLogin,
             PopNotificationLevel::Regular,
@@ -1168,7 +1168,7 @@ void PopNotificationCenter::on_user_account_action_retry(
         fmt::runtime(_u8L("Communication is taking longer than expected. Retrying. Attempt {}.")),
         std::to_string(retry.attempt)
     );
-    m_notification_list.upsert_notifcation(
+    m_notification_list.upsert_notification(
         PopNotificationData{
             PopNotificationType::UserAccountTransientError,
             PopNotificationLevel::Warning,
@@ -1197,7 +1197,7 @@ void PopNotificationCenter::on_user_account_action_retry_finished()
 
 void PopNotificationCenter::on_project_load_failed(const std::string& error)
 {
-    upsert_notifcation(
+    upsert_notification(
         PopNotificationData{
             PopNotificationType::LoadError,
             PopNotificationLevel::Warning,
@@ -1269,7 +1269,7 @@ void PopNotificationCenter::on_elements_not_arranged(
     ASSERT(text.back() == '\n');
     text.pop_back();
 
-    upsert_notifcation(
+    upsert_notification(
         PopNotificationData{
             PopNotificationType::ArrangeEvent,
             PopNotificationLevel::Warning,
@@ -1301,7 +1301,7 @@ void PopNotificationCenter::on_fatal_arrange_error(
         _u8L("Arrange failed, this is usually caused by an object being larger than slicer limits.")
     };
 
-    upsert_notifcation(
+    upsert_notification(
         PopNotificationData{
             PopNotificationType::ArrangeEvent,
             PopNotificationLevel::Error,
@@ -1327,7 +1327,7 @@ void PopNotificationCenter::on_connect_handler_error(const std::string& msg)
     // TRN Header of the Prusa Connect error notification.
     const std::string header{_u8L("Prusa Connect Error")};
 
-    upsert_notifcation(
+    upsert_notification(
         PopNotificationData{
             PopNotificationType::ConnectError,
             PopNotificationLevel::Error,
@@ -1375,7 +1375,7 @@ void PopNotificationCenter::on_file_explorer_error(
         return;
     }
 
-    upsert_notifcation(
+    upsert_notification(
         PopNotificationData{
             PopNotificationType::FileExplorerError,
             PopNotificationLevel::Error,
@@ -1399,7 +1399,7 @@ void PopNotificationCenter::on_preset_updater_status(const std::string& target, 
         const std::string header{_u8L("Installing...")};
         std::string text = fmt::format(fmt::runtime(_u8L("Vendor: {}")), target);
 
-        upsert_notifcation(
+        upsert_notification(
             PopNotificationData{
                 PopNotificationType::PresetUpdaterStatus,
                 PopNotificationLevel::Regular,
@@ -1425,7 +1425,7 @@ void PopNotificationCenter::on_preset_updater_status(const std::string& target, 
     }
     
 
-    upsert_notifcation(
+    upsert_notification(
         PopNotificationData{
             PopNotificationType::PresetUpdaterStatus,
             PopNotificationLevel::Regular,
@@ -1450,7 +1450,7 @@ void PopNotificationCenter::on_preset_updater_error(const std::string& body)
 {
     m_notification_list.close_notifications_of_type(PopNotificationType::PresetUpdaterStatus);
     const std::string header{_u8L("Preset Updater Error")};
-    upsert_notifcation(
+    upsert_notification(
         PopNotificationData{
             PopNotificationType::PresetUpdaterWarning,
             PopNotificationLevel::Error,
@@ -1485,7 +1485,7 @@ void PopNotificationCenter::on_preset_updater_reconfigurations_performed(
     const std::string header{_u8L("Update Successful")};
     std::string text {_u8L("All presets are now up to date.")};
 
-    upsert_notifcation(
+    upsert_notification(
         PopNotificationData{
             PopNotificationType::PresetUpdaterStatus,
             PopNotificationLevel::Regular,
@@ -1512,7 +1512,7 @@ void PopNotificationCenter::show_preset_updater_reconfigurations_list(
         text += fmt::format( fmt::runtime(_u8L("* {}\nsource: {}\nversion: {}\nreason: Update\n")), reconf.vendor_id, reconf.vendor_repo_id, reconf.recommended_version.to_string());
     }
 
-    upsert_notifcation(
+    upsert_notification(
         PopNotificationData{
             PopNotificationType::PresetUpdateAvailable,
             PopNotificationLevel::Regular,
@@ -1538,7 +1538,7 @@ void PopNotificationCenter::show_preset_updater_no_reconfigurations()
     const std::string header{_u8L("No Configuration Updates Available")};
     std::string text = Biz::_u8L("There are no configuration updates available at the moment.");
 
-    upsert_notifcation(
+    upsert_notification(
         PopNotificationData{
             PopNotificationType::PresetUpdateAvailable,
             PopNotificationLevel::Regular,
@@ -1557,7 +1557,7 @@ void PopNotificationCenter::show_preset_updater_warnings(const std::vector<Biz::
     m_notification_list.close_notifications_of_type(PopNotificationType::PresetUpdaterWarning);
     for (const auto& warning : warnings) {
         const std::string header{_u8L("Preset Updater Warning")};
-        upsert_notifcation(
+        upsert_notification(
             PopNotificationData{
                 PopNotificationType::PresetUpdaterWarning,
                 PopNotificationLevel::Warning,
@@ -1570,6 +1570,51 @@ void PopNotificationCenter::show_preset_updater_warnings(const std::vector<Biz::
             never_equal_matcher
         );
     }
+}
+
+void PopNotificationCenter::on_plugin_installation_error(const std::string& error_message)
+{
+    m_notification_list.close_notifications_of_type(PopNotificationType::PluginInstallationError);
+    m_notification_list.close_notifications_of_type(PopNotificationType::PluginInstallationSuccess);
+
+    const std::string header{_u8L("Plugin installation error")};
+    upsert_notification(
+        PopNotificationData{
+            PopNotificationType::PluginInstallationError,
+            PopNotificationLevel::Error,
+            0s,
+            PopNotificationLayoutHeaderText{header, error_message}
+        },
+        never_equal_matcher
+    );
+
+}
+
+void PopNotificationCenter::on_plugin_installation_succeeded(
+    const Lua::PluginBundleMeta& plugin_bundle_meta
+)
+{
+    m_notification_list.close_notifications_of_type(PopNotificationType::PluginInstallationSuccess);
+    m_notification_list.close_notifications_of_type(PopNotificationType::PluginInstallationError);
+
+    const std::string header{_u8L("Plugin installation")};
+    upsert_notification(
+        PopNotificationData{
+            PopNotificationType::PluginInstallationSuccess,
+            PopNotificationLevel::Regular,
+            5s,
+            PopNotificationLayoutHeaderText{
+                header,
+                fmt::format(
+                    // TRN {} is a plugin identifier
+                    fmt::runtime(_u8L("Plugin {} installed successfully")),
+                    plugin_bundle_meta.id
+                )
+            }
+        },
+        never_equal_matcher
+    );
+
 }
 
 } // namespace Slic3r::App::PopNotification

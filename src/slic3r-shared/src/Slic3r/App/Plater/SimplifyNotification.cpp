@@ -191,7 +191,7 @@ void SimplifyNotification::recreate_notification(
         .on_user_close = [this, project_id]() { m_dismissed_projects.insert(project_id); }
     };
     auto matcher = [](const PopNotificationPayload&, const PopNotificationPayload&) { return false; };
-    m_notify.upsert_notifcation(data, matcher);
+    m_notify.upsert_notification(data, matcher);
 }
 
 void SimplifyNotification::on_volume_added(
@@ -338,7 +338,7 @@ void SimplifyNotification::on_project_will_be_removed(Domain::SelectionId projec
 
 void SimplifyNotification::on_paint_removed_after_simplify()
 {
-    m_notify.upsert_notifcation(
+    m_notify.upsert_notification(
         PopNotificationData{
             PopNotificationType::SimplifySuggestion,
             PopNotificationLevel::Warning,

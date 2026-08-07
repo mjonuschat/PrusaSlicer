@@ -1192,6 +1192,37 @@ void MenuCommandRegistrar::save_project_as()
     }
 }
 
+void MenuCommandRegistrar::install_plugin(Lua::PluginSystem& plugin_system)
+{
+    IDialogManager::FileCallback callback =
+        [&plugin_system](bool success, const std::vector<boost::filesystem::path>& file_paths)
+    {
+        if (success) {
+            // as on Win/Linux this callback is triggered within render loop showing menu items,
+            // we are going to recreate, we need to dispatch this action outside render loop
+            // to prevent rendering disposed menu items
+            Biz::Platform::PlatformServices::instance()
+                .main_thread_dispatcher()
+                .dispatch_on_main_thread([&plugin_system, file_path = file_paths.front().string()]
+                                         { plugin_system.install(file_path); });
+        }
+    };
+
+    auto& dlg_manager = AppServices::instance().dialog_manager();
+    dlg_manager.show_file_dialog(
+        FileDialogType::Open,
+        _u8L("Install Plugin"),
+        m_project_interactor.project_dir(
+            m_project_interactor.selected_project_id(),
+            AppServices::instance().app_config().get<std::string>("last_used_directory")
+        ),
+        "",
+        Wildcards::generate_wildcards(Wildcards::TypeFlag::Zip),
+        callback
+    );
+
+}
+
 void MenuCommandRegistrar::load_object(Wildcards::TypeFlag specific_type)
 {
     IDialogManager::FileCallback callback =
@@ -2445,6 +2476,16 @@ void MenuCommandRegistrar::register_main_menu_plugin_commands(Lua::PluginSystem&
                 Biz::Platform::PlatformServices::instance()
                     .main_thread_dispatcher()
                     .dispatch_on_main_thread([&plugin_system] { plugin_system.rescan(); });
+            }
+        )
+    );
+    m_menu_manager.register_menu_item(
+        {MenuItemName::Plugins, MenuItemName::PluginInstall},
+        std::make_unique<UIItemCommand>(
+            CommandName::PluginInstall,
+            [&]
+            {
+                install_plugin(plugin_system);
             }
         )
     );

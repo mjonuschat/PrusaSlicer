@@ -13,6 +13,7 @@
 #include "Slic3r/Biz/Connect/IConnectHandlerListener.hpp"
 #include "Slic3r/App/Platform/IFileExplorerErrorListener.hpp"
 #include "Slic3r/App/LeftBarTabs.hpp"
+#include "Slic3r/App/Lua/IPluginInstallationListener.hpp"
 #include "Slic3r/Biz/PresetUpdater/IPresetUpdaterResultListener.hpp"
 
 namespace Slic3r::Biz {
@@ -32,12 +33,13 @@ class PopNotificationCenter :
     public Biz::IArrangeEventsListener,
     public Biz::Connect::IConnectHandlerListener,
     public Platform::IFileExplorerErrorListener,
-    public Biz::PresetUpdater::IPresetUpdaterResultListener
+    public Biz::PresetUpdater::IPresetUpdaterResultListener,
+    public Lua::IPluginInstallationListener
 {
 public:
     PopNotificationCenter(Biz::ProjectInteractor& project_interactor);
 
-    void upsert_notifcation(PopNotificationData data, PopNotificationObservableList::Matcher matcher);
+    void upsert_notification(PopNotificationData data, PopNotificationObservableList::Matcher matcher);
 
     // Job
     void on_job_manager_status_changed(const Biz::Platform::JobManager::JobManagerStatus& status) override;
@@ -135,6 +137,9 @@ public:
         Platform::FileExplorerError reason
     ) override;
 
+    // Plugin Error Listener
+    void on_plugin_installation_error(const std::string& error_message) override;
+    void on_plugin_installation_succeeded(const Lua::PluginBundleMeta& plugin_bundle_meta) override;
 private:
     void on_job_progress(
         const JobNotificationSpec& spec,

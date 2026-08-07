@@ -1,5 +1,5 @@
 info = {
-    id = "com.prusa3d.slicer.calibration.flow_tower",
+    id = "flow_tower",
     type = "project.plugin",
     title = "Flow Tower",
     menu = "Calibration/Flow Tower",
@@ -22,7 +22,7 @@ function flow_rate_to_speed(flow_rate, extrusion_width, layer_height)
 end
 
 function execute(opts)
-    local note_badge = require("note_badge").note_badge
+    local note_badge = require('note_badge').note_badge
 
     local bed = api.project:current_bed()
 
@@ -32,6 +32,7 @@ function execute(opts)
 
     bed:print_presets():set("first_layer_height", layer_height)
     bed:print_presets():set("layer_height", layer_height)
+    bed:material_presets(0):set("filament_max_volumetric_speed", 0)
 
     local rounded_step_depth = math.floor(opts.step_depth / layer_height) * layer_height
     local depth = rounded_step_depth * opts.steps

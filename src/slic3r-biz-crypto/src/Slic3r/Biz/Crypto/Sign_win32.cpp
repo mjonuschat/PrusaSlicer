@@ -12,9 +12,6 @@
 #include <stdexcept>
 #include <fmt/format.h>
 
-#pragma comment(lib, "bcrypt.lib")
-#pragma comment(lib, "crypt32.lib")
-
 namespace Slic3r::Biz::Crypto {
 
 namespace Internal {
@@ -77,7 +74,7 @@ KeyPair KeyPair::generate(const char* algo, int size)
 
     NTSTATUS status = BCryptOpenAlgorithmProvider(&impl->handle_alg, alg_id, nullptr, 0);
     if (!BCRYPT_SUCCESS(status)) {
-        throw std::runtime_error(fmt::format("Unsupported keygen cypher {}", algo));
+        throw CryptoException(fmt::format("Unsupported keygen cypher {}", algo));
     }
 
     status = BCryptGenerateKeyPair(impl->handle_alg, &impl->handle_key, size, 0);
@@ -105,7 +102,7 @@ KeyPair KeyPair::load_pub_pem(BytesView bytes)
             nullptr
         ))
     {
-        throw std::runtime_error("Reading PEM failed: CryptStringToBinaryA");
+        throw CryptoException("Reading PEM failed: CryptStringToBinaryA");
     }
 
     std::vector<BYTE> der(der_len);
@@ -132,7 +129,7 @@ KeyPair KeyPair::load_pub_pem(BytesView bytes)
             &info_len
         ))
     {
-        throw std::runtime_error("Reading PEM failed: CryptDecodeObjectEx");
+        throw CryptoException("Reading PEM failed: CryptDecodeObjectEx");
     }
 
     auto impl    = std::make_unique<Internal::KeyImpl>();
@@ -146,7 +143,7 @@ KeyPair KeyPair::load_pub_pem(BytesView bytes)
     LocalFree(info_ptr);
 
     if (!success) {
-        throw std::runtime_error("Reading PEM failed: CryptImportPublicKeyInfoEx2");
+        throw CryptoException("Reading PEM failed: CryptImportPublicKeyInfoEx2");
     }
 
     return KeyPair{std::move(impl)};

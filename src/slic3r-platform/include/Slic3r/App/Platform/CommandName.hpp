@@ -123,5 +123,6 @@ struct CommandName
     static constexpr const char* PluginExecutePrefix = "plugin-execute-";
     static constexpr const char* PluginRescan = "plugin-rescan";
     static constexpr const char* PluginFolder = "plugin-folder";
+    static constexpr const char* PluginInstall = "plugin-install";
 };
 } // namespace Slic3r::App::Platform

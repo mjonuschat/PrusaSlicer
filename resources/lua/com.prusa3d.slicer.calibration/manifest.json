@@ -1,0 +1,9 @@
+{
+	"id": "com.prusa3d.slicer.calibration",
+	"version": "1.0.0",
+	"author": "prusa3d",
+	"description": "Calibration patterns",
+	"required_apis": {
+		"project.plugin": "1.0.0"
+	}
+}

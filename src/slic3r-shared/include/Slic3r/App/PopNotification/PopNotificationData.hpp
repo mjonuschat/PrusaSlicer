@@ -30,6 +30,8 @@ enum class PopNotificationType
     PresetUpdateAvailable,
     PresetUpdaterWarning,
     PresetUpdaterError,
+    PluginInstallationError,
+    PluginInstallationSuccess
 };
 
 /*

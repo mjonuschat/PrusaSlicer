@@ -85,7 +85,7 @@ ExportNameData get_export_name_data(const Biz::ProjectInteractor& project_intera
         name_data = Biz::ExportNameParser::parse_export_name(project_interactor);
     } catch (const Slic3r::PlaceholderParserError& e) {
         SPDLOG_ERROR("Failed to parse output filename: {}", e.what());
-        AppServices::instance().pop_notification_center().upsert_notifcation(
+        AppServices::instance().pop_notification_center().upsert_notification(
             {PopNotification::PopNotificationType::Custom,
              PopNotification::PopNotificationLevel::Error,
              0s,
