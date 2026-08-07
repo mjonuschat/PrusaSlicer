@@ -1193,6 +1193,9 @@ set(SLIC3R_SHARED_FILES
 		include/Slic3r/App/Lua/PluginDialog.hpp
 		src/Slic3r/App/Lua/PluginDialog.cpp
 		include/Slic3r/App/Lua/IPluginRescanListener.hpp
+
+        include/Slic3r/App/CustomGCodeMigration.hpp
+        src/Slic3r/App/CustomGCodeMigration.cpp
 )
 
 if (WIN32)
@@ -1524,6 +1527,8 @@ if(SLIC3R_BUILD_TESTS)
         test/Slic3r/Biz/Format/STEPTests.cpp
 
         test/Slic3r/Biz/BundleCacheTests.cpp
+
+        test/Slic3r/App/CustomGCodeMigrationTests.cpp
     )
     target_include_directories(slic3r-shared-tests PRIVATE test src)
 
