@@ -9,6 +9,10 @@ namespace Slic3r::App::Lua {
 class PluginDialog;
 }
 
+namespace Slic3r::App {
+class InvalidDataDialog;
+}
+
 namespace Slic3r::App::Plater {
 
 class History;
@@ -31,6 +35,7 @@ public:
         std::unique_ptr<History> history,
         std::unique_ptr<NumberEntryDialog> number_entry_dialog,
         std::unique_ptr<WelcomeDialog> welcome_dialog,
+        std::unique_ptr<InvalidDataDialog> invalid_data_dialog,
         std::unique_ptr<Lua::PluginDialog> plugin_dialog
     );
 
@@ -44,6 +49,7 @@ private:
     Yoga::Passthrough<SidebarPlaterActionButtons> m_sidebar_action_buttons;
     Yoga::Passthrough<History> m_history;
     Yoga::Passthrough<WelcomeDialog> m_welcome_dialog;
+    Yoga::Passthrough<InvalidDataDialog> m_invalid_data_dialog;
     Yoga::Passthrough<Lua::PluginDialog> m_plugin_dialog;
 };
 

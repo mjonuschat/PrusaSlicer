@@ -84,6 +84,7 @@
 #include "Slic3r/App/Wildcards.hpp"
 #include "Slic3r/App/PreferencesDialog.hpp"
 #include "Slic3r/App/NumberEntryDialog.hpp"
+#include "Slic3r/App/InvalidDataDialog.hpp"
 #include "Slic3r/App/SidebarStackLayout.hpp"
 #include "Slic3r/App/LogicalPrinterSettingsDialog.hpp"
 #include "Slic3r/App/PhysicalPrinterSettingsDialog.hpp"
@@ -162,7 +163,17 @@ bool PlaterRenderModule::is_modal_dialog_opened() const
     // TODO: Refactor this into a more general solution once additional modal dialogs are added
     const bool is_number_entry_dialog_opened =
         m_number_entry_dialog.get() && m_number_entry_dialog->opened();
-    return is_opened_preferences() || is_number_entry_dialog_opened;
+    const bool is_invalid_data_dialog_opened =
+        m_invalid_data_dialog.get() && m_invalid_data_dialog->opened();
+    return is_opened_preferences() || is_number_entry_dialog_opened
+        || is_invalid_data_dialog_opened;
+}
+
+void PlaterRenderModule::open_invalid_data_dialog()
+{
+    if (m_invalid_data_dialog.get()) {
+        set_opened_dialog(m_invalid_data_dialog.get());
+    }
 }
 
 void PlaterRenderModule::set_opened_preferences(bool opened)
@@ -560,6 +571,11 @@ void PlaterRenderModule::init_scene_layout()
 
     m_welcome_dialog = std::make_unique<WelcomeDialog>(m_project_interactor);
 
+    m_invalid_data_dialog = std::make_unique<InvalidDataDialog>(
+        m_project_interactor,
+        *m_render_module_navigator
+    );
+
     // >> This code is same for Plater/PreviewRenderModule
     m_top_bar = std::make_unique<TopBar>(
         &m_project_interactor,
@@ -615,6 +631,7 @@ void PlaterRenderModule::init_scene_layout()
         m_history.release(),
         m_number_entry_dialog.release(),
         m_welcome_dialog.release(),
+        m_invalid_data_dialog.release(),
         m_plugin_system.init_dialog().release()
     ));
     m_layout->init();
@@ -793,6 +810,7 @@ void PlaterRenderModule::init_dialog_navigation()
     m_dialog_navigation.insert_dialog(&m_sidebar_print->print_settings_dialog());
     m_dialog_navigation.insert_dialog(m_preferences_dialog.get());
     m_dialog_navigation.insert_dialog(m_number_entry_dialog.get());
+    m_dialog_navigation.insert_dialog(m_invalid_data_dialog.get());
 
     m_dialog_navigation.insert_dialog(&m_sidebar_action_buttons->physical_printer_settings_dialog());
     m_dialog_navigation.insert_dialog(

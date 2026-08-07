@@ -2,8 +2,6 @@
 
 #include "Slic3r/App/DisplayStrings.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
-#include "Slic3r/App/AppServices.hpp"
-#include "Slic3r/App/IDialogManager.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
 
 #include "Slic3r/Biz/I18N/I18N.hpp"
@@ -166,21 +164,10 @@ void SidebarPlaterActionButtons::update_slice_button(const BedSelection& selecti
         border_color_hover = Imgui::adjust_brightness(border_color, 1.25f);
         border_width = 1_fpx;
 
-        std::string error_mesage;
-        for (const BedStatus& bed_status : statuses) {
-            if (bed_status.status == StatusCode::InvalidData) {
-                std::string bed_error;
-                for (const std::string& error : bed_status.errors) {
-                    bed_error += fmt::format("Bed {}:\n", bed_status.bed_index);
-                    bed_error += error + "\n";
-                }
-                bed_error += bed_error.empty() ? "" : "\n";
-                error_mesage += bed_error;
+        m_button_slice->callbacks().action = [this]() {
+            if (m_render_module_navigator) {
+                m_render_module_navigator->open_invalid_data_dialog();
             }
-        }
-
-        m_button_slice->callbacks().action = [error_mesage, label]() {
-            AppServices::instance().dialog_manager().show_error_dialog(error_mesage, label);
         };
     } else if (any_running) {
         label = _u8L("Cancel");

@@ -6,6 +6,7 @@
 #include "Slic3r/App/Preview/DoubleSliderForGCode.hpp"
 #include "Slic3r/App/Preview/SidebarAutoReslice.hpp"
 #include "Slic3r/App/Preview/SidebarPreviewActionButtons.hpp"
+#include "Slic3r/App/InvalidDataDialog.hpp"
 #include "Slic3r/App/SidebarStackLayout.hpp"
 
 using namespace Slic3r::App::Yoga;
@@ -29,7 +30,8 @@ PreviewRenderLayout::PreviewRenderLayout(
     std::unique_ptr<DoubleSliderForLayers> sla_double_slider_layers,
     std::unique_ptr<DoubleSliderForGcode> double_slider_gcode,
     std::unique_ptr<SidebarAutoReslice> sidebar_auto_reslice,
-    std::unique_ptr<NumberEntryDialog> numbers_entry_dialog
+    std::unique_ptr<NumberEntryDialog> numbers_entry_dialog,
+    std::unique_ptr<InvalidDataDialog> invalid_data_dialog
 ) :
     AbstractRenderLayout(
         navigator,
@@ -49,10 +51,19 @@ PreviewRenderLayout::PreviewRenderLayout(
     m_sla_double_slider_layers(std::move(sla_double_slider_layers)),
     m_double_slider_gcode(std::move(double_slider_gcode)),
     m_sidebar_auto_reslice(std::move(sidebar_auto_reslice)),
-    m_sidebar_action_buttons(std::move(sidebar_action_buttons))
+    m_sidebar_action_buttons(std::move(sidebar_action_buttons)),
+    m_invalid_data_dialog(std::move(invalid_data_dialog))
 {}
 
 PreviewRenderLayout::~PreviewRenderLayout() = default;
+
+void PreviewRenderLayout::init()
+{
+    AbstractRenderLayout::init();
+
+    m_layout_main.append(m_invalid_data_dialog.release());
+    m_invalid_data_dialog->attach_to_center();
+}
 
 void PreviewRenderLayout::init_left_column()
 {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/App/Plater/ThumbnailImageGenerator.hpp"
+#include "Slic3r/App/InvalidDataDialog.hpp"
 #include "Slic3r/App/Platform/AbstractRenderModule.hpp"
 #include "Slic3r/App/Preview/PreviewScenePresenter.hpp"
 #include "Slic3r/App/Scene/GizmoManager.hpp"
@@ -142,6 +143,7 @@ public:
 
     void set_opened_dialog(Yoga::Dialog* opened_dialog);
     bool is_modal_dialog_opened() const;
+    void open_invalid_data_dialog();
 
     void set_opened_preferences(bool opened);
     bool is_opened_preferences() const;
@@ -238,6 +240,7 @@ private:
     Yoga::Passthrough<SidebarAutoReslice> m_sidebar_auto_reslice;
     Yoga::Passthrough<PreferencesDialog> m_preferences_dialog;
     Yoga::Passthrough<NumberEntryDialog> m_number_entry_dialog;
+    Yoga::Passthrough<InvalidDataDialog> m_invalid_data_dialog;
     // temporary variable to allow to switch yoga layout on/off
 
     ToolBarButton* m_button_travels           = nullptr;

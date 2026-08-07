@@ -121,6 +121,11 @@ public:
         m_switch_left_tab_fn = switch_left_tab_fn;
     }
 
+    void set_open_invalid_data_dialog_fn(std::function<void()> open_dialog_fn)
+    {
+        m_open_invalid_data_dialog_fn = open_dialog_fn;
+    }
+
     // Connect Message Hander
     void on_connect_handler_error(const std::string& msg) override;
 
@@ -157,6 +162,7 @@ private:
     Biz::RemovableDrive::RemovableDriveService& m_removable_drive_service;
     Biz::ProjectInteractor& m_project_interactor;
     std::function<void(LeftBarTabs, const std::string&)> m_switch_left_tab_fn;
+    std::function<void()> m_open_invalid_data_dialog_fn;
 };
 
 } // namespace Slic3r::App::PopNotification

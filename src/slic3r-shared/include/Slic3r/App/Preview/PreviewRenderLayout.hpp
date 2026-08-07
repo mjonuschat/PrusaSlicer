@@ -11,6 +11,14 @@ class LegendWindow;
 class DoubleSliderForLayers;
 class DoubleSliderForGcode;
 
+} // namespace Slic3r::App::Preview
+
+namespace Slic3r::App {
+class InvalidDataDialog;
+}
+
+namespace Slic3r::App::Preview {
+
 class PreviewRenderLayout : public AbstractRenderLayout
 {
 public:
@@ -31,9 +39,12 @@ public:
         std::unique_ptr<DoubleSliderForLayers> sla_double_slider_layers,
         std::unique_ptr<DoubleSliderForGcode> double_slider_gcode,
         std::unique_ptr<SidebarAutoReslice> sidebar_auto_reslice,
-        std::unique_ptr<NumberEntryDialog> numbers_entry_dialog
+        std::unique_ptr<NumberEntryDialog> numbers_entry_dialog,
+        std::unique_ptr<InvalidDataDialog> invalid_data_dialog
     );
     ~PreviewRenderLayout();
+
+    void init() override;
 
 private:
     void init_left_column() override;
@@ -49,6 +60,7 @@ private:
 
     Yoga::Passthrough<SidebarAutoReslice> m_sidebar_auto_reslice;
     Yoga::Passthrough<SidebarPreviewActionButtons> m_sidebar_action_buttons;
+    Yoga::Passthrough<InvalidDataDialog> m_invalid_data_dialog;
 };
 
 } // namespace Slic3r::App::Preview

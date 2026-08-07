@@ -67,6 +67,8 @@ public:
 
     void request_search();
 
+    void open_invalid_data_dialog();
+
     void set_opened_preferences(bool opened);
     bool is_opened_preferences();
 

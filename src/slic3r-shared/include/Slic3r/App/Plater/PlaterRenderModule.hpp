@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "Slic3r/App/Undo/Store.hpp"
+#include "Slic3r/App/InvalidDataDialog.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/ISelectedProjectChangedListener.hpp"
 #include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
@@ -121,6 +122,7 @@ public:
 
     void set_opened_dialog(Yoga::Dialog* opened_dialog);
     bool is_modal_dialog_opened() const;
+    void open_invalid_data_dialog();
 
     void navigate_to_item(const Domain::ConfigItem* config_item);
 
@@ -258,6 +260,7 @@ private:
     Yoga::Passthrough<PreferencesDialog> m_preferences_dialog;
     Yoga::Passthrough<NumberEntryDialog> m_number_entry_dialog;
     Yoga::Passthrough<WelcomeDialog> m_welcome_dialog;
+    Yoga::Passthrough<InvalidDataDialog> m_invalid_data_dialog;
 
     ToolBarButton* m_toolbar_add                     = nullptr;
     ToolBarButton* m_toolbar_delete                  = nullptr;

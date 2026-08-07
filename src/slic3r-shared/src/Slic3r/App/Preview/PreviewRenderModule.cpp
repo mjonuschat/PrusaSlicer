@@ -28,6 +28,7 @@
 #include "Slic3r/App/PrintSettingsDialog.hpp"
 #include "Slic3r/App/MaterialSelectionDialog.hpp"
 #include "Slic3r/App/MaterialSettingsDialog.hpp"
+#include "Slic3r/App/InvalidDataDialog.hpp"
 #include "Slic3r/App/UIItemCommand.hpp"
 #include "Slic3r/App/AppConfig.hpp"
 
@@ -407,7 +408,16 @@ void PreviewRenderModule::set_opened_dialog(Yoga::Dialog* opened_dialog)
 bool PreviewRenderModule::is_modal_dialog_opened() const
 {
     // TODO: Refactor this into a more general solution once additional modal dialogs are added
-    return is_opened_preferences();
+    const bool is_invalid_data_dialog_opened =
+        m_invalid_data_dialog.get() && m_invalid_data_dialog->opened();
+    return is_opened_preferences() || is_invalid_data_dialog_opened;
+}
+
+void PreviewRenderModule::open_invalid_data_dialog()
+{
+    if (m_invalid_data_dialog.get()) {
+        set_opened_dialog(m_invalid_data_dialog.get());
+    }
 }
 
 void PreviewRenderModule::set_opened_preferences(bool opened)
@@ -829,6 +839,11 @@ void PreviewRenderModule::init_scene_layout()
         *m_render_module_navigator
     );
 
+    m_invalid_data_dialog = std::make_unique<InvalidDataDialog>(
+        m_project_interactor,
+        *m_render_module_navigator
+    );
+
     // >> This code is same for Plater/PreviewRenderModule
     m_top_bar = std::make_unique<TopBar>(
         &m_project_interactor,
@@ -873,7 +888,8 @@ void PreviewRenderModule::init_scene_layout()
         m_sla_slider_layers.release(),
         m_slider_gcode.release(),
         m_sidebar_auto_reslice.release(),
-        m_number_entry_dialog.release()
+        m_number_entry_dialog.release(),
+        m_invalid_data_dialog.release()
     ));
     m_layout->init();
 
@@ -1045,6 +1061,7 @@ void PreviewRenderModule::init_dialog_navigation()
 
     m_dialog_navigation.insert_dialog(&m_sidebar_print->print_settings_dialog());
     m_dialog_navigation.insert_dialog(m_preferences_dialog.get());
+    m_dialog_navigation.insert_dialog(m_invalid_data_dialog.get());
 
     m_dialog_navigation.insert_dialog(&m_sidebar_action_buttons->physical_printer_settings_dialog());
     m_dialog_navigation.insert_dialog(

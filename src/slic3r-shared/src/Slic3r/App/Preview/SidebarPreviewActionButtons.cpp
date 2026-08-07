@@ -2,12 +2,10 @@
 
 #include "Slic3r/App/AppConfig.hpp"
 #include "Slic3r/App/Browser/BrowserLogicLogInRedirect.hpp"
-#include "Slic3r/App/DisplayStrings.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/ResultExport/ExportActions.hpp"
 #include "Slic3r/App/AppServices.hpp"
-#include "Slic3r/App/IDialogManager.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
 using namespace Slic3r::App::Yoga;
@@ -133,20 +131,11 @@ void SidebarPreviewActionButtons::update_buttons()
         m_primary_button->set_background_border_width(2.f);
         m_primary_button->set_enabled(true);
 
-        const Domain::Project& project{
-            m_project_interactor->workbench().project(slicing_id.project_id)
-        };
-        std::string error_message;
-        for (const Biz::Slicing::Error& error : status.errors) {
-            error_message += to_display_string(error, project) + "\n";
-        }
-
-        m_primary_button->callbacks().action = [error_message]()
+        m_primary_button->callbacks().action = [this]()
         {
-            AppServices::instance().dialog_manager().show_error_dialog(
-                error_message,
-                "Invalid settings"
-            );
+            if (m_render_module_navigator) {
+                m_render_module_navigator->open_invalid_data_dialog();
+            }
         };
     } break;
     case StatusCode::Finished: {

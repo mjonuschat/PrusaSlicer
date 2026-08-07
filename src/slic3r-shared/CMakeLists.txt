@@ -273,6 +273,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/PreferencesDialog.cpp
         include/Slic3r/App/NumberEntryDialog.hpp
         src/Slic3r/App/NumberEntryDialog.cpp
+        include/Slic3r/App/InvalidDataDialog.hpp
+        src/Slic3r/App/InvalidDataDialog.cpp
         include/Slic3r/App/SidebarStackLayout.hpp
         src/Slic3r/App/SidebarStackLayout.cpp
         include/Slic3r/App/CurrentPresetLabel.hpp

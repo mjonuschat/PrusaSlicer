@@ -442,6 +442,9 @@ bool DesktopApp::OnInit()
             std::placeholders::_2
         )
     );
+    app_services.pop_notification_center().set_open_invalid_data_dialog_fn(
+        std::bind(&Navigator::open_invalid_data_dialog, &m_navigator)
+    );
 #ifdef WIN32
     m_main_frame->register_win32_callbacks();
 #endif

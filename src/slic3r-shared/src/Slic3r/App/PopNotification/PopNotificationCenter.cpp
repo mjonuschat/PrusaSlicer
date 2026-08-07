@@ -604,7 +604,22 @@ void PopNotificationCenter::on_status_cache_errors_changed(const Domain::Slicing
                 PopNotificationType::SlicingError,
                 PopNotificationLevel::Error,
                 0s,
-                PopNotificationLayoutHeaderText{header, to_display_string(error, project)},
+                PopNotificationLayoutHeaderTextButtons{
+                    header,
+                    to_display_string(error, project),
+                    {
+                        PopNotificationButtonData{
+                            _u8L("See more"),
+                            [this]()
+                            {
+                                if (m_open_invalid_data_dialog_fn) {
+                                    m_open_invalid_data_dialog_fn();
+                                }
+                                return true;
+                            }
+                        }
+                    }
+                },
                 Payload{error.code, slicing_id},
                 slicing_id.project_id
             },

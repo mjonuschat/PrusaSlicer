@@ -213,16 +213,6 @@ std::string to_display_string(Biz::Slicing::Error error, const Domain::Project& 
     const std::string object_info{object != nullptr ? _u8L("\nObject: ") + object->name : ""};
 
     switch (error.code) {
-    case Biz::Slicing::ErrorCode::PlaceholderParser: {
-        std::string partial_msg;
-        for (const auto& [name, error] : std::get<Biz::Slicing::PlaceholderParserErrorPayload>(error.payload))
-            partial_msg += name + "\n" + error + "\n";
-        const std::string start_tag = "        !!!!! Failed to process the custom G-code template ...";
-        const std::string end_tag = "        !!!!! End of an error report for the custom G-code template ...";
-        return to_display_string(error.code) + fmt::format(fmt::runtime(_u8L("G-code processing failed due to invalid custom G-code sections:\n\n{}\n"
-            "Please inspect the file for error messages enclosed between\n{}\nand\n{}\nfor all macro processing errors.")),
-            partial_msg, start_tag, end_tag);
-        }
     case Biz::Slicing::ErrorCode::InvalidThumbnailRequest: {
         const auto& payload = std::get<Biz::Slicing::InvalidThumbnailRequestPayload>(error.payload);
         std::string error_str = to_display_string(error.code);

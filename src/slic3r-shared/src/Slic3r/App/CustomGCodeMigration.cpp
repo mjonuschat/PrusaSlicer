@@ -16,9 +16,8 @@ static void find_replace(std::string& str, const std::string& from, const std::s
     }
 }
 
-static void find_replace_renames(std::string& gcode)
-{
-    std::vector<std::pair<std::string, std::string>> renames{
+const std::vector<std::pair<std::string, std::string>>& get_renames(){
+    static std::vector<std::pair<std::string, std::string>> renames{
         {"filament_retract_length", "retract_length"},
         {"filament_retract_lift", "retract_lift"},
         {"filament_retract_lift_above", "retract_lift_above"},
@@ -39,8 +38,12 @@ static void find_replace_renames(std::string& gcode)
         {"filament_seam_gap_distance", "seam_gap_distance"},
         {"first_layer_infill_speed", "first_layer_solid_infill_speed"},
     };
+    return renames;
+}
 
-    for (const auto& [from, to] : renames) {
+static void find_replace_renames(std::string& gcode)
+{
+    for (const auto& [from, to] : get_renames()) {
         find_replace(gcode, from, to);
     }
 }
