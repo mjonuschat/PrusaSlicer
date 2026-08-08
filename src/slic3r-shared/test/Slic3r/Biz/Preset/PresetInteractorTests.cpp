@@ -34,7 +34,11 @@ void update_diff(
             .new_preset_name = new_name
         };
         const auto it = getter(selected).find(key);
-        (it.is_override ? dest.overrides : dest.items).insert({key, it.item->value()});
+        if (it.is_override) {
+            dest.overrides.insert({key, it.item->value()});
+        } else {
+            dest.items.insert({key, it.item->value()});
+        }
         ret.emplace(Slic3r::Biz::Preset::PresetSwitchKindId{kind, slot}, std::move(dest));
     }
 }

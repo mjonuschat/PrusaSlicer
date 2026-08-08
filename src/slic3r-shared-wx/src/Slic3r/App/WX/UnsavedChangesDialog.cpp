@@ -9,7 +9,6 @@
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/App/Config/CategoryUtils.hpp"
 
-#include "Slic3r/Domain/Preset/Bundle.hpp"
 #include "Slic3r/Domain/FullConfigFDM.hpp"
 #include "Slic3r/Domain/FullConfigSLA.hpp"
 
@@ -27,7 +26,6 @@
 #include <wx/stattext.h>
 #include <wx/string.h>
 
-#include <wx/scrolwin.h>
 #include <fmt/format.h>
 #include "Slic3r/Log.hpp"
 
@@ -694,8 +692,13 @@ void UnsavedChangesDialog::process_button_click(PresetDiffOperation operation)
                 if (const Domain::ConfigItem* item = items.find(key)) {
                     m_exit_states[kind_id].items.insert({key, item->value()});
                 }
-                if (const Domain::ConfigItem* override = overrides.find(key)) {
+                if (overrides.empty())
+                    continue;
+                if (const auto& override = overrides.get(key)) {
                     m_exit_states[kind_id].overrides.insert({key, override->value()});
+                } else {
+                    std::optional<Domain::ConfigValue> disabled_override{std::nullopt};
+                    m_exit_states[kind_id].overrides.insert({key, disabled_override});
                 }
             }
         };

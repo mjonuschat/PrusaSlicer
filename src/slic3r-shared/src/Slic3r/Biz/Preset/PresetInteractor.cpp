@@ -2687,7 +2687,9 @@ void PresetInteractor::process_operation_from_unsaved_changes(
                 selected_preset.printer.config_box().items.opt(key).set(item_val);
             }
             for (const auto& [key, override_val] : state.overrides) {
-                selected_preset.printer.config_box().overrides.set(key, override_val);
+                // Printer-kind overrides are never disableable, so a disengaged value here is unexpected.
+                ASSERT(override_val);
+                selected_preset.printer.config_box().overrides.set(key, override_val.value());
             }
         }
         if (preset_id.kind == Domain::Preset::print_kind(selected_preset.technology())) {
@@ -2695,7 +2697,9 @@ void PresetInteractor::process_operation_from_unsaved_changes(
                 selected_preset.print.config_box().items.opt(key).set(item_val);
             }
             for (const auto& [key, override_val] : state.overrides) {
-                selected_preset.print.config_box().overrides.set(key, override_val);
+                // Print-kind overrides are never disableable, so a disengaged value here is unexpected.
+                ASSERT(override_val);
+                selected_preset.print.config_box().overrides.set(key, override_val.value());
             }
         }
         if (preset_id.kind == Domain::Preset::material_kind(selected_preset.technology())
@@ -2707,10 +2711,16 @@ void PresetInteractor::process_operation_from_unsaved_changes(
                 );
             }
             for (const auto& [key, override_val] : state.overrides) {
-                selected_preset.materials[preset_id.id.value()].config_box().overrides.set(
-                    key,
-                    override_val
-                );
+                if (override_val) {
+                    selected_preset.materials[preset_id.id.value()].config_box().overrides.set(
+                        key,
+                        override_val.value()
+                    );
+                } else {
+                    selected_preset.materials[preset_id.id.value()].config_box().overrides.disable(
+                        key
+                    );
+                }
             }
         }
         if (preset_id.kind == Domain::Preset::PresetKind::FdmToolPrint && preset_id.id) {
@@ -2720,10 +2730,14 @@ void PresetInteractor::process_operation_from_unsaved_changes(
                 );
             }
             for (const auto& [key, override_val] : state.overrides) {
-                selected_preset.tools[preset_id.id.value()].config_box().overrides.set(
-                    key,
-                    override_val
-                );
+                if (override_val) {
+                    selected_preset.tools[preset_id.id.value()].config_box().overrides.set(
+                        key,
+                        override_val.value()
+                    );
+                } else {
+                    selected_preset.tools[preset_id.id.value()].config_box().overrides.disable(key);
+                }
             }
         }
 

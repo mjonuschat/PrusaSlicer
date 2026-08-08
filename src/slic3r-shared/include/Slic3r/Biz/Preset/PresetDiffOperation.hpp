@@ -31,13 +31,18 @@ struct PresetSwitchState
     PresetDiffOperation operation;
 
     /**
-     * @brief Lists of affected options with their's values.
+     * @brief Lists of affected options with their values.
      *
      * - For **Save**, contains unsaved options.
      * - For **Transfer**, contains options to transfer to the new preset.
      */
     std::map<std::string, Domain::ConfigValue> items;
-    std::map<std::string, Domain::ConfigValue> overrides;
+    /**
+     * @brief Override values for affected options.
+     *
+     * Note: Can contain std::nullopt value if the override was disabled.
+     */
+    std::map<std::string, std::optional<Domain::ConfigValue>> overrides;
 
     /**
      * @brief Name of the new preset, valid only for the **Save** operation.
