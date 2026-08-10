@@ -1,7 +1,6 @@
 #include "Slic3r/Biz/Preset/IO/BundleLoader.hpp"
 
 #include "Slic3r/Log.hpp"
-#include "Slic3r/Semver.hpp"
 #include "Slic3r/Biz/Yaml/Yaml.hpp"
 #include "Slic3r/Biz/Preset/IO/PresetLoader.hpp"
 #include "Slic3r/Biz/Preset/IO/HwConfigLoader.hpp"
@@ -22,26 +21,6 @@ namespace Slic3r::Biz::Preset::IO {
 
 namespace fs = boost::filesystem;
 
-bool local_version_greater(const fs::path& src_path, const fs::path& dest_path)
-{
-    Semver src_version, dest_version;
-    try {
-        src_version = HwConfigLoader::load_info_only((src_path / "vendor.yaml").string()).version;
-    }
-    catch (...) {
-        return false;
-    }
-    try {
-        dest_version = HwConfigLoader::load_info_only((dest_path / "vendor.yaml").string()).version;
-    }
-    catch (...) {
-        return true;
-    }
-
-    return src_version > dest_version;
-}
-
-
 void populate_local_bundle(const BundlePaths& bundle_paths)
 {
     for (const auto& repo_entry : fs::directory_iterator(bundle_paths.app_bundle_path)) {
@@ -56,9 +35,7 @@ void populate_local_bundle(const BundlePaths& bundle_paths)
             }
             const auto dest_path =
                 bundle_paths.local_bundle_path / repo_entry.path().filename() / src_path.filename();
-            if (!fs::exists(dest_path / "vendor.yaml")
-                || local_version_greater(src_path, dest_path))
-            {
+            if (!fs::exists(dest_path / "vendor.yaml")) {
                 SPDLOG_INFO(
                     "Populate vendor {}/{}",
                     repo_entry.path().filename().string(),
