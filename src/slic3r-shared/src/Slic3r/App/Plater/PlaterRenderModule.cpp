@@ -180,7 +180,6 @@ void PlaterRenderModule::set_opened_preferences(bool opened)
 {
     if (opened) {
         set_opened_dialog(m_preferences_dialog.get());
-        request_render();
     } else {
         m_preferences_dialog->close();
     }

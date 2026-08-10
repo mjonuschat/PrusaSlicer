@@ -4,7 +4,7 @@
 ///|/
 #include "Slic3r/App/Yoga/Window.hpp"
 
-#include <imgui_internal.h>
+#include "Slic3r/Utils.hpp"
 
 namespace Slic3r::App::Yoga {
 
@@ -74,20 +74,6 @@ void Window::set_border_color(const std::optional<ImColor>& color)
 
 void Window::render(const Vec2f& pos, const Vec2f& size)
 {
-    // Process begin of popup modal if needed
-    bool is_begin_popup_modal{false};
-    if (m_is_modal) {
-        bool popup_modal_open{true};
-        const std::string popup_modal_wnd_name = object_name() + "_popup_modal";
-        ImGui::OpenPopup(popup_modal_wnd_name.c_str());
-        ImGui::SetNextWindowPos(Item::to_im(pos), ImGuiCond_Always);
-        is_begin_popup_modal =
-            ImGui::BeginPopupModal(popup_modal_wnd_name.c_str(), &popup_modal_open);
-        if (!is_begin_popup_modal) {
-            return;
-        }
-    }
-
     render_item_begin(pos, size);
 
     ImVec2 next_pos;
@@ -122,7 +108,34 @@ void Window::render(const Vec2f& pos, const Vec2f& size)
         ImGui::PushStyleColor(ImGuiCol_Border, m_border_color.value().Value);
     }
 
-    ImGui::Begin(object_name().c_str(), nullptr, m_flags);
+    ScopeGuard style_guard(
+        [has_border_color]()
+        {
+            // Revert current paddings and spacing
+            ImGui::PopStyleVar(4);
+            if (has_border_color) {
+                ImGui::PopStyleColor();
+            }
+        }
+    );
+
+    bool window_begun{false};
+    if (m_is_modal) {
+        bool popup_modal_open{true};
+        ImGui::OpenPopup(object_name().c_str());
+        window_begun = ImGui::BeginPopupModal(object_name().c_str(), &popup_modal_open, m_flags);
+        // Our render loop doesn't run continuously, so ImGui's time-based dim
+        // fade-in animation only gets a single frame most of the time. Skip it,
+        // otherwise the background dims further on the next unrelated render
+        // (e.g. mouse moving over the canvas), which looks like a visible jump.
+        ImGui::GetCurrentContext()->DimBgRatio = 1.0f;
+    } else {
+        window_begun = ImGui::Begin(object_name().c_str(), nullptr, m_flags);
+    }
+    if (!window_begun) {
+        render_item_end(pos, size);
+        return;
+    }
 
     ImVec2 pos_to_render = ImGui::GetWindowPos();
 
@@ -154,17 +167,10 @@ void Window::render(const Vec2f& pos, const Vec2f& size)
         ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
     }
 
-    ImGui::End();
-    // Revert current paddings and spacing
-    ImGui::PopStyleVar(4);
-
-    if (has_border_color) {
-        ImGui::PopStyleColor();
-    }
-
-    // Process end of popup modal if needed
-    if (m_is_modal && is_begin_popup_modal) {
+    if (m_is_modal) {
         ImGui::EndPopup();
+    } else {
+        ImGui::End();
     }
 }
 

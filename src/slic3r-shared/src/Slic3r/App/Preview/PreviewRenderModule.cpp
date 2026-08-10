@@ -424,7 +424,6 @@ void PreviewRenderModule::set_opened_preferences(bool opened)
 {
     if (opened) {
         m_dialog_navigation.open_dialog(m_preferences_dialog.get());
-        request_render();
     } else {
         m_preferences_dialog->close();
     }
