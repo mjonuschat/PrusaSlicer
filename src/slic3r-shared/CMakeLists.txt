@@ -467,6 +467,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Scene/GizmoCommandRegistry.cpp
         include/Slic3r/App/Scene/MouseDragDetector.hpp
         src/Slic3r/App/Scene/MouseDragDetector.cpp
+        include/Slic3r/App/Scene/MouseBindingScheme.hpp
+        src/Slic3r/App/Scene/MouseBindingScheme.cpp
 		include/Slic3r/App/Scene/ClickDetector.hpp
 		src/Slic3r/App/Scene/ClickDetector.cpp
         include/Slic3r/App/Scene/GeometryDataFactory.hpp
@@ -1456,6 +1458,7 @@ if(SLIC3R_BUILD_TESTS)
 
         test/Slic3r/App/Scene/Node.cpp
         test/Slic3r/App/Scene/Ray.cpp
+        test/Slic3r/App/Scene/MouseBindingScheme.cpp
 
         test/Slic3r/App/Plater/SurfaceMesh.cpp
 

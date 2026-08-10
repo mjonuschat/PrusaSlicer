@@ -76,6 +76,34 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
         }
     );
 
+    def               = defs.add("mouse_navigation_scheme", typeid(Domain::EnumWrapper));
+    def->location     = Domain::AppConfigLocation{};
+    def->label        = L("Mouse navigation");
+    def->category     = Domain::ConfigItemDef::Category::AppConfig_General;
+    def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_General_Application;
+    def->gui_type     = GUIType::combobox;
+    def->tooltip      = L("Controls how mouse buttons orbit, pan and select in the 3D scene");
+    def->init_fn      = Domain::init_with(
+        MouseNavigationScheme::PrusaSlicer,
+        {
+            {int(MouseNavigationScheme::PrusaSlicer),
+             "prusaslicer",
+             def->L_CONTEXT("PrusaSlicer", "Mouse navigation scheme")},
+            {int(MouseNavigationScheme::Tinkercad),
+             "tinkercad",
+             def->L_CONTEXT("Tinkercad", "Mouse navigation scheme")},
+            {int(MouseNavigationScheme::Blender),
+             "blender",
+             def->L_CONTEXT("Blender", "Mouse navigation scheme")},
+            {int(MouseNavigationScheme::SolidWorks),
+             "solidworks",
+             def->L_CONTEXT("SolidWorks", "Mouse navigation scheme")},
+            {int(MouseNavigationScheme::Fusion),
+             "fusion",
+             def->L_CONTEXT("Fusion", "Mouse navigation scheme")},
+        }
+    );
+
     def               = defs.add("graphics_quality", typeid(Domain::EnumWrapper));
     def->location     = Domain::AppConfigLocation{};
     def->label        = L("Graphics quality");

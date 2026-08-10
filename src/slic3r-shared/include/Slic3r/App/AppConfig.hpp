@@ -16,6 +16,15 @@ enum class GraphicsQuality
     High
 };
 
+enum class MouseNavigationScheme
+{
+    PrusaSlicer,
+    Tinkercad,
+    Blender,
+    SolidWorks,
+    Fusion
+};
+
 class AppSettings : public Domain::ConfigBox
 {
 public:

@@ -6,6 +6,7 @@
 #include "Slic3r/App/Scene/ClickDetector.hpp"
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+#include "Slic3r/App/Scene/MouseBindingScheme.hpp"
 
 #include <tracy/Tracy.hpp>
 
@@ -283,11 +284,19 @@ GizmoActivationState AbstractCameraGizmo::on_mouse(GizmoEventContext& ctx, bool 
     const bool ignore_dragging =
         event.key_modifiers() == static_cast<Platform::KeyModifiers>(Platform::KeyModifier::Ctrl);
     if (type == Platform::MouseEvent::Type::ButtonDown) {
-        bool pan = event.button() == Platform::MouseButton::Right || event.button() == Platform::MouseButton::Middle;
-        if (!pan && (!ignore_dragging && any_draggable(ctx)))
+        const MouseBindingScheme scheme = current_mouse_binding_scheme();
+        bool pan    = scheme.is_pan_start(event.button(), event.key_modifiers());
+        bool rotate = scheme.is_rotate_start(event.button(), event.key_modifiers());
+        if (!pan && !rotate)
             return GizmoActivationState::Inactive;
-        if (event.key_modifiers() != 0 && !ignore_dragging)
-            return GizmoActivationState::Inactive;
+        // Object-drag (MouseDragDetector) and box-select (QuickSelectGizmo) only ever claim Left;
+        // yield to them regardless of which scheme currently routes Left to orbit/pan/neither.
+        if (event.button() == Platform::MouseButton::Left) {
+            if (!pan && (!ignore_dragging && any_draggable(ctx)))
+                return GizmoActivationState::Inactive;
+            if (event.key_modifiers() != 0 && !ignore_dragging)
+                return GizmoActivationState::Inactive;
+        }
         m_state  = pan ? State::Panning : State::Rotating;
         m_last_x = event.x();
         m_last_y = event.y();
