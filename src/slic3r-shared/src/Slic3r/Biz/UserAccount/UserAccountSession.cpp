@@ -1,6 +1,7 @@
 #include "Slic3r/Biz/UserAccount/UserAccountSession.hpp"
 
 #include "Slic3r/Biz/AppInstance/AppInstanceUtils.hpp" // get_current_pid()
+#include "Slic3r/Biz/UserAccount/UserAccountTokenLog.hpp"
 #include "Slic3r/Biz/Network/ServiceConfig.hpp"
 #include "Slic3r/Biz/Network/Jwt.hpp"
 #include "Slic3r/Biz/UserAccount/UserAccountTokenStore.hpp"
@@ -13,6 +14,23 @@
 
 namespace Slic3r::Biz::UserAccount {
 
+namespace {
+
+std::string oauth_error_code(const std::string& body)
+{
+    try {
+        nlohmann::json j = nlohmann::json::parse(body);
+        if (j.contains("error") && j["error"].is_string()) {
+            return j["error"].get<std::string>();
+        }
+    } catch (const nlohmann::json::exception&) {
+        return "[unparsable response]";
+    }
+    return "[no error field]";
+}
+
+} // namespace
+
 UserAccountSession::UserAccountSession(Platform::IMainThreadDispatcher& dispatcher) :
     UserAccountSessionDispatchBase{dispatcher}
 {}
@@ -21,16 +39,8 @@ void UserAccountSession::set_tokens(const std::string& access_token, const std::
 {
     if (access_token.empty()) {
         SPDLOG_WARN("{} access_token empty!", __func__);
-    } else if (access_token.length() >= 20) {
-        std::string_view sv{access_token};
-        SPDLOG_INFO(
-            "{} access_token: {} ... {}",
-            __func__,
-            sv.substr(0, 5),
-            sv.substr(sv.length() - 5)
-        );
     } else {
-        SPDLOG_INFO("{} access_token: [too short to mask safely]", __func__);
+        SPDLOG_INFO("{} access_token: {}", __func__, token_log_fingerprint(access_token));
     }
 
     {
@@ -321,7 +331,7 @@ void UserAccountSession::code_exchange_fail_callback(const std::string& body, ui
         SPDLOG_INFO("Stale code exchange failure after logout - ignoring.");
         return;
     }
-    SPDLOG_INFO("Access token refresh failed, body: {}", body);
+    SPDLOG_INFO("Access token refresh failed. Error: {} ({} bytes)", oauth_error_code(body), body.size());
     do_clear(false);
     cancel_queue();
     dispatch_action_fail(ActionFailType::Reset, body);
@@ -360,7 +370,7 @@ void UserAccountSession::token_success_callback(const std::string& body, uint64_
         if (j.contains("shared_session_key"))
             shared_session_key = j["shared_session_key"].get<std::string>();
     } catch (const nlohmann::json::exception&) {
-        std::string msg = "Could not parse server response after code exchange.";
+        SPDLOG_ERROR("Could not parse server response after code exchange ({} bytes).", body.size());
         dispatch_action_fail(ActionFailType::Reset, body);
         return;
     }
@@ -368,8 +378,13 @@ void UserAccountSession::token_success_callback(const std::string& body, uint64_
     int expires_in = Network::Jwt::get_exp_seconds(access_token);
     if (access_token.empty() || refresh_token.empty() || shared_session_key.empty() || expires_in <= 0)
     {
-        // just debug msg, no need to translate
-        std::string msg = fmt::format("Failed read tokens after POST.\nAccess token: {}\nRefresh token: {}\nShared session token: {}\nbody: {}", access_token, refresh_token, shared_session_key, body);
+        SPDLOG_ERROR(
+            "Failed read tokens after POST. access_token: {}, refresh_token: {}, shared_session_key: {}, expires_in: {}",
+            token_log_fingerprint(access_token),
+            token_log_fingerprint(refresh_token),
+            token_log_fingerprint(shared_session_key),
+            expires_in
+        );
         {
             std::lock_guard<std::mutex> lock(m_credentials_mutex);
             m_access_token       = std::string();
@@ -381,19 +396,7 @@ void UserAccountSession::token_success_callback(const std::string& body, uint64_
         return;
     }
 
-    if (access_token.empty()) {
-        SPDLOG_WARN("{} access_token empty!", __func__);
-    } else if (access_token.length() >= 20) {
-        std::string_view sv{access_token};
-        SPDLOG_INFO(
-            "{} access_token: {} ... {}",
-            __func__,
-            sv.substr(0, 5),
-            sv.substr(sv.length() - 5)
-        );
-    } else {
-        SPDLOG_INFO("{} access_token: [too short to mask safely]", __func__);
-    }
+    SPDLOG_INFO("{} access_token: {}", __func__, token_log_fingerprint(access_token));
 
     long long next_token_timeout = 0;
     {

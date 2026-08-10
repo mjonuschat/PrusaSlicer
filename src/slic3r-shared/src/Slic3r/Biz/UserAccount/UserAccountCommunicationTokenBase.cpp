@@ -1,6 +1,7 @@
 #include "Slic3r/Biz/UserAccount/UserAccountCommunicationTokenBase.hpp"
 
 #include "Slic3r/Biz/UserAccount/UserAccountTokenStore.hpp"
+#include "Slic3r/Biz/UserAccount/UserAccountTokenLog.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Biz/Network/Jwt.hpp"
 #include "Slic3r/Log.hpp"
@@ -60,16 +61,8 @@ void UserAccountCommunicationTokenBase::init()
     }
     if (stored_data.access_token.empty()) {
         SPDLOG_WARN("{} access_token empty!", __func__);
-    } else if (stored_data.access_token.length() >= 20) {
-        std::string_view sv{stored_data.access_token};
-        SPDLOG_INFO(
-            "{} access_token: {} ... {}",
-            __func__,
-            sv.substr(0, 5),
-            sv.substr(sv.length() - 5)
-        );
     } else {
-        SPDLOG_INFO("{} access_token: [too short to mask safely]", __func__);
+        SPDLOG_INFO("{} access_token: {}", __func__, token_log_fingerprint(stored_data.access_token));
     }
 
     bool has_token = !stored_data.refresh_token.empty();
@@ -279,13 +272,11 @@ void UserAccountCommunicationTokenBase::on_username_changed(const std::string& u
         return;
     }
 
-    std::string at_print = m_session.get_access_token();
-    if (at_print.length() >= 20) {
-        at_print = at_print.substr(0,5) + "..." + at_print.substr(at_print.size()-5);
-    } else if (!at_print.empty()) {
-        at_print = "[too short to mask safely]";
-    }
-    SPDLOG_INFO("{} access_token: {}", __FUNCTION__, (username.empty() ? "" : at_print));
+    SPDLOG_INFO(
+        "{} access_token: {}",
+        __FUNCTION__,
+        username.empty() ? std::string("[logged out]") : token_log_fingerprint(m_session.get_access_token())
+    );
 
     TokenStore::StoreData stored_data{
         m_session.get_access_token(),

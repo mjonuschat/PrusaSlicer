@@ -249,12 +249,17 @@ void UserAccountInteractor::notify_action_retry_finished()
 void UserAccountInteractor::on_user_id(const std::string& body)
 {
     bool was_logged = is_logged_in();
-    SPDLOG_INFO("UserAccountInteractor: User ID message: {}", body);
+    SPDLOG_INFO("UserAccountInteractor: User ID message received ({} bytes).", body.size());
+    std::string received_keys;
     try {
         nlohmann::json j = nlohmann::json::parse(body);
 
         m_account_user_data.clear();
         for (const auto& [key, value] : j.items()) {
+            if (!received_keys.empty()) {
+                received_keys += ", ";
+            }
+            received_keys += key;
             if (value.is_string()) {
                 m_account_user_data[key] = value.get<std::string>();
             }
@@ -265,7 +270,7 @@ void UserAccountInteractor::on_user_id(const std::string& body)
     }
 
     if (m_account_user_data.find("public_username") == m_account_user_data.end()) {
-        SPDLOG_ERROR("User ID message from PrusaAuth did not contain public_username. Login failed. Message data: {}", body);
+        SPDLOG_ERROR("User ID message from PrusaAuth did not contain public_username. Login failed. Keys received: [{}]", received_keys);
         return;
     }
     std::string public_username = m_account_user_data["public_username"];

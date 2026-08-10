@@ -40,6 +40,7 @@
 #include <Slic3r/Biz/UserAccount/UserAccountInteractor.hpp>
 #include <Slic3r/Biz/UserAccount/UserAccountTokenStore.hpp>
 #include <Slic3r/Biz/AppInstance/AppInstanceMessageHandlerFactory.hpp>
+#include <Slic3r/Biz/AppInstance/AppInstanceUtils.hpp>
 #include "Slic3r/Biz/WX/FontManager.hpp"
 
 #include "Slic3r/Biz/Scene/BedGeometry.hpp"
@@ -78,7 +79,7 @@ void register_win32_device_notification_event()
             if (copy_data_structure->dwData == 1) {
                 LPCWSTR arguments = (LPCWSTR) copy_data_structure->lpData;
                 std::string args  = WX::into_u8(arguments);
-                SPDLOG_INFO("MSG {}", args);
+                SPDLOG_INFO("MSG {}", Biz::AppInstance::redact_app_urls(args));
                 app_instance->handle_app_instance_message(args);
             }
             return true;

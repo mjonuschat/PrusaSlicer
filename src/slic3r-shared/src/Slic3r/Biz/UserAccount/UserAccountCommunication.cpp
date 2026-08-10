@@ -157,7 +157,7 @@ void UserAccountCommunication::request_printables_secret_token()
     };
     auto fail_fn = [this](const std::string& body)
     {
-        SPDLOG_ERROR("Failed to retrieve Printables secret token:  {}", body);
+        SPDLOG_ERROR("Failed to retrieve Printables secret token. Response: {} bytes.", body.size());
         m_session.dispatch_printables_secret_token({});
     };
 

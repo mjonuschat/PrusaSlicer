@@ -1,5 +1,6 @@
 #include "Slic3r/Biz/UserAccount/UserAccountTokenStore.hpp"
 
+#include "Slic3r/Biz/UserAccount/UserAccountTokenLog.hpp"
 #include "Slic3r/Biz/Platform/ISecretStore.hpp"
 #include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Log.hpp"
@@ -19,13 +20,7 @@ bool save_tokens(const StoreData& secrets)
 {
 #ifdef SLIC3R_HAS_WEBKIT
     std::lock_guard<std::mutex> lock(g_store_mutex);
-    std::string at = secrets.access_token;
-    if (at.length() >= 20) {
-        at = at.substr(0,5) + "..." + at.substr(at.size()-5);
-    } else if (!at.empty()) {
-        at = "[too short to mask safely]";
-    }
-    SPDLOG_INFO( "{} access_token: {}", __FUNCTION__ , at);
+    SPDLOG_INFO("{} access_token: {}", __FUNCTION__, token_log_fingerprint(secrets.access_token));
 
     std::string tokens;
     tokens = secrets.access_token
@@ -72,7 +67,7 @@ bool load_tokens(StoreData& result)
     boost::split(token_list, tokens, boost::is_any_of("|"), boost::token_compress_off);
     //assert(token_list.empty() || token_list.size() == 5);
     if (token_list.size() < 5) {
-        SPDLOG_ERROR("Size of read secrets is only: {} (expected 5). Data: {}", token_list.size(), tokens);
+        SPDLOG_ERROR("Size of read secrets is only: {} (expected 5). Data length: {}", token_list.size(), tokens.size());
         result.malformed = true;
     }
     result.access_token =       token_list.size() > 0 ? token_list[0] : std::string();

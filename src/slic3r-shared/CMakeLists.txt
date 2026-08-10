@@ -1023,6 +1023,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/UserAccount/UserAccountActionData.hpp
         include/Slic3r/Biz/UserAccount/UserAccountCommunicationTokenBase.hpp
         include/Slic3r/Biz/UserAccount/UserAccountTokenStore.hpp
+        include/Slic3r/Biz/UserAccount/UserAccountTokenLog.hpp
         include/Slic3r/Biz/UserAccount/UserAccountCodeChallengeGenerator.hpp
         include/Slic3r/Biz/UserAccount/ConnectUtils.hpp
         src/Slic3r/Biz/UserAccount/UserAccountInteractor.cpp

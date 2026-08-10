@@ -1,6 +1,7 @@
 #include "Slic3r/Biz/AppInstance/AbstractAppInstanceMessageHandler.hpp"
 
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
+#include "Slic3r/Biz/AppInstance/AppInstanceUtils.hpp"
 #include "Slic3r/Biz/Platform/ISingleInstanceChecker.hpp"
 #include "Slic3r/Log.hpp"
 #include "Slic3r/Assert.hpp"
@@ -66,7 +67,7 @@ AbstractAppInstanceMessageHandler::~AbstractAppInstanceMessageHandler()
 void AbstractAppInstanceMessageHandler::handle_message(const std::string& message)
 {
     ASSERT(this != nullptr);
-    SPDLOG_INFO("Message from another instance {}", message);
+    SPDLOG_INFO("Message from another instance {}", redact_app_urls(message));
     // message in format { "type" : "TYPE", "data" : "data" }
     // types: CLI, STORE_READ
     std::string type;
@@ -81,7 +82,7 @@ void AbstractAppInstanceMessageHandler::handle_message(const std::string& messag
             data = j["data"].get<std::string>();
         }
     } catch (const nlohmann::json::exception& e) {
-        SPDLOG_ERROR("Could not parse other instance message: {}", e.what());
+        SPDLOG_ERROR("Could not parse other instance message: {}", redact_app_urls(e.what()));
         return;
     }
 
@@ -107,7 +108,9 @@ void AbstractAppInstanceMessageHandler::handle_message_type_cli(const std::strin
     bool parsed = Algorithms::unescape_strings_cstyle(data, args);
     assert(parsed);
     if (!parsed) {
-        SPDLOG_ERROR("message from other instance is incorrectly formatted: {}", data);
+        SPDLOG_ERROR(
+            "message from other instance is incorrectly formatted: {}", redact_app_urls(data)
+        );
         return;
     }
 
@@ -168,7 +171,10 @@ void AbstractAppInstanceMessageHandler::handle_message_type_login(const std::str
     bool parsed = Algorithms::unescape_strings_cstyle(data, args);
     assert(parsed);
     if (!parsed) {
-        SPDLOG_ERROR("login message from other instance is incorrectly formatted: {}", data);
+        SPDLOG_ERROR(
+            "login message from other instance is incorrectly formatted: {}",
+            redact_app_urls(data)
+        );
         return;
     }
     for (const std::string& arg : args) {
