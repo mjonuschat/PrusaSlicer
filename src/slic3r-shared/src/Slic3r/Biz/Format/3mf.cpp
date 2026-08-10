@@ -307,6 +307,11 @@ bool process_object_with_components(
         if (compose.volume != nullptr) {
             // component is mesh
             ModelVolume* mv = mo->add_volume(*compose.volume);
+            // A single 3mf mesh/volume resource can be referenced by more than one
+            // component (e.g. two objects sharing one mesh). add_volume() copies the
+            // id of compose.volume, so every extra reference needs a fresh id to keep
+            // ObjectIDs unique across the Model (see Model::assert_is_valid()).
+            mv->set_new_unique_id();
             volume_traces.push_back({path_id_c});
             if (mv->type() != ModelVolumeType::MODEL_PART)
                 mv->set_type(ModelVolumeType::MODEL_PART);
@@ -319,6 +324,8 @@ bool process_object_with_components(
         for (size_t vi = 0; vi < component_volumes.size(); vi++) {
             const ModelVolume* component_volume = component_volumes[vi];
             ModelVolume* mv                     = mo->add_volume(*component_volume); // push back
+            // same object can be referenced by multiple components, give this copy its own id
+            mv->set_new_unique_id();
             // transform by current transformation
             mv->set_transformation(component_volume->get_matrix() * component.transform);
             if (!compose.object->name.empty())
@@ -451,6 +458,9 @@ VolumeMap fill_build_objects(const BuildMap& build_map, ObjectMap& object_map)
             if (compose.volume != nullptr) {
                 // direct geometry
                 ModelVolume* mv = object->add_volume(*compose.volume);
+                // objects vector may hold several independent build-plate duplicates of
+                // the same 3mf object_id (non-instance duplicates); each needs its own id.
+                mv->set_new_unique_id();
                 add_unique(volume_map, path_id, mv);
                 object->name = compose.volume->name;
                 continue;
@@ -465,6 +475,8 @@ VolumeMap fill_build_objects(const BuildMap& build_map, ObjectMap& object_map)
             // copy volumes
             for (size_t vi = 0; vi < volumes.size(); vi++) {
                 ModelVolume* mv = object->add_volume(*volumes[vi]);
+                // same reason as above: give each independent copy its own id
+                mv->set_new_unique_id();
                 // whole path will know ModelVolume pointer
                 for (const PathId& source_path_id : compose.volume_traces[vi])
                     add_unique(volume_map, source_path_id, mv);
@@ -760,6 +772,10 @@ Loaded3MF load_3mf(const std::string& filepath_3mf)
                 loaded_3mf.version = version;
         }
     }
+
+    // Fail fast here rather than later (e.g. on the next preset change), where the
+    // stack trace no longer points at the 3mf loading code that produced the bad Model.
+    loaded_3mf.model.assert_is_valid();
 
     return loaded_3mf;
 }
