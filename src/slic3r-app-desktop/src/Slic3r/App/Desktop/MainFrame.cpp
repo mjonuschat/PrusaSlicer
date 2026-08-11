@@ -629,6 +629,16 @@ void MainFrame::init_preferences_button()
     );
 }
 
+static size_t get_tab_insert_index(LeftBar* left_bar, LeftBarTabs page_id)
+{
+    for (size_t idx = 0; idx < left_bar->GetPageCount(); ++idx) {
+        if (left_bar->GetPage(idx)->GetId() > static_cast<wxWindowID>(page_id)) {
+            return idx;
+        }
+    }
+    return left_bar->GetPageCount();
+}
+
 void MainFrame::init_printers_page(Biz::ProjectInteractor& project_interactor)
 {
     if (!AppServices::instance().app_config().is_prusa_account_enabled()) {
@@ -638,7 +648,7 @@ void MainFrame::init_printers_page(Biz::ProjectInteractor& project_interactor)
     std::unique_ptr<App::Browser::BrowserLogicConnectPage> logic = std::make_unique<App::Browser::BrowserLogicConnectPage>(project_interactor);
     WX::WebView::AbstractWebViewPanel* webview_panel = WebView::new_web_view_panel(m_left_bar, static_cast<int>(LeftBarTabs::Printers), std::move(logic), false);
     project_interactor.user_account_interactor().add_listener<Biz::UserAccount::IUserAccountListener>(webview_panel);
-    m_left_bar->InsertNewPage(1, webview_panel, WX::_L("Connect"), "lb_printers");
+    m_left_bar->InsertNewPage(get_tab_insert_index(m_left_bar, LeftBarTabs::Printers), webview_panel, WX::_L("Connect"), "lb_printers");
     webview_panel->set_switch_left_tab_fn(std::bind(&MainFrame::switch_left_tab, this, std::placeholders::_1, std::placeholders::_2));
     m_printers_page_added = true;
 }
@@ -658,7 +668,7 @@ void MainFrame::init_printables_page(Biz::ProjectInteractor& project_interactor)
     std::unique_ptr<App::Browser::BrowserLogicPrintables> logic = std::make_unique<App::Browser::BrowserLogicPrintables>(project_interactor);
     WX::WebView::AbstractWebViewPanel* webview_panel = WebView::new_web_view_panel(m_left_bar, static_cast<int>(LeftBarTabs::Printables), std::move(logic), false);
     project_interactor.user_account_interactor().add_listener<Biz::UserAccount::IUserAccountListener>(webview_panel);
-    m_left_bar->AddNewPage(webview_panel, WX::_L("Printables"), "lb_printables");
+    m_left_bar->InsertNewPage(get_tab_insert_index(m_left_bar, LeftBarTabs::Printables), webview_panel, WX::_L("Printables"), "lb_printables");
     webview_panel->set_switch_left_tab_fn(std::bind(&MainFrame::switch_left_tab, this, std::placeholders::_1, std::placeholders::_2));
     m_printables_page_added = true;
 }
@@ -684,7 +694,7 @@ void MainFrame::init_physical_printer_page(Biz::ProjectInteractor& project_inter
     std::string url = build_physical_printer_url(selected_printer.host);
     std::unique_ptr<App::Browser::BrowserLogicPhysicalPrinter> logic = std::make_unique<App::Browser::BrowserLogicPhysicalPrinter>(url, payload->api_key, payload->username, payload->password);
     WX::WebView::AbstractWebViewPanel* webview_panel = WebView::new_web_view_panel(m_left_bar, static_cast<int>(LeftBarTabs::PhysicalPrinter), std::move(logic), false);
-    m_left_bar->AddNewPage( webview_panel, WX::_L("Physical Printer"), "lb_printers");
+    m_left_bar->InsertNewPage(get_tab_insert_index(m_left_bar, LeftBarTabs::PhysicalPrinter), webview_panel, WX::_L("Physical Printer"), "lb_printers");
     webview_panel->set_switch_left_tab_fn(std::bind(&MainFrame::switch_left_tab, this, std::placeholders::_1, std::placeholders::_2));
     m_physical_printer_page_added = true;
 }

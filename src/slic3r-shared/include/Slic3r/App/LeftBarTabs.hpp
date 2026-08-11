@@ -2,11 +2,12 @@
 
 namespace Slic3r::App {
 
+// The order of the items defines the tab order in the left bar.
 enum class LeftBarTabs {
-    Printers = 1000,
-    //Projects = 1001,
-    Slicing = 1002,
-    Printables = 1003,
-    PhysicalPrinter = 1004
+    Slicing = 1000,
+    //Projects,
+    Printers,
+    Printables,
+    PhysicalPrinter
 };
 }
