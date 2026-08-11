@@ -1559,6 +1559,11 @@ void PresetInteractor::fill_printer_presets(bool no_data_update, ListenerInvokeL
             &selected_preset.printer.config_box(),
             &original_printer_preset_ref.get().config_box()
         );
+        update_print_tool_cbi(
+            selected_preset,
+            selected_config_container_context().config_container_id
+        );
+        fill_selected_material_cbis(selected_preset, true);
     }
 
     // call set_selected_index after set all configs for m_printer_cbi_accessor
