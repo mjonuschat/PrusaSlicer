@@ -251,7 +251,6 @@ bool DesktopApp::OnInit()
     const wxString dots = WX::from_u8("...");
 
     bool is_editor     = true; // is_editor();
-    wxWeakRef<SplashScreen> scrn;
     const std::string last_crash_reason =
         app_services.app_config().get<std::string>("crash_reason");
     if (app_services.app_config().get<bool>("show_splash_screen")) {
@@ -273,15 +272,15 @@ bool DesktopApp::OnInit()
         app_services.app_config().record_crash("splashscreen_pos", "show_splash_screen");
 
         // create splash screen with updated bmp
-        scrn = new SplashScreen(is_editor, splashscreen_pos);
+        m_splash_screen = new SplashScreen(is_editor, splashscreen_pos);
 
         // revert "crash_reason" value if application wasn't crashed
         // on set position for splashscreen
         app_services.app_config().resolve_crash(last_crash_reason, "show_splash_screen");
 
         wxYield();
-        if (scrn)
-            scrn->SetText(WX::_L("Loading configurations") + dots);
+        if (m_splash_screen)
+            m_splash_screen->SetText(WX::_L("Loading configurations") + dots);
     }
 
     using Biz::Platform::PlatformServices;
@@ -310,38 +309,25 @@ bool DesktopApp::OnInit()
         )
     );
 
-    std::shared_ptr<Plater::ThumbnailImageGenerator> thumbnail_image_generator{
-        std::make_shared<Plater::ThumbnailImageGenerator>()
-    };
+    m_thumbnail_image_generator = std::make_shared<Plater::ThumbnailImageGenerator>();
 
     m_project_interactor = std::make_unique<Biz::ProjectInteractor>(
         m_workbench,
         platform_services.main_thread_dispatcher(),
-        *thumbnail_image_generator
+        *m_thumbnail_image_generator
     );
 
     auto undo_store_ptr{std::make_unique<Undo::Store>(*m_project_interactor)};
-    Undo::Store& undo_store{*undo_store_ptr};
+    m_undo_store = undo_store_ptr.get();
 
     m_project_interactor->set_undo_provider(std::move(undo_store_ptr));
 
-    std::shared_ptr<App::ThumbnailStore> thumbnail_store =
-        std::make_shared<App::ThumbnailStore>(*m_project_interactor);
+    m_thumbnail_store = std::make_shared<App::ThumbnailStore>(*m_project_interactor);
     platform_services.set_job_manager(
         std::make_unique<JobManager>(platform_services.main_thread_dispatcher())
     );
-    std::shared_ptr<App::ThumbnailStoreUpdater> thumbnail_store_updater =
-        std::make_shared<App::ThumbnailStoreUpdater>(*thumbnail_image_generator, thumbnail_store);
-
-    auto& preset_interactor = m_project_interactor->preset_interactor();
-
-    preset_interactor.print_tool_cbi().set_app_config_cbol(
-        app_services.app_config_interactor().app_config_cbi().config_box_list()
-    );
-
-    // load new presets
-    auto bundle_paths = Biz::Preset::IO::BundlePaths::make_standard_runtime();
-    preset_interactor.load_preset_bundle(bundle_paths);
+    m_thumbnail_store_updater =
+        std::make_shared<App::ThumbnailStoreUpdater>(*m_thumbnail_image_generator, m_thumbnail_store);
 
     app_services.set_dialog_manager(std::make_unique<WX::DialogManager>());
     app_services.set_pop_notification_center(
@@ -364,42 +350,130 @@ bool DesktopApp::OnInit()
         .add_listener<Biz::Connect::IConnectHandlerListener>(
             &app_services.pop_notification_center()
         );
-    if (scrn && is_editor)
-        scrn->SetText(WX::_L("Initializing Prepare Mode") + dots);
-
     app_services.set_preset_updater_model(
         std::make_unique<PresetUpdaterModel>(m_project_interactor->preset_updater_interactor())
     );
 
-    std::shared_ptr<ProjectSaver> project_saver =
-        std::make_shared<ProjectSaver>(*m_project_interactor, *thumbnail_store);
+    PresetUpdaterModel& preset_updater_model = app_services.preset_updater_model();
+    preset_updater_model.set_forced_check_finished_callback(
+        [this](bool has_forced) { on_forced_check_finished(has_forced); }
+    );
+    preset_updater_model.set_show_dialog_callback(
+        [this]()
+        {
+            if (m_init_completed) {
+                m_navigator.set_modal_dialog(ModalDialog::PresetUpdater);
+            } else {
+                m_loading_module->set_opened_preset_updater(true);
+            }
+        }
+    );
+    preset_updater_model.set_presets_installed_callback(
+        [this]()
+        {
+            if (m_init_completed) {
+                m_project_interactor->preset_interactor().load_preset_bundle(m_bundle_paths);
+                return;
+            }
+            // Whether the install cleared the forced state is the check's answer to give, not ours:
+            // it reports presets installed even when some of the vendors failed.
+            AppServices::instance().preset_updater_model().start();
+        }
+    );
+
+    m_loading_module = std::make_unique<LoadingRenderModule>(preset_updater_model, m_navigator);
+
+    m_project_saver = std::make_shared<ProjectSaver>(*m_project_interactor, *m_thumbnail_store);
+
+    m_main_frame = new MainFrame(m_workbench, *m_project_interactor, m_navigator, m_project_saver);
+    platform_services.app_instance_message_handler().init(m_main_frame->GetHandle());
+    Platform::WX::WXRenderCanvas& canvas = m_main_frame->get_render_canvas();
+    m_gl_context                         = canvas.release_context();
+    platform_services.set_render_request_handler(&canvas);
+
+    // Queued as early as it can be: the job manager reports through the render request handler,
+    // which only exists now, and nothing preset related has been touched yet.
+    preset_updater_model.start();
+
+    m_navigator.set_canvas(canvas);
+
+    canvas.set_render_module(m_loading_module.get());
+
+    m_main_frame->update_graphics_settings();
+
+    // The main thread dispatcher is drained from the canvas only once the window is up, so the
+    // answer of the check started above cannot arrive before this point.
+    m_main_frame->Show();
+    if (m_splash_screen)
+        m_splash_screen->Raise();
+
+    return true;
+}
+
+void DesktopApp::on_forced_check_finished(bool has_forced)
+{
+    if (!has_forced) {
+        finish_init();
+        return;
+    }
+
+    if (m_splash_screen) {
+        m_splash_screen->Destroy();
+    }
+    m_loading_module->set_opened_preset_updater(true);
+}
+
+void DesktopApp::finish_init()
+{
+    if (m_init_completed) {
+        return;
+    }
+    m_init_completed = true;
+
+    auto& app_services{AppServices::instance()};
+    auto& platform_services{Biz::Platform::PlatformServices::instance()};
+
+    const wxString dots = WX::from_u8("...");
+
+    auto& preset_interactor = m_project_interactor->preset_interactor();
+
+    preset_interactor.print_tool_cbi().set_app_config_cbol(
+        app_services.app_config_interactor().app_config_cbi().config_box_list()
+    );
+
+    // load new presets
+    m_bundle_paths = Biz::Preset::IO::BundlePaths::make_standard_runtime();
+    preset_interactor.load_preset_bundle(m_bundle_paths);
+
+    if (m_splash_screen)
+        m_splash_screen->SetText(WX::_L("Initializing Prepare Mode") + dots);
 
     auto font_manager = std::make_unique<Biz::WX::FontManager>(data_dir());
 
     m_plater_module = std::make_unique<Plater::PlaterRenderModule>(
         m_workbench,
         *m_project_interactor,
-        undo_store,
-        thumbnail_store,
-        thumbnail_store_updater,
-        thumbnail_image_generator,
+        *m_undo_store,
+        m_thumbnail_store,
+        m_thumbnail_store_updater,
+        m_thumbnail_image_generator,
         std::move(font_manager),
-        project_saver
+        m_project_saver
     );
 
-    if (scrn && is_editor)
-        scrn->SetText(WX::_L("Initializing Preview Mode") + dots);
+    if (m_splash_screen)
+        m_splash_screen->SetText(WX::_L("Initializing Preview Mode") + dots);
 
     m_preview_module = std::make_unique<Preview::PreviewRenderModule>(
         m_workbench,
         *m_project_interactor,
-        undo_store,
-        thumbnail_store,
-        thumbnail_store_updater,
-        thumbnail_image_generator,
+        *m_undo_store,
+        m_thumbnail_store,
+        m_thumbnail_store_updater,
+        m_thumbnail_image_generator,
         m_plater_module.get(),
         &m_plater_module->plugin_system(),
-        project_saver
+        m_project_saver
     );
 
     m_project_interactor->removable_drive_service().add_status_listener(
@@ -416,36 +490,30 @@ bool DesktopApp::OnInit()
 
     handle_previous_crash_recovery(app_services.app_config());
 
-    m_main_frame = new MainFrame(m_workbench, *m_project_interactor, m_navigator, project_saver);
-    platform_services.app_instance_message_handler().init(m_main_frame->GetHandle());
     Platform::WX::WXRenderCanvas& canvas = m_main_frame->get_render_canvas();
-    m_gl_context                         = canvas.release_context();
-    platform_services.set_render_request_handler(&canvas);
 
     m_navigator.on_init(*m_plater_module, *m_preview_module, canvas, m_project_interactor.get());
 
-    canvas.set_render_module(m_plater_module.get());
+    // Closed before the module goes, so the model stops counting it as an open dialog.
+    m_loading_module->set_opened_preset_updater(false);
 
-    m_main_frame->update_graphics_settings();
+    // set_next_render_module, because the plater has to be initialized before it is handed a
+    // screen size. The swap itself is done at the end of the frame rendered below, which is why
+    // the module is kept alive: the canvas still points at it until then.
+    canvas.set_next_render_module(m_plater_module.get());
+    canvas.render();
+    canvas.request_render();
 
-    m_main_frame->Show();
-    if (scrn)
-        scrn->Destroy();
+    // The main frame was shown while the preset updater module was the active one, so the
+    // shortcuts of the plater have to be picked up now.
+    if (m_navigator.callbacks().render_module_switched) {
+        m_navigator.callbacks().render_module_switched();
+    }
 
     m_project_interactor->user_account_interactor()
         .add_listener<Biz::UserAccount::IUserAccountListener>(m_main_frame);
 
     m_project_interactor->user_account_interactor().init(app_services.app_config().is_prusa_account_enabled());
-
-    PresetUpdaterModel& preset_updater_model = app_services.preset_updater_model();
-    preset_updater_model.set_show_dialog_callback(
-        [this]() { m_navigator.set_modal_dialog(ModalDialog::PresetUpdater); }
-    );
-    preset_updater_model.set_presets_installed_callback(
-        [&preset_interactor, bundle_paths]()
-        { preset_interactor.load_preset_bundle(bundle_paths); }
-    );
-    preset_updater_model.start();
 
     m_prusalink_storage_listener =
         std::make_unique<PrintHost::PrusaLinkStorageListener>(*m_project_interactor.get());
@@ -474,6 +542,9 @@ bool DesktopApp::OnInit()
     m_main_frame->register_win32_callbacks();
 #endif
 
+    if (m_splash_screen)
+        m_splash_screen->Destroy();
+
 #if !defined(__linux)
     // Initial repaint
     canvas.render();
@@ -491,8 +562,6 @@ bool DesktopApp::OnInit()
             m_project_interactor->on_download_models({std::move(arg)});
         }
     }
-
-    return true;
 }
 
 DesktopApp::~DesktopApp()

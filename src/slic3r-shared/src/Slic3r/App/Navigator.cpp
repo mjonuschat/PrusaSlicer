@@ -22,6 +22,11 @@ Navigator::Callbacks& Navigator::callbacks()
     return m_callbacks;
 }
 
+void Navigator::set_canvas(Platform::AbstractRenderCanvas& canvas)
+{
+    m_canvas = &canvas;
+}
+
 void Navigator::on_init(
     Plater::PlaterRenderModule& plater_module,
     Preview::PreviewRenderModule& preview_module,
@@ -40,8 +45,16 @@ void Navigator::on_init(
     AppServices::instance().app_config_interactor().add_listener<IAppConfigChangedListener>(this);
 }
 
+bool Navigator::has_modules() const
+{
+    return m_project_contexts != nullptr;
+}
+
 void Navigator::navigate_to_module_type(Render::ModuleType type)
 {
+    if (!has_modules()) {
+        return;
+    }
     ProjectContext& context = m_project_contexts->selected();
     context.opened_dialog   = nullptr;
     set_render_module_type(type);
@@ -66,6 +79,9 @@ void Navigator::set_render_module_type(Render::ModuleType type)
 
 void Navigator::on_selected_project_changed(size_t index)
 {
+    if (!has_modules()) {
+        return;
+    }
     ProjectContext& context = m_project_contexts->selected();
     set_render_module_type(context.type);
     set_opened_dialog(context.opened_dialog);
@@ -73,6 +89,9 @@ void Navigator::on_selected_project_changed(size_t index)
 
 void Navigator::set_opened_dialog(Yoga::Dialog* opened_dialog)
 {
+    if (!has_modules()) {
+        return;
+    }
     ProjectContext& context = m_project_contexts->selected();
     context.opened_dialog   = opened_dialog;
     switch (context.type) {
@@ -91,12 +110,18 @@ void Navigator::navigate_to_item(const Domain::ConfigItem* config_item)
 {
     ASSERT(config_item);
 
+    if (!has_modules()) {
+        return;
+    }
     set_render_module_type(Render::ModuleType::Plater);
     m_plater_module->navigate_to_item(config_item);
 }
 
 void Navigator::request_search()
 {
+    if (!has_modules()) {
+        return;
+    }
     set_render_module_type(Render::ModuleType::Plater);
     m_plater_module->open_search();
 }
@@ -118,6 +143,9 @@ void Navigator::open_invalid_data_dialog()
 
 void Navigator::set_modal_dialog(ModalDialog modal_dialog)
 {
+    if (!has_modules()) {
+        return;
+    }
     ProjectContext& context = m_project_contexts->selected();
     switch (context.type) {
     case Render::ModuleType::Plater:
@@ -152,6 +180,9 @@ bool Navigator::object_list_collapsed() const
 
 void Navigator::set_object_list_collapsed(bool collapsed)
 {
+    if (!has_modules()) {
+        return;
+    }
     if (m_object_list_collapsed != collapsed) {
         m_object_list_collapsed = collapsed;
         m_plater_module->set_object_list_collapsed(collapsed);
@@ -172,6 +203,9 @@ bool Navigator::is_fullscreen() const
 void Navigator::set_fullscreen(bool fullscreen)
 {
     m_canvas->set_fullscreen(fullscreen);
+    if (!has_modules()) {
+        return;
+    }
     m_plater_module->command_binding_manager().update_ui_items();
     m_preview_module->command_binding_manager().update_ui_items();
 }
@@ -183,6 +217,9 @@ void Navigator::close_application()
 
 void Navigator::on_app_config_changed(const std::string& key)
 {
+    if (!has_modules()) {
+        return;
+    }
     m_plater_module->command_binding_manager().update_ui_items();
     m_preview_module->command_binding_manager().update_ui_items();
 }

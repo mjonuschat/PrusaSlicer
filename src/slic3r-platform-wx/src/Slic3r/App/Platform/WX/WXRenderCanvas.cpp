@@ -399,10 +399,14 @@ WXRenderCanvas::WXRenderCanvas(wxWindow* parent, int id) :
 
     this->Bind(
         wxEVT_KILL_FOCUS,
-        [](wxFocusEvent& e)
+        [this](wxFocusEvent& e)
         {
-            // When the OS intercepts the key and shows a dialog / overlay, 
-            // the application never receives the WM_KEYUP / key - release event, 
+            // There is no ImGui context to clean up before the first paint created one.
+            if (!m_initialized) {
+                return;
+            }
+            // When the OS intercepts the key and shows a dialog / overlay,
+            // the application never receives the WM_KEYUP / key - release event,
             // leaving ImGui thinking the key is still held.
             // So, force input keys cleanup on kill focus
             ImGuiIO& io = ImGui::GetIO();

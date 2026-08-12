@@ -54,6 +54,11 @@ public:
 
     MenuItem* menu_item(const UniversalMenuItemName& name);
 
+    bool empty() const
+    {
+        return m_menus_by_id.empty();
+    }
+
     void rebuild_submenu(const UniversalMenuItemName& name, const std::function<void()>& modifier);
 
 private:

@@ -41,6 +41,9 @@ struct PresetUpdaterVendorRowState
     InstallState install_state{InstallState::Idle};
     std::string error_text;
 
+    /// Set while a forced reconfiguration is pending: only the whole of it may be installed.
+    bool install_locked{false};
+
     bool skipped{false};
 };
 
@@ -87,6 +90,8 @@ struct PresetUpdaterSourceRowState
     bool selected{false};
     /// Held still while an install is in flight for a source sharing this one's id.
     bool selection_locked{false};
+    /// Set while a forced reconfiguration is pending: only the whole of it may be installed.
+    bool install_locked{false};
     UpdateState update_state{UpdateState::NotChecked};
     PresetUpdaterSourceCounts counts;
     /// Vendors the check could not evaluate, deduplicated and deliberately outside the counts.
@@ -156,7 +161,13 @@ public:
 
     void set_presets_installed_callback(std::function<void()> callback);
 
+    /// Called once the check started by start() is over, whether it delivered a list or failed.
+    void set_forced_check_finished_callback(std::function<void(bool has_forced)> callback);
+
     bool has_actionable_updates() const;
+
+    /// Whether anything is left of what a forced reconfiguration requires.
+    bool has_required_updates() const;
 
     bool has_forced_reconfigurations() const;
 
@@ -254,7 +265,7 @@ private:
     void mutate_vendor(const VendorKey& key, const VendorMutator& mutator);
     void refresh_source_counts(PresetUpdaterSourceRowState& source);
 
-    void refresh_selection_locks();
+    void refresh_locks();
 
     bool selection_locked(const std::string& uuid) const;
 
@@ -300,11 +311,13 @@ private:
 
     std::function<void()> m_show_dialog_callback;
     std::function<void()> m_presets_installed_callback;
+    std::function<void(bool has_forced)> m_forced_check_finished_callback;
 
     std::vector<VendorKey> m_forced_vendors;
 
     size_t m_open_count{0};
     Biz::PresetUpdater::JobId m_check_job{Biz::PresetUpdater::k_invalid_job_id};
+    Biz::PresetUpdater::JobId m_forced_check_job{Biz::PresetUpdater::k_invalid_job_id};
     std::map<Biz::PresetUpdater::JobId, InstallJob> m_install_jobs;
 
     Biz::PresetUpdater::JobId m_selection_job{Biz::PresetUpdater::k_invalid_job_id};

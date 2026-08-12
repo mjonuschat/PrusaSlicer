@@ -348,10 +348,10 @@ MainFrame::MainFrame(
     {
         wxTheApp->CallAfter([this]() {
 #ifdef USE_NATIVE_MENU
-            this->set_accel_table();
-#else
-            this->update_accel_table();
+            // No-op unless the module taking over is the first one carrying menus.
+            this->setup_macos_native_menu_bar();
 #endif
+            this->update_accel_table();
         });
     };
 
@@ -369,6 +369,10 @@ MainFrame::MainFrame(
     };
 
     SetDropTarget(new MainFrameDropTarget(project_interactor, m_navigator, [this]() {
+        // Nothing can be loaded before the presets are known to be usable.
+        if (!m_navigator.has_modules()) {
+            return false;
+        }
         wxWindow* page = m_left_bar->GetCurrentPage();
         return page && page->GetId() == static_cast<wxWindowID>(LeftBarTabs::Slicing);
     }));
@@ -1090,6 +1094,11 @@ void MainFrame::setup_macos_native_menu_bar()
     }
 
     MenuManager& menu_manager                      = render_module->menu_manager();
+    if (menu_manager.empty()) {
+        // The module carrying the app through startup has no menus of its own; the menu bar is
+        // built once the plater takes over.
+        return;
+    }
     CommandBindingManager& command_binding_manager = render_module->command_binding_manager();
 
     m_native_menu_bar = std::make_unique<MacOSNativeMenuBar>(

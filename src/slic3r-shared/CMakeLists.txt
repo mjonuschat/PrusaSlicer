@@ -543,6 +543,8 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/App/TestRenderModule.hpp
         src/Slic3r/App/TestRenderModule.cpp
+        include/Slic3r/App/LoadingRenderModule.hpp
+        src/Slic3r/App/LoadingRenderModule.cpp
         src/Slic3r/App/Init.cpp
         include/Slic3r/App/Init.hpp
         include/Slic3r/App/AppServices.hpp

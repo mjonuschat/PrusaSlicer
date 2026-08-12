@@ -311,6 +311,7 @@ void PresetUpdaterDialog::on_preset_updater_model_changed()
     m_empty_state->set_visible(status == PresetUpdaterModel::Status::Disabled);
 
     const bool forced{m_model.has_forced_reconfigurations()};
+    const bool forced_state_cleared{m_forced_mode && !forced};
     if (m_forced_mode != forced) {
         m_forced_mode = forced;
         m_online_filter->invalidate();
@@ -321,8 +322,14 @@ void PresetUpdaterDialog::on_preset_updater_model_changed()
     m_add_zip_button->set_enabled(local_sources_enabled);
     m_repo_link_button->set_enabled(local_sources_enabled);
 
-    const bool actionable{m_model.has_actionable_updates()};
-    m_update_everything_button->set_enabled(actionable);
+    // In forced mode the button installs the required vendors only, so anything else being
+    // actionable must not make it look like there is something left to press.
+    const bool actionable{forced ? m_model.has_required_updates() :
+                                   m_model.has_actionable_updates()};
+    const bool busy{status == PresetUpdaterModel::Status::Installing
+                    || status == PresetUpdaterModel::Status::Checking
+                    || status == PresetUpdaterModel::Status::ListingSources};
+    m_update_everything_button->set_enabled(actionable && !busy);
     if (forced) {
         m_update_everything_button->set_label(apply_required_label());
     } else if (!actionable && status == PresetUpdaterModel::Status::UpToDate) {
@@ -335,6 +342,10 @@ void PresetUpdaterDialog::on_preset_updater_model_changed()
     m_footer_close_button->set_visible(!forced);
     m_exit_app_button->set_visible(forced);
     m_forced_banner->set_visible(forced);
+
+    if (forced_state_cleared) {
+        close();
+    }
 }
 
 void PresetUpdaterDialog::resize(const SizeInfo& size_info)

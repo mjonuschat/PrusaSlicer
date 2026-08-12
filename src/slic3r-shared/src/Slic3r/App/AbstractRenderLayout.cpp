@@ -5,6 +5,7 @@
 #include "Slic3r/App/Scene/IGizmo.hpp"
 #include "Slic3r/App/ToolBar/ToolBar.hpp"
 #include "Slic3r/App/ToolBar/ToolBarButton.hpp"
+#include "Slic3r/App/Yoga/ImGuiUtils.hpp"
 #include "Slic3r/App/Yoga/SplitLayout.hpp"
 #include "Slic3r/App/SidebarStackLayout.hpp"
 #include "Slic3r/App/AppServices.hpp"
@@ -378,38 +379,6 @@ void AbstractRenderLayout::init_toolbar_row()
     m_right_toolbar->set_flex_shrink(0);
     m_right_toolbar->set_visible(false);
 }
-
-struct SetOurStyleVars
-{
-    SetOurStyleVars()
-    {
-        PushStyleVar(ImGuiStyleVar_WindowRounding, 5.f);
-        PushStyleVar(ImGuiStyleVar_FrameRounding, 3.f);
-        PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6.f, 0.f));
-        PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.f, 6.f));
-        PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(2.f, 0.f));
-    }
-
-    ~SetOurStyleVars()
-    {
-        ImGui::PopStyleVar(m_vars_cnt);
-    }
-
-private:
-    void PushStyleVar(ImGuiStyleVar idx, float val)
-    {
-        ImGui::PushStyleVar(idx, val);
-        m_vars_cnt++;
-    }
-
-    void PushStyleVar(ImGuiStyleVar idx, const ImVec2& val)
-    {
-        ImGui::PushStyleVar(idx, val);
-        m_vars_cnt++;
-    }
-
-    size_t m_vars_cnt{0};
-};
 
 AbstractRenderLayout::AbstractRenderLayout(
     Navigator& navigator,

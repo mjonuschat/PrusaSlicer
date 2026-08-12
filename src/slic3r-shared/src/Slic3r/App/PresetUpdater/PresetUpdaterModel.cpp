@@ -100,7 +100,7 @@ void PresetUpdaterModel::start()
     if (m_shut_down) {
         return;
     }
-    m_preset_updater_interactor.check_forced_reconfigurations();
+    m_forced_check_job = m_preset_updater_interactor.check_forced_reconfigurations();
 }
 
 void PresetUpdaterModel::set_show_dialog_callback(std::function<void()> callback)
@@ -112,6 +112,13 @@ void PresetUpdaterModel::set_show_dialog_callback(std::function<void()> callback
 void PresetUpdaterModel::set_presets_installed_callback(std::function<void()> callback)
 {
     m_presets_installed_callback = std::move(callback);
+}
+
+void PresetUpdaterModel::set_forced_check_finished_callback(
+    std::function<void(bool has_forced)> callback
+)
+{
+    m_forced_check_finished_callback = std::move(callback);
 }
 
 bool PresetUpdaterModel::has_forced_reconfigurations() const
@@ -171,7 +178,8 @@ void PresetUpdaterModel::shutdown()
 
     m_activity_reporter.reset();
     set_show_dialog_callback(nullptr);
-    m_presets_installed_callback = nullptr;
+    m_presets_installed_callback     = nullptr;
+    m_forced_check_finished_callback = nullptr;
     m_forced_vendors.clear();
 
     m_preset_updater_interactor.remove_listener<Biz::PresetUpdater::IPresetUpdaterResultListener>(
@@ -295,15 +303,17 @@ void PresetUpdaterModel::request_render()
 
 void PresetUpdaterModel::notify_changed()
 {
-    refresh_selection_locks();
+    refresh_locks();
     m_activity_reporter.report_problems(current_problems());
     invoke_listeners<IPresetUpdaterModelListener>([](IPresetUpdaterModelListener* listener)
                                                   { listener->on_preset_updater_model_changed(); });
     request_render();
 }
 
-void PresetUpdaterModel::refresh_selection_locks()
+void PresetUpdaterModel::refresh_locks()
 {
+    const bool install_locked = has_forced_reconfigurations();
+
     std::set<std::string> locked_ids;
     for (const PresetUpdaterSourceList* list : {&m_online_sources, &m_local_sources}) {
         for (size_t index = 0; index < list->size(); ++index) {
@@ -322,14 +332,32 @@ void PresetUpdaterModel::refresh_selection_locks()
     for (PresetUpdaterSourceList* list : {&m_online_sources, &m_local_sources}) {
         for (size_t index = 0; index < list->size(); ++index) {
             const bool locked = locked_ids.contains(list->at(index).id);
-            if (list->at(index).selection_locked == locked) {
-                continue;
+            if (list->at(index).selection_locked != locked
+                || list->at(index).install_locked != install_locked)
+            {
+                mutate_element(
+                    *list,
+                    index,
+                    [locked, install_locked](PresetUpdaterSourceRowState& source)
+                    {
+                        source.selection_locked = locked;
+                        source.install_locked   = install_locked;
+                    }
+                );
             }
-            mutate_element(
-                *list,
-                index,
-                [locked](PresetUpdaterSourceRowState& source) { source.selection_locked = locked; }
-            );
+
+            PresetUpdaterVendorList& vendors = *list->at(index).vendors;
+            for (size_t vendor_index = 0; vendor_index < vendors.size(); ++vendor_index) {
+                if (vendors.at(vendor_index).install_locked == install_locked) {
+                    continue;
+                }
+                mutate_element(
+                    vendors,
+                    vendor_index,
+                    [install_locked](PresetUpdaterVendorRowState& vendor)
+                    { vendor.install_locked = install_locked; }
+                );
+            }
         }
     }
 }
@@ -743,6 +771,18 @@ bool PresetUpdaterModel::has_actionable_updates() const
     for (const PresetUpdaterSourceList* list : {&m_online_sources, &m_local_sources}) {
         for (size_t index = 0; index < list->size(); ++index) {
             if (!actionable_keys_of_source(list->at(index)).empty()) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool PresetUpdaterModel::has_required_updates() const
+{
+    for (const PresetUpdaterSourceList* list : {&m_online_sources, &m_local_sources}) {
+        for (size_t index = 0; index < list->size(); ++index) {
+            if (!actionable_keys_of_source(list->at(index), true).empty()) {
                 return true;
             }
         }
@@ -1327,7 +1367,16 @@ void PresetUpdaterModel::on_preset_updater_job_finished(
         }
     }
 
+    const bool forced_check_over = job_id == m_forced_check_job;
+    if (forced_check_over) {
+        m_forced_check_job = Biz::PresetUpdater::k_invalid_job_id;
+    }
+
     notify_changed();
+
+    if (forced_check_over && m_forced_check_finished_callback) {
+        m_forced_check_finished_callback(has_forced_reconfigurations());
+    }
 }
 
 } // namespace Slic3r::App

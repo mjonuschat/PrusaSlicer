@@ -209,6 +209,8 @@ void PresetUpdaterVendorRow::build_action_slot()
         const PresetUpdaterVendorRowState* row = state();
         m_model.update_vendor(row->repo_id, row->vendor_id);
     };
+
+    m_action->emplace_back<Item>();
 }
 
 void PresetUpdaterVendorRow::on_data_update()
@@ -253,10 +255,11 @@ void PresetUpdaterVendorRow::on_data_update()
     m_action_button->set_label(action_label(row->state));
     m_failed_text->set_text(row->error_text);
     m_retry_button->set_tooltip(row->error_text);
+    m_retry_button->set_visible(!row->install_locked);
 
     switch (row->install_state) {
     case PresetUpdaterVendorRowState::InstallState::Idle:
-        m_action->set_current_index(ActionIdle);
+        m_action->set_current_index(row->install_locked ? ActionNone : ActionIdle);
         break;
     case PresetUpdaterVendorRowState::InstallState::Queued:
         m_action->set_current_index(ActionQueued);

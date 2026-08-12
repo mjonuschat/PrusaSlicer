@@ -50,13 +50,15 @@ protected:
     void on_data_update() override;
 
 private:
+    /// @note Must match the order the pages are added to m_action.
     enum ActionPage : size_t
     {
         ActionIdle    = 0,
         ActionQueued  = 1,
         ActionRunning = 2,
         ActionDone    = 3,
-        ActionFailed  = 4
+        ActionFailed  = 4,
+        ActionNone    = 5
     };
 
     void build_action_slot();

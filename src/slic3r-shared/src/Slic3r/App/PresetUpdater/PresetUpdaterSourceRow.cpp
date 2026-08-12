@@ -293,6 +293,7 @@ void PresetUpdaterSourceRow::on_data_update()
 
     m_reveal_button->set_visible(is_local);
     m_remove_button->set_visible(is_local);
+    m_remove_button->set_enabled(!row->install_locked);
 
     m_vendor_list_view->set_source_list(std::weak_ptr<PresetUpdaterVendorList>(row->vendors));
 
@@ -337,7 +338,7 @@ void PresetUpdaterSourceRow::on_data_update()
         break;
     case PresetUpdaterSourceRowState::UpdateState::HasUpdates:
         m_status->set_current_index(StatusSummary);
-        m_action_slot->set_current_index(ActionApplyAll);
+        m_action_slot->set_current_index(row->install_locked ? ActionNone : ActionApplyAll);
         break;
     }
 }
