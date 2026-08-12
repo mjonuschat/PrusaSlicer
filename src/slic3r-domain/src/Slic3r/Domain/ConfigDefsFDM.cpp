@@ -3874,6 +3874,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def               = defs.add("toolchange_ordering", typeid(EnumWrapper));
     def->location     = Print;
+    def->compatibility_rule = CompatibilityRule::IgnoreOverrides;
+    def->overrides_in       = Locations{Tool};
     def->label        = L("Toolchange ordering");
     def->option_group = ConfigItemDef::OptionGroup::Print_MultiMaterial_ToolChanges;
     def->category     = ConfigItemDef::Category::Print_MultiMaterial;
