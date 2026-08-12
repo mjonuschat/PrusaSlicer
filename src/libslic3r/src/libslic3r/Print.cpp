@@ -1460,6 +1460,16 @@ void Print::slice(
     const std::optional<SliceUntilStep> slice_until_step
 )
 {
+    if (this->is_step_done(psGCodeExport)) {
+        // This is a special case. Print::slice is not in most cases called when
+        // GCodeExport is finished, but in a special case of invalid
+        // data it can be re-called even when the state of the
+        // backend is that psGCodeExport is finished.
+        // In that case GCodeExport needs to be invalidated to
+        // re-generate the FDMResult.
+        this->invalidate_step(psGCodeExport);
+    }
+
     // Clean up after the processing on every exit path, even the exceptional ones.
     const ScopeGuard finalize_and_cleanup_guard{
         [this]() -> void
