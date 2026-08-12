@@ -898,6 +898,8 @@ static std::vector<ReturnData> import_files(
             if (!data.error().user_cancelled) {
                 errors += data.error().message + "\n";
             }
+        } else if (data.value().model.has_value() && data.value().model->objects.empty()) {
+            continue;
         } else {
             if (extra_model && data.value().mesh) {
                 ModelObject* new_object = extra_model->add_object();
