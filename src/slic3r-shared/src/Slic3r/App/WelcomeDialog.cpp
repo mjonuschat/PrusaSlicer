@@ -1072,10 +1072,10 @@ public:
 
     void on_avatar_downloaded() override
     {
-        reload_layout();
+        reload_layout(true);
     };
 
-    void reload_layout()
+    void reload_layout(bool reload_image = false)
     {
         if (m_project_interactor.user_account_interactor().is_logged_in()) {
             m_logged_in_layout->set_visible(true);
@@ -1089,8 +1089,8 @@ public:
             m_project_interactor.user_account_interactor().avatar()};
 
         if (boost::filesystem::exists(avatar_image)) {
-            m_logged_out_avatar->set_image(avatar_image.string());
-            m_logged_in_avatar->set_image(avatar_image.string());
+            m_logged_out_avatar->set_image(avatar_image.string(), reload_image);
+            m_logged_in_avatar->set_image(avatar_image.string(), reload_image);
         } else {
             m_logged_out_avatar->set_image("");
             m_logged_in_avatar->set_image("");

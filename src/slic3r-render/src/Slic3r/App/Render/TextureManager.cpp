@@ -150,6 +150,14 @@ IResourceResolver& TextureManager::resource_resolver()
     return *m_resource_resolver;
 }
 
+void TextureManager::invalidate_image(const std::string& filename)
+{
+    std::erase_if(m_image_textures, [&filename](const auto& pair) {
+        return pair.first.key_name == filename;
+    });
+    m_image_sizes.erase(filename);
+}
+
 void TextureManager::shutdown()
 {
     m_image_textures.clear();

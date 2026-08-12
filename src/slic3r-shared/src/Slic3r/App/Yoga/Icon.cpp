@@ -100,10 +100,14 @@ std::string Icon::image() const
     return m_icon_type == IconType::Image ? m_image : std::string();
 }
 
-void Icon::set_image(const std::string& image)
+void Icon::set_image(const std::string& image, bool force_reload)
 {
-    if (m_image == image && m_icon_type == IconType::Image) {
+    if (!force_reload && m_image == image && m_icon_type == IconType::Image) {
         return;
+    }
+
+    if (force_reload && !image.empty() && m_imgui_render) {
+        m_imgui_render->invalidate_image_texture(image);
     }
 
     m_image     = image;

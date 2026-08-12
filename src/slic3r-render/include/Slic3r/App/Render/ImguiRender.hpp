@@ -37,6 +37,11 @@ public:
      */
     TexturePtr image_texture(const std::string& image, int max_size);
 
+    /**
+     * @brief Drop the cached texture for the given image path.
+     */
+    void invalidate_image_texture(const std::string& image);
+
     void new_frame();
     void render(CommandBuffer& buffer, const ImDrawData* draw_data);
 

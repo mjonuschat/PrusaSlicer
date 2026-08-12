@@ -61,6 +61,11 @@ TexturePtr ImguiRender::image_texture(const std::string& image, int max_size)
     );
 }
 
+void ImguiRender::invalidate_image_texture(const std::string& image)
+{
+    m_device.context().texture_manager().invalidate_image(image);
+}
+
 void ImguiRender::new_frame()
 {
     if (m_shader == nullptr)

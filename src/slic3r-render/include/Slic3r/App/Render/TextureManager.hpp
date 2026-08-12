@@ -55,6 +55,13 @@ public:
      */
     TexturePtr get_or_create_dynamic(const std::string& name, Domain::PixelFormat pf, size_t w, size_t h);
 
+    /**
+     * @brief Drop all cached image textures and the remembered on-disk size for the given filename.
+     * @note Existing TexturePtr holders keep a valid texture; subsequent get_or_create_image calls
+     *       will miss the cache and reload from disk.
+     */
+    void invalidate_image(const std::string& filename);
+
     void shutdown();
 
     static void set_resource_resolver(std::unique_ptr<IResourceResolver> resource_resolver);

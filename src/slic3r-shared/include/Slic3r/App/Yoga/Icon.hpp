@@ -66,7 +66,7 @@ public:
     Render::Icon icon() const;
     void set_icon(Render::Icon icon);
     std::string image() const;
-    void set_image(const std::string& image);
+    void set_image(const std::string& image, bool force_reload = false);
 
     const Vec2f& source_size() const;
     void set_source_size(const Vec2f& source_size);
