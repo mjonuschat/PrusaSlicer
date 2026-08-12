@@ -43,17 +43,7 @@ ConfigItemTextField::ConfigItemTextField(
         } else if (*m_state->def().type == typeid(double)) {
             value = Domain::ConfigValue{m_double_validator->value()};
         } else if (*m_state->def().type == typeid(Domain::Percentage)) {
-            value = Domain::ConfigValue{Domain::Percentage{m_percentage_validator->value()}};
-        } else if (*m_state->def().type == typeid(Domain::FloatOrPercentage)) {
-            const std::string value_text = text();
-            if (m_percentage_validator->entered_percentage_symbol()) {
-                value = Domain::ConfigValue{
-                    Domain::FloatOrPercentage{Domain::Percentage{m_percentage_validator->value()}}
-                };
-            } else {
-                value =
-                    Domain::ConfigValue{Domain::FloatOrPercentage{m_percentage_validator->value()}};
-            }
+            value = Domain::ConfigValue{Domain::Percentage{m_double_validator->value()}};
         } else {
             PANIC("Item is used for unexpected parameter type");
         }
@@ -90,25 +80,15 @@ void ConfigItemTextField::on_data_update()
 
         set_tooltip(ConfigItemUtils::config_item_tooltip(*m_state));
 
-        if (*m_state->def().type == typeid(double)) {
+        if (*m_state->def().type == typeid(double)
+            || *m_state->def().type == typeid(Domain::Percentage))
+        {
             m_double_validator = std::make_unique<DoubleValidator>(
                 m_state->def().min.value_or(std::numeric_limits<double>::lowest()),
                 m_state->def().max.value_or(std::numeric_limits<double>::max())
             );
+            m_double_validator->set_units(m_state->def().units);
             set_validator(m_double_validator.release());
-        } else if (
-            *m_state->def().type == typeid(Domain::Percentage)
-            || *m_state->def().type == typeid(Domain::FloatOrPercentage)
-        )
-        {
-            m_percentage_validator = std::make_unique<PercentageValidator>(
-                m_state->def().min.value_or(std::numeric_limits<double>::lowest()),
-                m_state->def().max.value_or(std::numeric_limits<double>::max())
-            );
-            m_percentage_validator->set_visible_percentage_symbol(
-                *m_state->def().type == typeid(Domain::FloatOrPercentage)
-            );
-            set_validator(m_percentage_validator.release());
         } else if (validator()) {
             // Remove the validator when validation is no longer required.
             set_validator(nullptr);
@@ -148,12 +128,6 @@ void ConfigItemTextField::update_value(const Domain::ConfigValue& value)
         set_text(fmt::format("{:.10g}", m_state->value().get<double>()));
     } else if (*m_state->def().type == typeid(Domain::Percentage)) {
         set_text(fmt::format("{:.10g}", m_state->value().get<Domain::Percentage>().value));
-    } else if (*m_state->def().type == typeid(Domain::FloatOrPercentage)) {
-        Domain::FloatOrPercentage value = m_state->value().get<Domain::FloatOrPercentage>();
-        set_text(
-            value.is_percentage() ? fmt::format("{:.10g} %", value.percentage().value) :
-                                    fmt::format("{:.10g}", value.float_value())
-        );
     } else {
         PANIC("Item is used for unexpected parameter type");
     }

@@ -386,6 +386,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/Config/ConfigRowItems.cpp
         src/Slic3r/App/Config/ExplanationContainer.cpp
         include/Slic3r/App/Config/ExplanationContainer.hpp
+        src/Slic3r/App/Config/ConfigItemUnitPercentage.cpp
+        include/Slic3r/App/Config/ConfigItemUnitPercentage.hpp
 
         include/Slic3r/App/ThumbnailStore.hpp
         src/Slic3r/App/ThumbnailStore.cpp

@@ -8,6 +8,7 @@
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include <fmt/format.h>
+#include <numeric>
 
 namespace Slic3r::App {
 
@@ -27,6 +28,20 @@ std::string ConfigItemUtils::config_item_tooltip(const Domain::ConfigItem& confi
     }
     if (def.max.has_value()) {
         text += fmt::format("\nMax: {:.10g}", def.max.value());
+    }
+
+    if (!def.units.empty()) {
+        std::string joined_units = std::accumulate(
+            def.units.begin(),
+            def.units.end(),
+            std::string{},
+            [](std::string result, const std::string& unit)
+            {
+                return result.empty() ? Biz::_u8L("\nUnit:") + " " + Biz::_u8(unit) :
+                                        result + " " + Biz::_u8L("or") + " " + Biz::_u8(unit);
+            }
+        );
+        text += joined_units;
     }
 
     return text;
@@ -51,13 +66,11 @@ std::string ConfigItemUtils::config_item_to_string(
         if (fop.is_percentage()) {
             result = fmt::format("{:.10g} %", fop.percentage().value);
         } else {
-            // sidetext may contain " or %" (e.g. "mm or %", "mm/s or %",
-            // "mm or % (zero to disable)").  Strip everything from " or " onward
-            // to get just the unit.  If " or " is absent, use sidetext as-is.
-            const std::string& sidetext = config_item.def().sidetext;
-            const auto pos              = sidetext.find(" or ");
-            const std::string unit = pos != std::string::npos ? sidetext.substr(0, pos) : sidetext;
-            result                 = fmt::format("{:.10g} {}", fop.float_value(), Biz::_u8(unit));
+            result = fmt::format(
+                "{:.10g} {}",
+                fop.float_value(),
+                Biz::_u8(config_item.def().units.front())
+            );
         }
     } else if (*config_item.def().type == typeid(Domain::EnumWrapper)) {
         const Domain::EnumWrapper enum_wrapper = value.get<Domain::EnumWrapper>();

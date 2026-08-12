@@ -141,7 +141,7 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->gui_type = GUIType::spinbox;
     def->label = L("Application font size");
     def->tooltip = L("Base font size of text in points.");
-    def->sidetext = "pt";
+    def->units = {"pt"};
     def->category = Domain::ConfigItemDef::Category::AppConfig_General;
     def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_General_Application;
     def->min = 8;

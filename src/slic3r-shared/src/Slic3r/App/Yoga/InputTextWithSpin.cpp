@@ -9,7 +9,6 @@
 #include <fmt/format.h>
 
 #include <imgui_internal.h>
-#include <cmath>
 
 namespace Slic3r::App::Yoga {
 
@@ -27,7 +26,8 @@ InputTextWithSpin::InputTextWithSpin(
     set_validator(std::move(validator_in));
     set_orientation(Orientation::Horizontal);
 
-    InputTextField::callbacks().text_edited = [this]() {
+    InputTextField::callbacks().text_edited = [this]()
+    {
         try {
             set_last_value();
         } catch ([[maybe_unused]] const Biz::Expr::ParseError& error) {
@@ -48,16 +48,12 @@ InputTextWithSpin::InputTextWithSpin(
     spins->set_flex_shrink(0.f);
 
     m_increase_button                     = spins->emplace_back<SpinButton>(ImGuiDir_Up);
-    m_increase_button->callbacks().action = [this]() -> void {
-        increase_value();
-    };
+    m_increase_button->callbacks().action = [this]() -> void { increase_value(); };
     m_increase_button->set_width(10);
     m_increase_button->set_height(10);
 
     m_decrease_button                     = spins->emplace_back<SpinButton>(ImGuiDir_Down);
-    m_decrease_button->callbacks().action = [this]() -> void {
-        decrease_value();
-    };
+    m_decrease_button->callbacks().action = [this]() -> void { decrease_value(); };
     m_decrease_button->set_width(10);
     m_decrease_button->set_height(10);
 }
@@ -92,13 +88,13 @@ void InputTextWithSpin::set_default(double default_value)
     InputTextField::set_default(default_value);
 }
 
-void InputTextWithSpin::set_text(const std::string &text)
+void InputTextWithSpin::set_text(const std::string& text)
 {
     InputTextField::set_text(text);
     set_last_value();
 }
 
-void InputTextWithSpin::set_override_label(const std::string &override_label)
+void InputTextWithSpin::set_override_label(const std::string& override_label)
 {
     input_text()->set_override_label(override_label);
 }
@@ -124,14 +120,17 @@ void InputTextWithSpin::decrease_value()
 void InputTextWithSpin::text_updated_internal()
 {
     try {
-        m_last_value = boost::get<double>(m_eval.eval(m_parser.parse(text())));
+        m_last_value =
+            boost::get<double>(m_eval.eval(m_parser.parse(validator()->string_without_unit())));
     } catch ([[maybe_unused]] const Biz::Expr::ParseError& error) {
     } catch ([[maybe_unused]] const Biz::Expr::EvalError& error) {
     }
 }
 
-void InputTextWithSpin::set_last_value() {
-    m_last_value = boost::get<double>(m_eval.eval(m_parser.parse(text())));
+void InputTextWithSpin::set_last_value()
+{
+    m_last_value =
+        boost::get<double>(m_eval.eval(m_parser.parse(validator()->string_without_unit())));
 }
 
 } // namespace Slic3r::App::Yoga

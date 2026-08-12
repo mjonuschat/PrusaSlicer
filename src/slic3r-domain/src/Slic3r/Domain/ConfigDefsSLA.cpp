@@ -133,7 +133,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->full_label = L("Fast tilt");
     def->tooltip = L("Time of the fast tilt");
-    def->sidetext = L("s");
+    def->units = {L("s")};
     def->min = 0;
     def->init_fn = init_with(5.);
 
@@ -145,7 +145,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->full_label = L("Slow tilt");
     def->tooltip = L("Time of the slow tilt");
-    def->sidetext = L("s");
+    def->units = {L("s")};
     def->min = 0;
     def->init_fn = init_with(8.);
 
@@ -157,7 +157,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->full_label = L("Tilt for high viscosity resin");
     def->tooltip = L("Time of the super slow tilt");
-    def->sidetext = L("s");
+    def->units = {L("s")};
     def->min = 0;
     def->init_fn = init_with(10.);
 
@@ -170,7 +170,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->tooltip = L("The value is expressed as a percentage of the bed area. If the area of a particular layer "
                      "is smaller than 'area_fill', then 'Below area fill threshold' parameters are used to determine the "
                      "layer separation (tearing) procedure. Otherwise 'Above area fill threshold' parameters are used.");
-    def->sidetext = L("%");
+    def->units = {L("%")};
     def->min = 0;
     def->init_fn = init_with(35.);
 
@@ -228,7 +228,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->full_label = L("Printer absolute correction");
     def->tooltip  = L("Will inflate or deflate the sliced 2D polygons according "
                       "to the sign of the correction.");
-    def->sidetext = L("mm");
+    def->units = {L("mm")};
     def->init_fn = init_with(0.);
 
     def = defs.add("elefant_foot_min_width", typeid(double));
@@ -238,7 +238,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Printer_General;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Minimum width of features to maintain when doing elephant foot compensation.");
-    def->sidetext = L("mm");
+    def->units = {L("mm")};
     def->min = 0;
     def->init_fn = init_with(0.2);
 
@@ -282,7 +282,6 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->label = L("SLA material type");
     def->category = ConfigItemDef::Category::Hidden;
     def->tooltip = L("SLA material type");
-    def->gui_flags = "show_value";
     def->gui_type = ConfigItemDef::GUIType::s_enum_open;
     def->choices = {
         { std::string("Tough"),  std::string("Tough")   },
@@ -299,7 +298,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Filament_MaterialTemperatures;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Initial layer height");
-    def->sidetext = L("mm");
+    def->units = {L("mm")};
     def->min = 0;
     def->init_fn = init_with(0.3);
 
@@ -310,7 +309,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Filament_MaterialTemperatures;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Bottle volume");
-    def->sidetext = L("ml");
+    def->units = {L("ml")};
     def->min = 50;
     def->init_fn = init_with(1000.);
 
@@ -321,7 +320,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Filament_MaterialTemperatures;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Bottle weight");
-    def->sidetext = L("kg");
+    def->units = {L("kg")};
     def->min = 0;
     def->init_fn = init_with(1.);
 
@@ -332,7 +331,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Filament_MaterialTemperatures;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Density");
-    def->sidetext = L("g/ml");
+    def->units = {L("g/ml")};
     def->min = 0;
     def->init_fn = init_with(1.);
 
@@ -343,7 +342,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Filament_MaterialTemperatures;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Cost");
-    def->sidetext = L("money/bottle");
+    def->units = {L("money/bottle")};
     def->min = 0;
     def->init_fn = init_with(0.);
 
@@ -366,7 +365,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Printer_General;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Minimum exposure time");
-    def->sidetext = L("s");
+    def->units = {L("s")};
     def->min = 0;
     def->init_fn = init_with(0.);
 
@@ -377,7 +376,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Printer_General;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Maximum exposure time");
-    def->sidetext = L("s");
+    def->units = {L("s")};
     def->min = 0;
     def->init_fn = init_with(100.);
 
@@ -388,7 +387,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Filament_MaterialTemperatures;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Exposure time");
-    def->sidetext = L("s");
+    def->units = {L("s")};
     def->min = 0;
     def->init_fn = init_with(10.);
 
@@ -399,7 +398,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Printer_General;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Minimum initial exposure time");
-    def->sidetext = L("s");
+    def->units = {L("s")};
     def->min = 0;
     def->init_fn = init_with(0.);
 
@@ -410,7 +409,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Printer_General;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Maximum initial exposure time");
-    def->sidetext = L("s");
+    def->units = {L("s")};
     def->min = 0;
     def->init_fn = init_with(150.);
 
@@ -421,7 +420,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Filament_MaterialTemperatures;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Initial exposure time");
-    def->sidetext = L("s");
+    def->units = {L("s")};
     def->min = 0;
     def->init_fn = init_with(15.);
 
@@ -556,7 +555,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Print_Supports;
     def->gui_type = ConfigItemDef::GUIType::spinbox;
     def->tooltip = L("This is a relative measure of support points density.");
-    def->sidetext = L("%");
+    def->units = {L("%")};
     def->min = 0;
     def->init_fn = init_with(100);
 
@@ -578,7 +577,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Print_Pad;
     def->gui_type = ConfigItemDef::GUIType::textfield;
      def->tooltip = L("The thickness of the pad and its optional cavity walls.");
-    def->sidetext = L("mm");
+    def->units = {L("mm")};
     def->min = 0;
     def->max = 30;
     def->init_fn = init_with(2.);
@@ -595,7 +594,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
                      "produce an extreme suction effect inside the cavity, "
                      "which makes peeling the print off the vat foil difficult.");
 //     def->tooltip = L("");
-    def->sidetext = L("mm");
+    def->units = {L("mm")};
     def->min = 0;
     def->max = 30;
     def->init_fn = init_with(0.);
@@ -609,7 +608,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("How far should the pad extend around the contained geometry");
     //     def->tooltip = L("");
-    def->sidetext = L("mm");
+    def->units = {L("mm")};
     def->min = 0;
     def->max = 30;
     def->init_fn = init_with(1.6);
@@ -625,7 +624,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
                       "instead of a single big one. This parameter defines "
                       "how far the center of two smaller pads should be. If they"
                       "are closer, they will get merged into one pad.");
-    def->sidetext = L("mm");
+    def->units = {L("mm")};
     def->min = 0;
     def->init_fn = init_with(50.);
 
@@ -647,7 +646,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("The slope of the pad wall relative to the bed plane. "
                      "90 degrees means straight walls.");
-    def->sidetext = L("°");
+    def->units = {L("°")};
     def->min = 45;
     def->max = 90;
     def->init_fn = init_with(90.);
@@ -681,7 +680,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip  = L("The gap between the object bottom and the generated "
                       "pad in zero elevation mode.");
-    def->sidetext = L("mm");
+    def->units = {L("mm")};
     def->min = 0;
     def->max = 10;
     def->init_fn = init_with(1.);
@@ -694,7 +693,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Print_Pad;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Distance between two connector sticks which connect the object and the generated pad.");
-    def->sidetext = L("mm");
+    def->units = {L("mm")};
     def->min = 0;
     def->init_fn = init_with(10.);
 
@@ -706,7 +705,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Print_Pad;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip  = L("Width of the connector sticks which connect the object and the generated pad.");
-    def->sidetext = L("mm");
+    def->units = {L("mm")};
     def->min = 0;
     def->init_fn = init_with(0.5);
 
@@ -719,7 +718,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip  = L(
         "How much should the tiny connectors penetrate into the model body.");
-    def->sidetext = L("mm");
+    def->units = {L("mm")};
     def->min = 0;
     def->init_fn = init_with(0.3);
 
@@ -741,7 +740,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Print_Hollowing;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip  = L("Minimum wall thickness of a hollowed model.");
-    def->sidetext = L("mm");
+    def->units = {L("mm")};
     def->min = 1;
     def->max = 10;
     def->init_fn = init_with(3.);
@@ -771,7 +770,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         "then it's inflated back to the specified offset. A greater closing "
         "distance makes the interior more rounded. At zero, the interior will "
         "resemble the exterior the most.");
-    def->sidetext = L("mm");
+    def->units = {L("mm")};
     def->min = 0;
     def->max = 10;
     def->init_fn = init_with(2.);
@@ -806,7 +805,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Printer_General;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Minimum resolution in nanometers");
-    def->sidetext = L("mm");
+    def->units = {L("mm")};
     def->min = 0.000001f;
     def->init_fn = init_with(0.001);
 
@@ -817,7 +816,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Filament_MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::textfields;
     def->tooltip = L("Delay before exposure after previous layer separation.");
-    def->sidetext = L("s");
+    def->units = {L("s")};
     def->min = 0;
     def->max = 30;
     def->init_fn = init_with((std::vector<double>{ 3., 3.}));
@@ -829,7 +828,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Filament_MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::textfields;
     def->tooltip = L("Delay after exposure before layer separation.");
-    def->sidetext = L("s");
+    def->units = {L("s")};
     def->min = 0;
     def->max = 30;
     def->init_fn = init_with((std::vector<double>{ 0., 0.}));
@@ -841,7 +840,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Filament_MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::textfields;
     def->tooltip = L("The height of the tower raise.");
-    def->sidetext = L("mm");
+    def->units = {L("mm")};
     def->min = 0;
     def->max = 100;
     def->init_fn = init_with((std::vector<double>{ 0., 0.}));
@@ -853,7 +852,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Filament_MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::comboboxes;
     def->tooltip = L("Tower speed used for tower raise.");
-    def->sidetext = L("mm/s");
+    def->units = {L("mm/s")};
     def->init_fn = init_with(
         std::vector<TowerSpeeds>{tsLayer22, tsLayer22},
         {{int(TowerSpeeds::tsLayer1), "layer1", "1"},
@@ -896,7 +895,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Filament_MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::comboboxes;
     def->tooltip = L("Tilt speed used for an initial portion of tilt down move.");
-    def->sidetext = L("μ-steps/s");
+    def->units = {L("μ-steps/s")};
     def->init_fn = init_with(std::vector<TiltSpeeds>{ tsLayer1750, tsLayer1750 }, tilt_speeds_enum_def);
 
     def = defs.add("tilt_down_finish_speed", typeid(EnumVectorWrapper));
@@ -906,7 +905,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Filament_MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::comboboxes;
     def->tooltip = L("Tilt speed used for the rest of the tilt down move.");
-    def->sidetext = L("μ-steps/s");
+    def->units = {L("μ-steps/s")};
     def->init_fn = init_with(std::vector<TiltSpeeds>{ tsLayer1750, tsLayer1750 }, tilt_speeds_enum_def);
 
     def = defs.add("tilt_up_initial_speed", typeid(EnumVectorWrapper));
@@ -916,7 +915,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Filament_MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::comboboxes;
     def->tooltip = L("Tilt speed used for an initial portion of tilt up move.");
-    def->sidetext = L("μ-steps/s");
+    def->units = {L("μ-steps/s")};
     def->init_fn = init_with(std::vector<TiltSpeeds>{ tsMove8000, tsMove8000 }, tilt_speeds_enum_def);
 
     def = defs.add("tilt_up_finish_speed", typeid(EnumVectorWrapper));
@@ -926,7 +925,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Filament_MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::comboboxes;
     def->tooltip = L("Tilt speed used for the rest of the tilt-up.");
-    def->sidetext = L("μ-steps/s");
+    def->units = {L("μ-steps/s")};
     def->init_fn = init_with((std::vector<TiltSpeeds>{ tsLayer1750, tsLayer1750 }), tilt_speeds_enum_def);
 
     def = defs.add("use_tilt", typeid(std::vector<bool>));
@@ -945,7 +944,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Filament_MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::spinboxes;
     def->tooltip = L("Number of steps to move down from the calibrated (horizontal) position with 'tilt_down_initial_speed'.");
-    def->sidetext = L("μ-steps");
+    def->units = {L("μ-steps")};
     def->min = 0;
     def->max = 10000;
     def->init_fn = init_with((std::vector<int>{ 0, 0 }));
@@ -957,7 +956,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Filament_MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::textfields;
     def->tooltip = L("Delay after the tilt reaches 'tilt_down_offset_steps' position.");
-    def->sidetext = L("s");
+    def->units = {L("s")};
     def->min = 0;
     def->max = 20;
     def->init_fn = init_with((std::vector<double>{ 0., 0. }));
@@ -980,7 +979,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Filament_MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::textfields;
     def->tooltip = L("The delay between tilt-down cycles.");
-    def->sidetext = L("s");
+    def->units = {L("s")};
     def->min = 0;
     def->max = 20;
     def->init_fn = init_with((std::vector<double>{ 0., 0. }));
@@ -992,7 +991,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Filament_MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::spinboxes;
     def->tooltip = L("Move tilt up to calibrated (horizontal) position minus this offset.");
-    def->sidetext = L("μ-steps");
+    def->units = {L("μ-steps")};
     def->min = 0;
     def->max = 10000;
     def->init_fn = init_with((std::vector<int>{ 1200, 1200 }));
@@ -1004,7 +1003,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Filament_MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::textfields;
     def->tooltip = L("Delay after the tilt reaches 'tilt_up_offset_steps' position.");
-    def->sidetext = L("s");
+    def->units = {L("s")};
     def->min = 0;
     def->max = 20;
     def->init_fn = init_with((std::vector<double>{ 0., 0. }));
@@ -1027,7 +1026,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
     def->category = ConfigItemDef::Category::Filament_MaterialPrintingProfile;
     def->gui_type = ConfigItemDef::GUIType::textfields;
     def->tooltip = L("The delay between tilt-up cycles.");
-    def->sidetext = L("s");
+    def->units = {L("s")};
     def->min = 0;
     def->max = 20;
     def->init_fn = init_with((std::vector<double>{ 0., 0. }));
@@ -1042,7 +1041,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->category = ConfigItemDef::Category::Print_Supports;
         def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L("Diameter of the pointing side of the head");
-        def->sidetext = L("mm");
+        def->units = {L("mm")};
         def->min = 0;
         def->init_fn = init_with(0.4);
 
@@ -1055,7 +1054,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->category = ConfigItemDef::Category::Print_Supports;
         def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L("How much the pinhead has to penetrate the model surface");
-        def->sidetext = L("mm");
+        def->units = {L("mm")};
         def->min = 0;
         def->init_fn = init_with(0.2);
 
@@ -1068,7 +1067,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->category = ConfigItemDef::Category::Print_Supports;
         def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L("Width from the back sphere center to the front sphere center");
-        def->sidetext = L("mm");
+        def->units = {L("mm")};
         def->min = 0;
         def->max = 20;
         def->init_fn = init_with(1.);
@@ -1082,7 +1081,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->category = ConfigItemDef::Category::Print_Supports;
         def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L("Diameter in mm of the support pillars");
-        def->sidetext = L("mm");
+        def->units = {L("mm")};
         def->min = 0;
         def->max = 15;
         def->init_fn = init_with(1.);
@@ -1097,7 +1096,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L("The percentage of smaller pillars compared to the normal pillar diameter "
             "which are used in problematic areas where a normal pilla cannot fit.");
-        def->sidetext = L("%");
+        def->units = {L("%")};
         def->min = 1;
         def->max = 100;
         def->init_fn = init_with(Percentage{50.});
@@ -1131,7 +1130,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->tooltip = L(
             "Maximum weight of sub-trees that terminate on the model instead of the print bed. The weight is the sum of the lenghts of all "
             "branches emanating from the endpoint.");
-        def->sidetext = L("mm");
+        def->units = {L("mm")};
         def->min = 0;
         def->init_fn = init_with(10.);
 
@@ -1191,7 +1190,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->category = ConfigItemDef::Category::Print_Supports;
         def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L("Diameter in mm of the pillar base");
-        def->sidetext = L("mm");
+        def->units = {L("mm")};
         def->min = 0;
         def->max = 30;
         def->init_fn = init_with(4.);
@@ -1205,7 +1204,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->category = ConfigItemDef::Category::Print_Supports;
         def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L("The height of the pillar base cone");
-        def->sidetext = L("mm");
+        def->units = {L("mm")};
         def->min = 0;
         def->init_fn = init_with(1.);
 
@@ -1221,7 +1220,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
             "The minimum distance of the pillar base from the model in mm. "
             "Makes sense in zero elevation mode where a gap according "
             "to this parameter is inserted between the model and the pad.");
-        def->sidetext = L("mm");
+        def->units = {L("mm")};
         def->min = 0;
         def->max = 10;
         def->init_fn = init_with(1.);
@@ -1235,7 +1234,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->category = ConfigItemDef::Category::Print_Supports;
         def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L("The default angle for connecting support sticks and junctions.");
-        def->sidetext = L("°");
+        def->units = {L("°")};
         def->min = 0;
         def->max = 90;
         def->init_fn = init_with(45.);
@@ -1249,7 +1248,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->category = ConfigItemDef::Category::Print_Supports;
         def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L("The max length of a bridge");
-        def->sidetext = L("mm");
+        def->units = {L("mm")};
         def->min = 0;
         if (prefix.first == "branching")
             def->init_fn = init_with(5.0);
@@ -1266,7 +1265,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L("The max distance of two pillars to get linked with each other."
             " A zero value will prohibit pillar cascading.");
-        def->sidetext = L("mm");
+        def->units = {L("mm")};
         def->min = 0;   // 0 means no linking
         def->init_fn = init_with(10.);
 
@@ -1279,7 +1278,7 @@ void sla_config_init_fn(ConfigDefinitions& defs)
         def->gui_type = ConfigItemDef::GUIType::textfield;
         def->tooltip = L("How much the supports should lift up the supported object. "
             "If \"Pad around object\" is enabled, this value is ignored.");
-        def->sidetext = L("mm");
+        def->units = {L("mm")};
         def->min = 0;
         def->max = 150; // This is the max height of print on SL1
         def->init_fn = init_with(5.);

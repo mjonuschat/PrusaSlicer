@@ -99,7 +99,7 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("The first layer will be shrunk in the XY plane by the configured value "
                      "to compensate for the 1st layer squish aka an Elephant Foot effect.");
-    def->sidetext = L("mm");
+    def->units = {L("mm")};
     def->min = 0;
     def->init_fn = init_with(0.);
 
@@ -143,7 +143,7 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This setting controls the height (and thus the total number) of the slices/layers. "
                    "Thinner layers give better accuracy but take more time to print.");
-    def->sidetext = L("mm");
+    def->units = {L("mm")};
     def->min = 0;
     def->init_fn = init_with(0.3);
 
@@ -155,7 +155,7 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     def->order = 1;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Set this to the maximum height that can be reached by your extruder while printing.");
-    def->sidetext = L("mm");
+    def->units = {L("mm")};
     def->min = 0;
     def->max = 1200;
     def->init_fn = init_with(200.);
@@ -186,7 +186,7 @@ void init_common_fdm_sla_config_items(ConfigDefinitions& defs, const PrinterTech
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Cracks smaller than 2x gap closing radius are being filled during the triangle mesh slicing. "
                      "The gap closing operation may reduce the final print resolution, therefore it is advisable to keep the value reasonably low.");
-    def->sidetext = L("mm");
+    def->units = {L("mm")};
     def->min = 0;
     def->init_fn = init_with(0.049);
 

@@ -88,16 +88,17 @@ ConfigItemComboBox::ConfigItemComboBox(
             if (*m_state->def().type == typeid(double)) {
                 value = Domain::ConfigValue{m_double_validator->value()};
             } else if (*m_state->def().type == typeid(Domain::Percentage)) {
-                value = Domain::ConfigValue{Domain::Percentage{m_percentage_validator->value()}};
+                value = Domain::ConfigValue{Domain::Percentage{m_double_validator->value()}};
             } else if (*m_state->def().type == typeid(Domain::FloatOrPercentage)) {
-                if (m_percentage_validator->entered_percentage_symbol()) {
-                    value = Domain::ConfigValue{Domain::FloatOrPercentage{
-                        Domain::Percentage{m_percentage_validator->value()}
-                    }};
-                } else {
+                if (m_double_validator->detected_unit()
+                    && *m_double_validator->detected_unit() == "%")
+                {
                     value = Domain::ConfigValue{
-                        Domain::FloatOrPercentage{m_percentage_validator->value()}
+                        Domain::FloatOrPercentage{Domain::Percentage{m_double_validator->value()}}
                     };
+                } else {
+                    value =
+                        Domain::ConfigValue{Domain::FloatOrPercentage{m_double_validator->value()}};
                 }
             }
         } else if (gui_type == Domain::ConfigItemDef::GUIType::i_enum_open) {
@@ -181,18 +182,9 @@ void ConfigItemComboBox::initialize()
     if (gui_type == Domain::ConfigItemDef::GUIType::f_enum_open) {
         set_editable(true);
 
-        if (*m_state->def().type == typeid(Domain::Percentage)
-            || *m_state->def().type == typeid(Domain::FloatOrPercentage))
-        {
-            m_percentage_validator = std::make_unique<PercentageValidator>();
-            m_percentage_validator->set_visible_percentage_symbol(
-                *m_state->def().type == typeid(Domain::FloatOrPercentage)
-            );
-            set_validator(m_percentage_validator.release());
-        } else {
-            m_double_validator = std::make_unique<DoubleValidator>();
-            set_validator(m_double_validator.release());
-        }
+        m_double_validator = std::make_unique<DoubleValidator>();
+        m_double_validator->set_units(m_state->def().units);
+        set_validator(m_double_validator.release());
 
         for (const auto& choice : m_state->def().choices) {
             items.push_back(choice.second);
@@ -200,6 +192,7 @@ void ConfigItemComboBox::initialize()
     } else if (gui_type == Domain::ConfigItemDef::GUIType::i_enum_open) {
         set_editable(true);
         m_int_validator = std::make_unique<IntValidator>();
+        m_int_validator->set_units(m_state->def().units);
         set_validator(m_int_validator.release());
 
         for (const auto& [v, str_ui] : m_state->def().choices) {

@@ -64,7 +64,6 @@ private:
     Yoga::Item* m_left_side{nullptr};
     Yoga::Text* m_label{nullptr};
     Yoga::LayoutButton* m_revert_button{nullptr};
-    Yoga::Text* m_sidetext{nullptr};
     Yoga::Item* m_input{nullptr};
     Yoga::ToggleButton* m_toggle_enable{nullptr};
 

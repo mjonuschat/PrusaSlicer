@@ -385,11 +385,12 @@ void PrintToolRowItem::initialize()
             m_cb_setter,
             [this](size_t tool_index) { exclude_tool(tool_index); },
             [this](size_t dropped_tool_index, size_t index)
-            { move_tool(dropped_tool_index, index); }
+            { move_tool(dropped_tool_index, index); },
+            !m_options.show_favorites
         };
         m_tool_list_view = m_content->emplace_back<ToolRowListView>(std::move(factory));
         m_tool_list_view->set_orientation(Orientation::Vertical);
-        m_tool_list_view->set_gap(5);
+        m_tool_list_view->set_gap(5_fpx);
         m_tool_list_view->set_source_list(this);
 
         if (m_options.show_explanation) {

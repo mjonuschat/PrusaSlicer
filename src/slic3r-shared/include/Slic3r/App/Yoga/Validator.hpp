@@ -15,15 +15,32 @@ namespace Slic3r::App::Yoga {
 class Validator
 {
 public:
-    virtual ~Validator();
+    virtual ~Validator() = default;
 
     virtual std::string process(const std::string& input);
+
+    std::string string_without_unit() const;
+    std::string string_with_unit() const;
+
+    void set_units(const std::vector<std::string>& units);
+    const std::string* detected_unit() const;
+
+protected:
+    void split_string(const std::string& input);
+
+protected:
+    std::vector<std::string> m_units;
+    std::string m_string_without_unit;
+    const std::string* m_detected_unit{};
 };
 
 class IntValidator : public Validator
 {
 public:
-    IntValidator(int from = std::numeric_limits<int>::min(), int to = std::numeric_limits<int>::max());
+    IntValidator(
+        int from = std::numeric_limits<int>::min(),
+        int to   = std::numeric_limits<int>::max()
+    );
 
     std::string process(const std::string& input) override;
 
@@ -53,7 +70,6 @@ public:
     );
 
     std::string process(const std::string& input) override;
-
     double from() const;
     void set_from(double from);
 
@@ -73,33 +89,6 @@ private:
     double m_from  = 0;
     double m_to    = 0;
     std::optional<int> m_precision;
-};
-
-class PercentageValidator : public DoubleValidator
-{
-public:
-    PercentageValidator(
-        double from = std::numeric_limits<double>::lowest(),
-        double to   = std::numeric_limits<double>::max()
-    );
-
-    std::string process(const std::string& input) override;
-
-    /**
-     * @brief Indicates whether the last processed input contained a '%' symbol.
-     * @return True if the last input contained a percentage symbol.
-     */
-    bool entered_percentage_symbol() const;
-
-    /**
-     * @brief Controls visibility of the '%' symbol in the displayed value.
-     * @param visible If true, the percentage symbol will be visible.
-     */
-    void set_visible_percentage_symbol(bool visible);
-
-private:
-    bool m_last_entered_percentage_symbol = false;
-    bool m_is_visible_percentage_symbol = false;
 };
 
 } // namespace Slic3r::App::Yoga

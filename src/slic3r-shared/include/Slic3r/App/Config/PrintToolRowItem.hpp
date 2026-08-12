@@ -102,7 +102,8 @@ private:
         ToolRowOverrideGroup,
         Biz::IConfigBoxSetter&,
         ToolRowControl::ExtruderClickedFn,
-        ToolRowControl::ExtruderDroppedFn>;
+        ToolRowControl::ExtruderDroppedFn,
+        bool>;
     using ToolRowListView = Yoga::ListView<ToolRowControl, ToolRowOverrideGroup, ToolRowFactory>;
 
     enum class InitializedType

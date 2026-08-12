@@ -20,6 +20,7 @@
 #include "Slic3r/App/Config/ConfigItemExtruderSelection.hpp"
 #include "Slic3r/App/Config/ConfigItemLanguageSelection.hpp"
 #include "Slic3r/App/Config/ConfigItemRammingParams.hpp"
+#include "Slic3r/App/Config/ConfigItemUnitPercentage.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
 
 #include <fmt/format.h>
@@ -275,6 +276,15 @@ ConfigItemControl* ConfigItemControl::config_item_control_factory(
         break;
     case Slic3r::Domain::ConfigItemDef::GUIType::language_selection:
         item_control = container->emplace<ConfigItemLanguageSelection>(
+            child_index,
+            data_index,
+            item,
+            cb_setter,
+            cbi_index
+        );
+        break;
+    case Slic3r::Domain::ConfigItemDef::GUIType::unit_or_percentage:
+        item_control = container->emplace<ConfigItemUnitPercentage>(
             child_index,
             data_index,
             item,

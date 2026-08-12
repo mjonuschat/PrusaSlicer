@@ -32,7 +32,6 @@ protected:
 private:
     Yoga::Passthrough<Yoga::IntValidator> m_int_validator;
     Yoga::Passthrough<Yoga::DoubleValidator> m_double_validator;
-    Yoga::Passthrough<Yoga::PercentageValidator> m_percentage_validator;
 
     const Domain::ConfigItem* m_last_item{nullptr};
     bool m_init = false;

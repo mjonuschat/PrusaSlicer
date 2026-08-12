@@ -12,12 +12,16 @@ namespace Slic3r::Biz {
 class IConfigBoxSetter;
 } // namespace Slic3r::Biz
 
+namespace Slic3r::App::Yoga {
+class LayoutButton;
+} // namespace Slic3r::App::Yoga
+
 namespace Slic3r::App {
 
-class ConfigItemTextField : public ConfigItemControl, public Yoga::InputTextField
+class ConfigItemUnitPercentage : public ConfigItemControl, public Yoga::InputTextField
 {
 public:
-    ConfigItemTextField(
+    ConfigItemUnitPercentage(
         size_t index,
         const Domain::ConfigItem& data,
         Biz::IConfigBoxSetter& cb_setter,
@@ -29,10 +33,10 @@ protected:
     void update_value(const Domain::ConfigValue& value);
 
 private:
-    Yoga::Passthrough<Yoga::DoubleValidator> m_double_validator;
+    Yoga::Passthrough<Yoga::DoubleValidator> m_validator;
     const Domain::ConfigItem* m_last_item{nullptr};
-    std::optional<bool> m_is_multiline{std::nullopt};
-    std::optional<bool> m_is_full_width{std::nullopt};
+    Yoga::LayoutButton* m_unit1{nullptr};
+    Yoga::LayoutButton* m_unit2{nullptr};
 };
 
 } // namespace Slic3r::App

@@ -149,6 +149,20 @@ bool ComboBox::YGBeginCombo(
             ImGuiInputTextFlags_AutoSelectAll,
             nullptr
         );
+        if (ImGui::IsItemActivated() && m_validator) {
+            std::string without_unit = m_validator->string_without_unit();
+            strncpy(
+                buffer,
+                without_unit.data(),
+                std::min(without_unit.size(), static_cast<size_t>(buf_size))
+            );
+            buffer[std::min(without_unit.size(), static_cast<size_t>(buf_size) - 1)] = '\0';
+
+            if (ImGuiInputTextState* state = ImGui::GetInputTextState(ImGui::GetItemID())) {
+                state->ReloadUserBufAndSelectAll();
+            }
+        }
+
         if (edited && ImGui::IsItemDeactivatedAfterEdit()) {
             edited = false;
             if (validator) {
@@ -156,9 +170,21 @@ bool ComboBox::YGBeginCombo(
                 text = validator->process(text);
                 strncpy(buffer, text.data(), std::min(text.size(), static_cast<size_t>(buf_size)));
                 buffer[std::min(text.size(), static_cast<size_t>(buf_size) - 1)] = '\0';
+
+                if (ImGuiInputTextState* state = ImGui::GetInputTextState(ImGui::GetItemID())) {
+                    state->ReloadUserBufAndSelectAll();
+                }
             }
             if (callbacks.text_edited) {
                 callbacks.text_edited();
+            }
+        } else if (ImGui::IsItemDeactivated() && validator) {
+            std::string text = m_validator->string_with_unit();
+            strncpy(buffer, text.data(), std::min(text.size(), static_cast<size_t>(buf_size)));
+            buffer[std::min(text.size(), static_cast<size_t>(buf_size) - 1)] = '\0';
+
+            if (ImGuiInputTextState* state = ImGui::GetInputTextState(ImGui::GetItemID())) {
+                state->ReloadUserBufAndSelectAll();
             }
         }
     } else {
@@ -495,8 +521,11 @@ void ComboBox::set_current_label(const std::string& current_label)
 {
     ASSERT(m_editable);
     ASSERT(current_label.size() < 2'048);
-    if (m_current_label != current_label) {
-        m_current_label = current_label;
+
+    const std::string label = m_validator ? m_validator->process(current_label) : current_label;
+
+    if (m_current_label != label) {
+        m_current_label = label;
         strncpy(m_buffer.data(), m_current_label.data(), m_current_label.size());
         m_buffer[m_current_label.size()] = '\0';
     }
@@ -515,9 +544,15 @@ void ComboBox::set_current_index(int current_index)
         std::fill(m_buffer.begin(), m_buffer.end(), 0);
     } else {
         m_current_index = std::clamp(current_index, 0, static_cast<int>(m_items.size()) - 1);
-        m_current_label = m_items.at(m_current_index);
-        strncpy(m_buffer.data(), m_current_label.c_str(), m_current_label.size());
-        m_buffer[m_current_label.size()] = '\0';
+
+        const std::string label = m_validator ? m_validator->process(m_items.at(m_current_index)) :
+                                                m_items.at(m_current_index);
+
+        if (m_current_label != label) {
+            m_current_label = label;
+            strncpy(m_buffer.data(), m_current_label.c_str(), m_current_label.size());
+            m_buffer[m_current_label.size()] = '\0';
+        }
     }
     update_revert_button();
 }

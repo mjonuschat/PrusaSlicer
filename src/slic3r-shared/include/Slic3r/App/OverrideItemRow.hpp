@@ -41,7 +41,6 @@ private:
     Yoga::Text* m_label{nullptr};
     ConfigItemControl* m_control{nullptr};
     Yoga::Item* m_control_item{nullptr};
-    Yoga::Text* m_sidetext{nullptr};
     Domain::ConfigItemDef::GUIType m_gui_type{Domain::ConfigItemDef::GUIType::undefined};
 };
 

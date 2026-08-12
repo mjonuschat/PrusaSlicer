@@ -31,6 +31,7 @@ ConfigRowItem::ConfigRowItem(
     m_force_label(force_label),
     m_enable_revert(enable_revert_fn)
 {
+    set_object_name("ConfigRowItem");
     set_fill(m_theme->color_imgui(Platform::Color::Transparent));
     set_border_width(2);
     set_border_color(m_theme->color_imgui(Platform::Color::Transparent));
@@ -58,11 +59,6 @@ ConfigRowItem::ConfigRowItem(
     m_revert_button->callbacks().action = [this]()
     { m_cb_setter.set_from_original_value(*m_state, m_cbi_index); };
 
-    m_sidetext = emplace_back<Text>(Biz::_u8(m_state->def().sidetext));
-    m_sidetext->set_self_align(YGAlignCenter);
-    m_sidetext->set_flex_grow(1.f);
-    m_sidetext->set_wrap_mode(Text::WrapMode::WrapElide);
-
     m_label->set_width(m_force_label.has_value() ? 90 : 175);
     m_left_side->set_max_width(175);
 
@@ -76,8 +72,7 @@ void ConfigRowItem::set_label_text_color(const ImColor& color)
 
 void ConfigRowItem::set_enabled_control(bool enabled)
 {
-    get_item(1)->set_enabled(enabled);
-    m_sidetext->set_enabled(enabled);
+    m_input->set_enabled(enabled);
 }
 
 void ConfigRowItem::on_data_update()
@@ -101,6 +96,9 @@ void ConfigRowItem::on_data_update()
 
         m_input = dynamic_cast<Yoga::Item*>(m_control);
         ASSERT(m_input, "ConfigItem needs to derive from Yoga::Item");
+        m_input->set_flex_grow(1);
+        m_input->set_max_width(200_fpx);
+        m_input->set_width(150_fpx);
 
         if (m_state->def().gui_type == Slic3r::Domain::ConfigItemDef::GUIType::spinbox) {
             m_config_item_spin_box = dynamic_cast<ConfigItemSpinBox*>(m_input);
@@ -108,13 +106,16 @@ void ConfigRowItem::on_data_update()
     }
 
     if (m_input && (!m_last_full_width || m_last_full_width.value() != m_state->def().full_width)) {
-        m_input->set_flex_grow(m_state->def().full_width);
         if (m_state->def().full_width) {
             set_orientation(Orientation::Vertical);
             set_align_items(YGAlign::YGAlignStretch);
+            m_input->set_width(YGUndefined);
+            m_input->set_max_width(YGUndefined);
         } else {
             set_orientation(Orientation::Horizontal);
             set_align_items(YGAlign::YGAlignCenter);
+            m_input->set_width(150_fpx);
+            m_input->set_max_width(200_fpx);
         }
         m_last_full_width = m_state->def().full_width;
     }
@@ -147,8 +148,6 @@ void ConfigRowItem::on_data_update()
     }
 
     m_label->set_text(m_force_label.value_or(Biz::_u8(m_state->def().label)));
-    m_sidetext->set_text(Biz::_u8(m_state->def().sidetext));
-    m_sidetext->set_min_width(m_sidetext->text().empty() ? 0 : 30);
 
     if (*m_state->def().type == typeid(std::optional<int>)) {
         std::optional<int> value = m_state->value().get<std::optional<int>>();

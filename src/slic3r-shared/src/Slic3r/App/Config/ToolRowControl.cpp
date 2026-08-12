@@ -32,6 +32,7 @@ public:
         set_width(28_fpx);
         set_height(28_fpx);
         set_content_align_items(YGAlignCenter);
+        set_object_name("ExtruderButton");
 
         set_draggable(true);
         set_cursor(ImGuiMouseCursor_Hand);
@@ -70,23 +71,29 @@ ToolRowControl::ToolRowControl(
     const ToolRowOverrideGroup& data,
     Biz::IConfigBoxSetter& cb_setter,
     ExtruderClickedFn clicked_fn,
-    ExtruderDroppedFn dropped_fn
+    ExtruderDroppedFn dropped_fn,
+    bool small
 ) :
     Biz::DataObserver<ToolRowOverrideGroup>(index, data),
     m_cb_setter(cb_setter),
     m_extruder_clicked_fn(clicked_fn),
-    m_extruder_dropped_fn(dropped_fn)
+    m_extruder_dropped_fn(dropped_fn),
+    m_small(small)
 {
     set_orientation(Orientation::Horizontal);
     set_align_items(YGAlign::YGAlignCenter);
     set_content_justify_content(YGJustifyFlexStart);
-    set_height(28_fpx);
-    set_padding(Paddings{10_fpx, 0, 0, 0});
+    set_width_percent(100);
+    if (!m_small) {
+        set_height(28_fpx);
+    }
+    set_padding(Paddings{m_small ? 0 : 10_fpx, 0, 0, 0});
     set_gap(5_fpx);
     set_allow_overlap(true);
     set_droppable(true);
     set_background_color(Platform::Color::Transparent);
     set_background_color_border(m_theme->color_imgui(Platform::Color::AccentSecondary));
+    set_object_name("ToolRowControl");
 
     m_icon_container = emplace_back<Item>();
 
@@ -102,7 +109,19 @@ void ToolRowControl::on_data_update()
     indexes.reserve(overrides.size());
     std::ranges::transform(overrides, std::back_inserter(indexes), &ToolRowOverride::tool_index);
 
-    m_icon_container->set_width(28_fpx * m_state->second);
+    if (m_small) {
+        m_icon_container->set_min_width(28_fpx);
+        m_icon_container->set_max_width(84_fpx);
+        m_icon_container->set_flex_grow(1);
+        m_icon_container->set_flex_shrink(1);
+        m_icon_container->set_flex_wrap(YGWrap::YGWrapWrap);
+    } else {
+        m_icon_container->set_flex_grow(0);
+        m_icon_container->set_flex_shrink(0);
+        m_icon_container->set_width(28_fpx * m_state->second);
+        m_icon_container->set_max_width(YGUndefined);
+        m_icon_container->set_flex_wrap(YGWrap::YGWrapNoWrap);
+    }
 
     if (m_last_indexes != indexes) {
         m_control_gui_type = Domain::ConfigItemDef::GUIType::undefined; // reset GUI
@@ -164,6 +183,16 @@ void ToolRowControl::on_data_update()
 
         m_input = dynamic_cast<Yoga::Item*>(m_control);
         ASSERT(m_input, "ConfigItem needs to derive from Yoga::Item");
+
+        m_input->set_flex_grow(1);
+        if (m_small) {
+            m_input->set_width(100_fpx);
+            m_input->set_max_width(100_fpx);
+        } else {
+            m_input->set_width(125_fpx);
+            m_input->set_max_width(125_fpx);
+        }
+        m_input->set_self_align(YGAlignCenter);
     }
 
     ASSERT(m_control);

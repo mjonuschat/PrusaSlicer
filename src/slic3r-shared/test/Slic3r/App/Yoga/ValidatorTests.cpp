@@ -104,125 +104,87 @@ TEST_CASE("DoubleValidator range")
     REQUIRE_THAT(std::stod(validator.process("5.1")), WithinRel(0.5, 0.0001));
 }
 
-TEST_CASE("PercentageValidator empty")
-{
-    PercentageValidator validator;
+// PercentageValidator was removed; percentage handling now lives in DoubleValidator
+// via set_units()/detected_unit(), driven by ConfigItemDef::units.
 
-    REQUIRE_THAT(std::stod(validator.process("")), WithinRel(0., 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == false);
+TEST_CASE("DoubleValidator with % unit empty")
+{
+    DoubleValidator validator;
+    validator.set_units({"%"});
+
+    REQUIRE(validator.process("") == "0 %");
+    REQUIRE(validator.detected_unit() == nullptr);
 }
 
-TEST_CASE("PercentageValidator simple")
+TEST_CASE("DoubleValidator with % unit simple")
 {
-    PercentageValidator validator;
+    DoubleValidator validator;
+    validator.set_units({"%"});
 
-    REQUIRE_THAT(std::stod(validator.process("0")), WithinRel(0., 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == false);
-    REQUIRE_THAT(std::stod(validator.process("1%")), WithinRel(1., 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == true);
-    REQUIRE_THAT(std::stod(validator.process("-999")), WithinRel(-999., 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == false);
-    REQUIRE_THAT(std::stod(validator.process("-99%")), WithinRel(-99., 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == true);
-    REQUIRE_THAT(std::stod(validator.process("-999.999")), WithinRel(-999.999, 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == false);
-    REQUIRE_THAT(std::stod(validator.process("-999.9%")), WithinRel(-999.9, 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == true);
-    REQUIRE_THAT(std::stod(validator.process("-0.1")), WithinRel(-0.1, 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == false);
-    REQUIRE_THAT(std::stod(validator.process("-0.5%")), WithinRel(-0.5, 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == true);
-
-    validator.set_visible_percentage_symbol(true);
-
-    REQUIRE_THAT(std::stod(validator.process("0")), WithinRel(0., 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == false);
-    REQUIRE(validator.process("1%") == "1%");
-    REQUIRE(validator.entered_percentage_symbol() == true);
-    REQUIRE_THAT(std::stod(validator.process("-999")), WithinRel(-999., 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == false);
-    REQUIRE(validator.process("-99%") == "-99%");
-    REQUIRE(validator.entered_percentage_symbol() == true);
-    REQUIRE_THAT(std::stod(validator.process("-999.999")), WithinRel(-999.999, 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == false);
-    REQUIRE(validator.process("-999.9%") == "-999.9%");
-    REQUIRE(validator.entered_percentage_symbol() == true);
-    REQUIRE_THAT(std::stod(validator.process("-0.1")), WithinRel(-0.1, 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == false);
-    REQUIRE(validator.process("-0.5%") == "-0.5%");
-    REQUIRE(validator.entered_percentage_symbol() == true);
+    REQUIRE(validator.process("0") == "0 %");
+    REQUIRE(validator.detected_unit() == nullptr);
+    REQUIRE(validator.process("1%") == "1 %");
+    REQUIRE(validator.detected_unit() != nullptr);
+    REQUIRE(*validator.detected_unit() == "%");
+    REQUIRE(validator.process("-999") == "-999 %");
+    REQUIRE(validator.detected_unit() == nullptr);
+    REQUIRE(validator.process("-99%") == "-99 %");
+    REQUIRE(validator.detected_unit() != nullptr);
+    REQUIRE(*validator.detected_unit() == "%");
+    REQUIRE(validator.process("-999.999") == "-999.999 %");
+    REQUIRE(validator.detected_unit() == nullptr);
+    REQUIRE(validator.process("-0.5%") == "-0.5 %");
+    REQUIRE(validator.detected_unit() != nullptr);
+    REQUIRE(*validator.detected_unit() == "%");
 }
 
-TEST_CASE("PercentageValidator complex")
+TEST_CASE("DoubleValidator with % unit complex")
 {
-    PercentageValidator validator;
+    DoubleValidator validator;
+    validator.set_units({"%"});
 
-    REQUIRE_THAT(std::stod(validator.process("2+3%")), WithinRel(5., 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == true);
-    REQUIRE_THAT(std::stod(validator.process("3%-0.5")), WithinRel(0., 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == false);
-    REQUIRE_THAT(std::stod(validator.process("2*2%")), WithinRel(4, 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == true);
-    REQUIRE_THAT(std::stod(validator.process("2%/2")), WithinRel(0., 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == false);
-    REQUIRE_THAT(std::stod(validator.process("2/2+1+2%")), WithinRel(4, 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == true);
-    REQUIRE_THAT(std::stod(validator.process("2.5%*2")), WithinRel(0., 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == false);
-    REQUIRE_THAT(std::stod(validator.process("3% ")), WithinRel(3., 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == true);
-    REQUIRE_THAT(std::stod(validator.process("4% %")), WithinRel(0., 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == true);
-    REQUIRE_THAT(std::stod(validator.process("4 %")), WithinRel(4., 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == true);
-
-    validator.set_visible_percentage_symbol(true);
-
-    REQUIRE(validator.process("2+3%") == "5%");
-    REQUIRE(validator.entered_percentage_symbol() == true);
-    REQUIRE_THAT(std::stod(validator.process("3%-0.5")), WithinRel(0., 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == false);
-    REQUIRE(validator.process("2*2%") == "4%");
-    REQUIRE(validator.entered_percentage_symbol() == true);
-    REQUIRE_THAT(std::stod(validator.process("2%/2")), WithinRel(0., 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == false);
-    REQUIRE(validator.process("2/2+1+2%") == "4%");
-    REQUIRE(validator.entered_percentage_symbol() == true);
-    REQUIRE_THAT(std::stod(validator.process("2.5%*2")), WithinRel(0., 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == false);
-    REQUIRE(validator.process("3% ") == "3%");
-    REQUIRE(validator.entered_percentage_symbol() == true);
-    REQUIRE_THAT(std::stod(validator.process("4% %")), WithinRel(0., 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == true);
-    REQUIRE(validator.process("4 %") == "4%");
-    REQUIRE(validator.entered_percentage_symbol() == true);
+    REQUIRE(validator.process("2+3%") == "5 %");
+    REQUIRE(validator.detected_unit() != nullptr);
+    REQUIRE(validator.process("10/2%") == "5 %");
+    REQUIRE(validator.detected_unit() != nullptr);
+    REQUIRE(validator.process("2*2%") == "4 %");
+    REQUIRE(validator.detected_unit() != nullptr);
+    REQUIRE(validator.process("-1+50%") == "49 %");
+    REQUIRE(validator.detected_unit() != nullptr);
+    REQUIRE(validator.process("-1+50") == "49 %");
+    REQUIRE(validator.detected_unit() == nullptr);
 }
 
-TEST_CASE("PercentageValidator range")
+TEST_CASE("DoubleValidator with % unit range")
 {
-    PercentageValidator validator(-5, 0.5);
+    DoubleValidator validator(-5, 0.5);
+    validator.set_units({"%"});
 
-    REQUIRE_THAT(std::stod(validator.process("2%")), WithinRel(0.5, 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == true);
-    REQUIRE_THAT(std::stod(validator.process("-999")), WithinRel(-5., 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == false);
-    REQUIRE_THAT(std::stod(validator.process("-99.5%")), WithinRel(-5, 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == true);
-    REQUIRE_THAT(std::stod(validator.process("-0.1")), WithinRel(-0.1, 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == false);
-    REQUIRE_THAT(std::stod(validator.process("5.1%")), WithinRel(0.5, 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == true);
+    REQUIRE(validator.process("2%") == "0.5 %");
+    REQUIRE(validator.detected_unit() != nullptr);
+    REQUIRE(validator.process("-999") == "-5 %");
+    REQUIRE(validator.detected_unit() == nullptr);
+    REQUIRE(validator.process("-99.5%") == "-5 %");
+    REQUIRE(validator.detected_unit() != nullptr);
+    REQUIRE(validator.process("-0.1") == "-0.1 %");
+    REQUIRE(validator.detected_unit() == nullptr);
+    REQUIRE(validator.process("5.1%") == "0.5 %");
+    REQUIRE(validator.detected_unit() != nullptr);
+}
 
-    validator.set_visible_percentage_symbol(true);
+TEST_CASE("DoubleValidator with two units (mm or %)")
+{
+    DoubleValidator validator;
+    validator.set_units({"mm", "%"});
 
-    REQUIRE(validator.process("2%") == "0.5%");
-    REQUIRE(validator.entered_percentage_symbol() == true);
-    REQUIRE_THAT(std::stod(validator.process("-999")), WithinRel(-5., 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == false);
-    REQUIRE(validator.process("-99.5%") == "-5%");
-    REQUIRE(validator.entered_percentage_symbol() == true);
-    REQUIRE_THAT(std::stod(validator.process("-0.1")), WithinRel(-0.1, 0.0001));
-    REQUIRE(validator.entered_percentage_symbol() == false);
-    REQUIRE(validator.process("5.1%") == "0.5%");
-    REQUIRE(validator.entered_percentage_symbol() == true);
+    REQUIRE(validator.process("5") == "5 mm");
+    REQUIRE(validator.detected_unit() == nullptr);
+
+    REQUIRE(validator.process("5%") == "5 %");
+    REQUIRE(validator.detected_unit() != nullptr);
+    REQUIRE(*validator.detected_unit() == "%");
+
+    REQUIRE(validator.process("5mm") == "5 mm");
+    REQUIRE(validator.detected_unit() != nullptr);
+    REQUIRE(*validator.detected_unit() == "mm");
 }

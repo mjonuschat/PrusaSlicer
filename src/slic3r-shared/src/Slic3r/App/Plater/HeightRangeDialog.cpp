@@ -352,7 +352,10 @@ void HeightRangeDialog::add_override_category_section(
         control->set_overriden(true);
         control->set_state(*override_item);
 
-        Text* sidetext = override_row->emplace_back<Text>(Biz::_u8(config_item.def().sidetext));
+        Text* sidetext = override_row->emplace_back<Text>(
+            config_item.def().units.empty() ? std::string{} :
+                                              Biz::_u8(config_item.def().units.front())
+        );
         sidetext->set_height(40);
         sidetext->set_min_width(25);
         sidetext->set_wrap_mode(Text::WrapMode::WrapElide);

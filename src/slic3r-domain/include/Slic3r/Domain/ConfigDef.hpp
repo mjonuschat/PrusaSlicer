@@ -340,7 +340,7 @@ struct ConfigItemDef
     int order                = 0;
     std::string row_group;
     std::string tooltip; // A tooltip text shown in the GUI.
-    std::string sidetext; // Text right from the input field.
+    std::vector<std::string> units; // Text right from the input field.
     std::string cli; // Format of this parameter on a command line.
 
     // For text only:
@@ -369,13 +369,6 @@ struct ConfigItemDef
     double max_literal =
         1; // // To check if it's not a typo and a % is missing - TODO Check how this is used.
 
-    // NEEDS MORE WORK (TODO)
-    // Usually empty. Otherwise "serialized" or "show_value"
-    // The flags may be combined.
-    // "serialized" - vector valued option is entered in a single edit field. Values are separated by a semicolon.
-    // "show_value" - even if enum_values / enum_labels are set, still display the value, not the enum label.
-    std::string gui_flags;
-
     enum class GUIType
     { // TODO Go through this one after everything is ported and remove what we don't use.
         undefined,
@@ -400,7 +393,8 @@ struct ConfigItemDef
         substitutions,
         ramming_params,
         extruder_selection,
-        language_selection
+        language_selection,
+        unit_or_percentage,
     };
     GUIType gui_type = GUIType::undefined;
 };

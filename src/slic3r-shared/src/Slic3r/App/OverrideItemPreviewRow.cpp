@@ -57,11 +57,7 @@ OverrideItemPreviewRow::OverrideItemPreviewRow(
 
     m_preview = container->emplace_back<ConfigItemPreview>();
     m_preview->set_text_font_type(Render::ImguiFontType::Italic);
-
-    m_sidetext = container->emplace_back<Text>(std::string());
-    m_sidetext->set_flex_grow(1);
-    m_sidetext->set_wrap_mode(Text::WrapMode::WrapElide);
-    m_sidetext->set_font_type(Render::ImguiFontType::Italic);
+    m_preview->set_flex_grow(1);
 
     m_add_button = add_button(
         container,
@@ -92,13 +88,6 @@ void OverrideItemPreviewRow::on_data_update()
     ));
 
     m_add_button->set_visible(!m_state->overriden.value());
-
-    // Side text does not make sense for mixed values.
-    // For typeid(Domain::FloatOrPercentage) items, m_preview already contains
-    // the measurement unit.
-    const bool hide_sidetext =
-        *item.def().type == typeid(Domain::FloatOrPercentage) || m_state->mixed;
-    m_sidetext->set_text(hide_sidetext ? std::string() : Biz::_u8(item.def().sidetext));
 }
 
 } // namespace Slic3r::App

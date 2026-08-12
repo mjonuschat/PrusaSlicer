@@ -66,6 +66,7 @@ void ConfigItemSpinBox::on_data_update()
         set_font_type(Render::ImguiFontType::Italic);
         return;
     }
+    m_value_validator->set_units(m_state->def().units);
 
     set_override_label({});
     set_font_type(Render::ImguiFontType::Regular);

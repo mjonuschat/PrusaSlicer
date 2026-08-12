@@ -69,6 +69,7 @@ void ConfigItemPreview::set_data(
             m_input_checkbox = emplace_back<ToggleButton>();
             m_input_checkbox->set_enabled(false);
             break;
+        case Domain::ConfigItemDef::GUIType::unit_or_percentage:
         case Domain::ConfigItemDef::GUIType::textfield:
         case Domain::ConfigItemDef::GUIType::spinbox:
         case Domain::ConfigItemDef::GUIType::f_enum_open:
@@ -106,6 +107,7 @@ void ConfigItemPreview::set_data(
         case Domain::ConfigItemDef::GUIType::checkbox:
             m_input_checkbox->set_checked(value.get<bool>());
             break;
+        case Domain::ConfigItemDef::GUIType::unit_or_percentage:
         case Domain::ConfigItemDef::GUIType::textfield:
         case Domain::ConfigItemDef::GUIType::spinbox:
         case Domain::ConfigItemDef::GUIType::f_enum_open:

@@ -58,6 +58,7 @@ void ConfigItemTextFields::reconstruct_fields()
             m_state->def().min.value_or(std::numeric_limits<double>::lowest()),
             m_state->def().max.value_or(std::numeric_limits<double>::max())
         );
+        field.double_validator->set_units(m_state->def().units);
         field.textfield = emplace_back<InputTextField>("ConfigItemTextField");
         field.textfield->set_validator(field.double_validator.release());
         field.textfield->set_text(fmt::format("{:.10g}", value));

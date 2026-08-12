@@ -146,16 +146,17 @@ void InputText::render(const Vec2f& pos, const Vec2f& size)
             );
             ImGui::PopStyleColor();
         } else {
-            changed = YInputText(
-                id.c_str(),
-                m_hint.c_str(),
-                &m_text,
-                to_im(size),
-                m_flags,
-                {},
-                nullptr
-            );
+            changed =
+                YInputText(id.c_str(), m_hint.c_str(), &m_text, to_im(size), m_flags, {}, nullptr);
         }
+        if (ImGui::IsItemActivated() && m_validator) {
+            m_text = m_validator->string_without_unit();
+
+            if (ImGuiInputTextState* state = ImGui::GetInputTextState(ImGui::GetItemID())) {
+                state->ReloadUserBufAndSelectAll();
+            }
+        }
+
         if (is_disabled) {
             ImGui::EndDisabled();
         }
@@ -199,6 +200,14 @@ void InputText::render(const Vec2f& pos, const Vec2f& size)
         }
 
         if (m_has_focus && ImGui::IsItemDeactivated()) {
+            if (m_validator) {
+                m_text = m_validator->string_with_unit();
+
+                if (ImGuiInputTextState* state = ImGui::GetInputTextState(ImGui::GetItemID())) {
+                    state->ReloadUserBufAndSelectAll();
+                }
+            }
+
             m_has_focus = false;
             if (m_callbacks.focus_lost) {
                 m_callbacks.focus_lost();

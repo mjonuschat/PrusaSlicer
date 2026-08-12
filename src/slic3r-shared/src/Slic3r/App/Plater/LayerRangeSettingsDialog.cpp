@@ -180,8 +180,10 @@ void LayerRangeSettingsDialog::create_settings_page_for_category(ConfigItemDef::
         control->set_overriden(true);
         control->set_state(*config_item);
 
-        Text* setting_right_sidetext =
-            setting_row->emplace_back<Text>(Biz::_u8(config_item->def().sidetext));
+        Text* setting_right_sidetext = setting_row->emplace_back<Text>(
+            config_item->def().units.empty() ? std::string{} :
+                                               Biz::_u8(config_item->def().units.front())
+        );
         setting_right_sidetext->set_flex_grow(1);
         setting_right_sidetext->set_align({AlignH::Left, AlignV::Center});
         setting_right_sidetext->set_wrap_mode(Text::WrapMode::WrapElide);

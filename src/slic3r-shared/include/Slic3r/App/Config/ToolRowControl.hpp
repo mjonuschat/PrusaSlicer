@@ -39,7 +39,8 @@ public:
         const ToolRowOverrideGroup& data,
         Biz::IConfigBoxSetter& cb_setter,
         ExtruderClickedFn clicked_fn,
-        ExtruderDroppedFn extruder_dropped_fn
+        ExtruderDroppedFn extruder_dropped_fn,
+        bool small
     );
 
 protected:
@@ -52,6 +53,7 @@ private:
     Biz::IConfigBoxSetter& m_cb_setter;
     ExtruderClickedFn m_extruder_clicked_fn;
     ExtruderDroppedFn m_extruder_dropped_fn;
+    bool m_small{false};
 
     Domain::ConfigItemDef::GUIType m_control_gui_type{Domain::ConfigItemDef::GUIType::undefined};
     std::vector<size_t> m_last_indexes;
