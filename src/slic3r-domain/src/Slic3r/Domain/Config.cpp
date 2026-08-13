@@ -535,6 +535,16 @@ ensure_slot_parity(std::map<std::string, ConfigValueAndDef>& squashed_boxes, con
     }
 }
 
+static FloatOrPercentage get_average(const std::vector<FloatOrPercentage>& values)
+{
+    double sum{};
+    for (const FloatOrPercentage& value : values) {
+        ASSERT(!value.is_percentage());
+        sum += value.float_value();
+    }
+    return {sum / (double) values.size()};
+}
+
 static Percentage get_average(const std::vector<Percentage>& values)
 {
     double sum{};
@@ -557,7 +567,16 @@ template <typename T>
 static T get_min(const std::vector<T>& values)
 {
     using Type = std::remove_cvref_t<T>;
-    if constexpr (std::is_same_v<Type, Percentage>) {
+    if constexpr (std::is_same_v<Type, FloatOrPercentage>) {
+        double min{std::numeric_limits<double>::max()};
+        for (const FloatOrPercentage& value : values) {
+            ASSERT(!value.is_percentage());
+            if (value.float_value() < min) {
+                min = value.float_value();
+            }
+        }
+        return FloatOrPercentage{min};
+    } else if constexpr (std::is_same_v<Type, Percentage>) {
         double min{std::numeric_limits<double>::max()};
         for (const Percentage& value : values) {
             if (value.value < min) {
@@ -580,7 +599,16 @@ template <typename T>
 static T get_max(const std::vector<T>& values)
 {
     using Type = std::remove_cvref_t<T>;
-    if constexpr (std::is_same_v<Type, Percentage>) {
+    if constexpr (std::is_same_v<Type, FloatOrPercentage>) {
+        double max{std::numeric_limits<double>::lowest()};
+        for (const FloatOrPercentage& value : values) {
+            ASSERT(!value.is_percentage());
+            if (value.float_value() > max) {
+                max = value.float_value();
+            }
+        }
+        return FloatOrPercentage{max};
+    } else if constexpr (std::is_same_v<Type, Percentage>) {
         double max{std::numeric_limits<double>::lowest()};
         for (const Percentage& value : values) {
             if (value.value > max) {
@@ -638,12 +666,17 @@ static std::pair<ConfigValue, bool> apply_compatibility_rule(
 
             if constexpr (
                 std::is_same_v<T, int>
+                || std::is_same_v<T, FloatOrPercentage>
                 || std::is_same_v<T, Percentage>
                 || std::is_same_v<T, double>)
             {
                 switch (compatibility_rule) {
                 case CompatibilityRule::Average: {
-                    if constexpr (std::is_same_v<T, double> || std::is_same_v<T, Percentage>) {
+                    if constexpr (
+                        std::is_same_v<T, double>
+                        || std::is_same_v<T, Percentage>
+                        || std::is_same_v<T, FloatOrPercentage>)
+                    {
                         return ConfigValue{get_average(vector)};
                     }
                 } break;

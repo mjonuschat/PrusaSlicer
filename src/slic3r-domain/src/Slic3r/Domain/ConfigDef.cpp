@@ -449,6 +449,13 @@ void ConfigDefinitions::check_valid() const
             }
         }
 
+        if (*def.type == typeid(FloatOrPercentage)) {
+            // FloatOrPercentage must not have IgnoreOverrides compatibility rule,
+            // as it is then impossible to resolve the *single* percentage value,
+            // as the base can be a value specified per tool.
+            ASSERT(def.compatibility_rule != CompatibilityRule::IgnoreOverrides);
+        }
+
         if (def.category == ConfigItemDef::Category::Unknown) {
             PANIC("All config items must have a category (failed for item: " + def.name + ").");
         }

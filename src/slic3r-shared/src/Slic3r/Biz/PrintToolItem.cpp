@@ -14,8 +14,132 @@ const Domain::ConfigValue& PrintToolItem::tool_value(size_t index) const
     return tool_overrides.at(index)->value();
 }
 
+static double get_average(const std::vector<double>& values)
+{
+    double sum{};
+    for (const double& value : values) {
+        sum += value;
+    }
+    return sum / (double) values.size();
+}
+
+static double get_min(const std::vector<double>& values)
+{
+    double min{std::numeric_limits<double>::max()};
+    for (const double& value : values) {
+        if (value < min) {
+            min = value;
+        }
+    }
+    return min;
+}
+
+static double get_max(const std::vector<double>& values)
+{
+    double max{std::numeric_limits<double>::lowest()};
+    for (const double& value : values) {
+        if (value > max) {
+            max = value;
+        }
+    }
+    return max;
+}
+
 void PrintToolItem::update_value()
 {
+    if (*print_item->def().type == typeid(Domain::FloatOrPercentage)
+        && print_item->def().compatibility_rule != Domain::CompatibilityRule::Undefined)
+    {
+        // TEMPORARY HACK: apply_compatibility_rule must not be called for
+        // float or percentage unless all the tool overrides are resolved
+        // to float values! The backend handles this correctly, but
+        // we have nothing to show to the user.
+        //
+        // The correct fix is to resolve the tool override values before
+        // applying compatibility rules to them.
+        //
+        // The ultimate fix is to get rid of compatibility rules for such
+        // values.
+
+        std::vector<Domain::ConfigValue> values;
+        for (std::size_t i{}; i < tool_overrides.size(); ++i) {
+            const Domain::ConfigItem* item{tool_overrides[i]};
+            if (!item) {
+                continue;
+            }
+            if (shared_context.extruder_candidates.empty()
+                || shared_context.extruder_candidates.contains(i))
+            {
+                values.push_back(item->value());
+            }
+        }
+        if (values.empty()) {
+            value = {print_item->value(), false};
+            return;
+        }
+
+        const bool all_same{std::ranges::all_of(
+            values,
+            [&](const Domain::ConfigValue& value) { return value == values.front(); })};
+
+        if (all_same) {
+            value = {values.front(), false};
+            return;
+        }
+
+        const bool all_percentage{std::ranges::all_of(
+            values,
+            [](const Domain::ConfigValue& value)
+            { return value.get<Domain::FloatOrPercentage>().is_percentage(); })};
+
+        if (all_percentage) {
+            std::vector<double> percentage_values;
+            for (const Domain::ConfigValue& value : values) {
+                percentage_values.push_back(value.get<Domain::FloatOrPercentage>().get_abs_value(100));
+            }
+            double resulting_value{};
+            if (print_item->def().compatibility_rule == Domain::CompatibilityRule::Average) {
+                resulting_value = get_average(percentage_values);
+            } else if (print_item->def().compatibility_rule == Domain::CompatibilityRule::Min) {
+                resulting_value = get_min(percentage_values);
+            } else if (print_item->def().compatibility_rule == Domain::CompatibilityRule::Max) {
+                resulting_value = get_max(percentage_values);
+            } else {
+                PANIC("Invalid compatibility rule");
+            }
+            value = {Domain::ConfigValue{Domain::FloatOrPercentage{Domain::Percentage{resulting_value}}}, true};
+            return;
+        }
+
+        const bool all_floats{std::ranges::all_of(
+            values,
+            [](const Domain::ConfigValue& value)
+            { return !value.get<Domain::FloatOrPercentage>().is_percentage(); })};
+
+        if (all_floats) {
+            std::vector<double> float_values;
+            for (const Domain::ConfigValue& value : values) {
+                float_values.push_back(value.get<Domain::FloatOrPercentage>().float_value());
+            }
+            double resulting_value{};
+            if (print_item->def().compatibility_rule == Domain::CompatibilityRule::Average) {
+                resulting_value = get_average(float_values);
+            } else if (print_item->def().compatibility_rule == Domain::CompatibilityRule::Min) {
+                resulting_value = get_min(float_values);
+            } else if (print_item->def().compatibility_rule == Domain::CompatibilityRule::Max) {
+                resulting_value = get_max(float_values);
+            } else {
+                PANIC("Invalid compatibility rule");
+            }
+            value = {Domain::ConfigValue{Domain::FloatOrPercentage{resulting_value}}, true};
+            return;
+        }
+
+        // This std::nan, is a massive shortcut for now, just to show something.
+        value = {Domain::ConfigValue{Domain::FloatOrPercentage{std::nan("")}}, true};
+        return;
+    }
+
     value = Domain::apply_compatibility_rule(
         &print_item->value(),
         tool_overrides,

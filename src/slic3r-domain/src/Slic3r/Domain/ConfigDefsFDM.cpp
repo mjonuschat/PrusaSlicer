@@ -3917,7 +3917,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_xy_spacing", typeid(FloatOrPercentage));
     def->location = Print;
-    def->compatibility_rule = CompatibilityRule::IgnoreOverrides;
+    def->compatibility_rule = CompatibilityRule::Max;
     def->overrides_in = Locations{ Tool, Object };
     def->label = L("XY separation between an object and its support");
     def->option_group = ConfigItemDef::OptionGroup::Print_Supports_InterfaceSeparation;
@@ -4032,7 +4032,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_extrusion_width", typeid(FloatOrPercentage));
     def->location = Print;
-    def->compatibility_rule = CompatibilityRule::IgnoreOverrides;
+    def->compatibility_rule = CompatibilityRule::Average;
     def->overrides_in = Locations{ Tool, Object };
     def->label = L("Support material");
     def->option_group = ConfigItemDef::OptionGroup::Print_ExtrusionRetraction_ExtrusionWidth;
@@ -4176,7 +4176,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
 
     def = defs.add("support_material_interface_speed", typeid(FloatOrPercentage));
     def->location = Print;
-    def->compatibility_rule = CompatibilityRule::IgnoreOverrides;
+    def->compatibility_rule = CompatibilityRule::Min;
     def->overrides_in = Locations{ Tool, Object };
     def->label = L("Support material interface");
     def->option_group = ConfigItemDef::OptionGroup::Print_Speed_SupportAndBridges;
