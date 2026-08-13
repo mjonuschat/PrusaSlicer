@@ -824,6 +824,8 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/Biz/Scene/SceneInteractor.hpp
         src/Slic3r/Biz/Scene/SceneInteractor.cpp
+        include/Slic3r/Biz/Scene/MeshRepairJob.hpp
+        src/Slic3r/Biz/Scene/MeshRepairJob.cpp
         include/Slic3r/Biz/Scene/Selection.hpp
         src/Slic3r/Biz/Scene/Selection.cpp
         include/Slic3r/Biz/Scene/SceneInteractorProjectContext.hpp
@@ -1473,6 +1475,10 @@ endif()
 
 if (SLIC3R_ENABLE_WEBKIT)
     target_compile_definitions(slic3r-shared PRIVATE SLIC3R_HAS_WEBKIT)
+endif()
+
+if (SLIC3R_ENABLE_WIN10_MESH_REPAIR)
+    target_compile_definitions(slic3r-shared PRIVATE SLIC3R_ENABLE_WIN10_MESH_REPAIR=$<BOOL:${SLIC3R_ENABLE_WIN10_MESH_REPAIR}>)
 endif()
 
 if (SLIC3R_ENABLE_FORMAT_STEP)

@@ -75,6 +75,7 @@ enum class UndoSnapshotType
     SplitToObjects,
     SplitToVolumes,
     MergeToOneObject,
+    RepairObjectMesh,
     InvalidateCutInfo,
     SetAsPrintable,
     ChangeVolumeType,

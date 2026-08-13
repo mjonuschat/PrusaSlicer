@@ -29,8 +29,17 @@ option(SLIC3R_ASAN "Enable ASan on Clang and GCC" 0)
 option(SLIC3R_UBSAN "Enable UBSan on Clang and GCC" 0)
 option(SLIC3R_REPO_URL "Preset repo URL")
 option(SLIC3R_RELEASE_DEBUG_SYMBOLS "Build release build with debug symbols" ON)
-
 option(SLIC3R_ENABLE_PROFILING "Enable Tracy profiling instrumentation" OFF)
+
+if (WIN32)
+    set(SLIC3R_ENABLE_WIN10_MESH_REPAIR_DEFAULT ON)
+else()
+    set(SLIC3R_ENABLE_WIN10_MESH_REPAIR_DEFAULT OFF)
+endif()
+option(SLIC3R_ENABLE_WIN10_MESH_REPAIR "Enable mesh repair via the Windows WinRT Printing3D API" ${SLIC3R_ENABLE_WIN10_MESH_REPAIR_DEFAULT})
+if (SLIC3R_ENABLE_WIN10_MESH_REPAIR AND NOT WIN32)
+    message(FATAL_ERROR "SLIC3R_ENABLE_WIN10_MESH_REPAIR is Windows-only option, but the current platform is not Windows")
+endif()
 
 if (NOT EMSCRIPTEN)
     option(SLIC3R_ENABLE_FORMAT_STEP "Support STEP loading (requires OpenCASCADE)" ON)
@@ -110,13 +119,27 @@ if (APPLE)
 endif ()
 include(${PROJECT_SOURCE_DIR}/cmake/modules/OSXDeploymentTarget.cmake)
 if(WIN32)
-    include(WinSDK)
     add_compile_definitions(
         _USE_MATH_DEFINES
         _WIN32
         _CRT_SECURE_NO_WARNINGS
         _SCL_SECURE_NO_WARNINGS
     )
+endif()
+
+if (SLIC3R_ENABLE_WIN10_MESH_REPAIR)
+    include(WinSDK)
+    if (NOT WIN10SDK_INCLUDE_PATH)
+        message(FATAL_ERROR
+            "SLIC3R_ENABLE_WIN10_MESH_REPAIR is ON, but the Windows WinRT headers "
+            "(winrt/windows.graphics.printing3d.h) could not be found.\n"
+            "To point CMake at a specific SDK root manually, set "
+            "-DWIN10SDK_PATH=<path> when running CMake."
+        )
+    endif()
+    message(STATUS "Win10 mesh repair: enabled, using WinRT headers from ${WIN10SDK_INCLUDE_PATH}")
+else()
+    message(STATUS "Win10 mesh repair: disabled")
 endif()
 
 add_compile_definitions(

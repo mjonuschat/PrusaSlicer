@@ -87,6 +87,15 @@ const JobNotificationSpec* find_job_spec(const std::string& job_key)
             // TRN Header of a failed simplify notification.
             .failed_header = L("Simplify Failed"),
             .icon = Render::Icon::Simplify
+        },
+        JobNotificationSpec{
+            .key_prefix = "RepairObjectMesh",
+            // TRN Header of a repair notification while the mesh repair runs.
+            .started_header = L("Repairing..."),
+            // TRN Header of a finished repair notification.
+            .finished_header = L("Repair Finished"),
+            // TRN Header of a failed repair notification.
+            .failed_header = L("Repair Failed")
         }
     };
 

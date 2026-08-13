@@ -152,7 +152,7 @@ ItemPtr MultiMaterialPaintingDialog::brush_properties_picker()
     m_circle_brush_button =
         emplace_flex_button(m_brush_shape_row, Render::Icon::Circle, _u8L("Circle"));
     m_triangle_brush_button =
-        emplace_flex_button(m_brush_shape_row, Render::Icon::Triangle, _u8L("Trianle"));
+        emplace_flex_button(m_brush_shape_row, Render::Icon::Triangle, _u8L("Triangle"));
     m_brush_shape_group.set_buttons(
         {m_sphere_brush_button, m_circle_brush_button, m_triangle_brush_button}
     );

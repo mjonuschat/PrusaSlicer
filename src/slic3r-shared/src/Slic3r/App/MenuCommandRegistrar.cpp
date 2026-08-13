@@ -604,12 +604,15 @@ void MenuCommandRegistrar::register_object_menu_commands()
             []() {},
             UIItemCommandExtraOpts{.todo = true}
         )
-#ifdef _WIN32
+#if SLIC3R_ENABLE_WIN10_MESH_REPAIR
         .append_item(
             MenuItemName::FixObjectWithRepairAlgorithm,
             CommandName::FixWithRepairAlgorithm,
-            []() {},
-            UIItemCommandExtraOpts{.todo = true}
+            [this]() { m_project_interactor.scene_interactor().repair_selected_object(); },
+            UIItemCommandExtraOpts{
+                .enabled = [this]()
+                { return m_project_interactor.scene_interactor().can_repair_selected_object(); }
+            }
         )
 #endif
         .append_separator()
@@ -1072,7 +1075,7 @@ void MenuCommandRegistrar::register_volume_menu_commands()
         .append_item_from_command(MenuItemName::ReloadVolume, CommandName::ReloadFromDisk)
         .append_separator()
         .append_item_from_command(MenuItemName::SplitVolume, CommandName::SplitToVolumes)
-#ifdef _WIN32
+#if SLIC3R_ENABLE_WIN10_MESH_REPAIR
         .append_item_from_command(
             MenuItemName::FixVolumeWithRepairAlgorithm,
             CommandName::FixWithRepairAlgorithm
@@ -1096,7 +1099,7 @@ void MenuCommandRegistrar::register_multi_object_menu_commands()
             CommandName::SetNumberOfInstances
         )
         .append_separator()
-#ifdef _WIN32
+#if SLIC3R_ENABLE_WIN10_MESH_REPAIR
         .append_item_from_command(
             MenuItemName::FixMultiObjectWithRepairAlgorithm,
             CommandName::FixWithRepairAlgorithm

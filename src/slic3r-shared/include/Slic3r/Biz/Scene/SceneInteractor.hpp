@@ -279,6 +279,11 @@ public:
     void change_volume_meshes(RefMeshes&& meshes);
     Domain::ElementRefs change_volume_meshes(VolumeMeshReplacements&& replacements);
 
+#if SLIC3R_ENABLE_WIN10_MESH_REPAIR
+    bool can_repair_selected_object() const;
+    void repair_selected_object();
+#endif
+
     /**
      * @brief Modify facets annotations for given volumes.
      * @param volume_refs List of volumes to modify.

@@ -1,6 +1,7 @@
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 
 #include "Slic3r/Assert.hpp"
+#include "Slic3r/Exception.hpp"
 #include "Slic3r/Biz/Arrange/Arrange.hpp"
 #include "Slic3r/Biz/Utils/Transformation.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
@@ -25,8 +26,11 @@
 #include "Slic3r/Biz/Arrange/Arrange.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
 #include "Slic3r/Biz/Scene/BedFactory.hpp"
+#include "Slic3r/Biz/Scene/MeshRepairJob.hpp"
 #include "Slic3r/Biz/Scene/SelectionExtents.hpp"
 #include "Slic3r/Biz/Config/BedShape.hpp"
+#include "Slic3r/Biz/Platform/JobManager/JobManager.hpp"
+#include "Slic3r/Biz/Platform/PlatformServices.hpp"
 #include "Slic3r/Biz/Utils/SetDiff.hpp"
 #include "Slic3r/Directories.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
@@ -37,6 +41,7 @@
 
 #include <algorithm>
 #include <boost/filesystem/path.hpp>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
 #include <map>
@@ -1086,7 +1091,6 @@ ElementRefs SceneInteractor::change_volume_meshes(VolumeMeshReplacements&& repla
         ModelVolume* volume_ptr =
             project.find_volume_by_id(replacement.element.object_id, replacement.element.volume_id);
 
-        assert(volume_ptr != nullptr);
         if (volume_ptr == nullptr) {
             return {};
         }
@@ -1163,6 +1167,82 @@ ElementRefs SceneInteractor::change_volume_meshes(VolumeMeshReplacements&& repla
 
     return updated_ids;
 }
+
+#if SLIC3R_ENABLE_WIN10_MESH_REPAIR
+bool SceneInteractor::can_repair_selected_object() const
+{
+    const Biz::Scene::ObjectSelection& selection = object_selection();
+    if (selection.elements.size() != 1 || selection.contains_wipe_tower())
+        return false;
+
+    const Domain::Project& project = m_workbench.project(m_selected_project_id);
+    return project.find_object_by_id(selection.elements.front().object_id) != nullptr;
+}
+
+void SceneInteractor::repair_selected_object()
+{
+    const Biz::Scene::ObjectSelection& selection = object_selection();
+    if (selection.elements.size() != 1 || selection.contains_wipe_tower())
+        return;
+
+    const Domain::ElementRef& sel_element = selection.elements.front();
+    Domain::Project& project    = m_workbench.project(m_selected_project_id);
+    Domain::ModelObject* object = project.find_object_by_id(sel_element.object_id);
+    if (object == nullptr)
+        return;
+
+    const size_t sel_instance_id =
+        sel_element.instance_id == 0 ? object->instances.front()->id().id : sel_element.instance_id;
+
+    RefMeshes meshes;
+    meshes.reserve(object->volumes.size());
+    for (Domain::ModelVolume* volume : object->volumes)
+        meshes.emplace_back(
+            Domain::ElementRef{sel_element.object_id, sel_instance_id, volume->id().id},
+            volume->mesh()
+        );
+
+    if (meshes.empty())
+        return;
+
+    const Domain::SelectionId project_id = m_selected_project_id;
+    Platform::PlatformServices::instance()
+        .job_manager()
+        .create_job("RepairObjectMesh", repair_meshes, std::move(meshes))
+        .set_project_id(project_id)
+        .on_result(
+            [this, project_id](RefMeshes&& result)
+            {
+                if (m_workbench.find_project_by_id(project_id) == nullptr)
+                    return;
+                change_volume_meshes(std::move(result));
+                undo_provider().take_snapshot(UndoSnapshotType::RepairObjectMesh);
+            }
+        )
+        .on_exception(
+            [](const std::exception_ptr& exception)
+            {
+                // Unlike most job algorithms, mesh repair calls into an external OS
+                // service (WinRT on Windows) that is expected to fail sometimes (no
+                // WinRT runtime present, the service rejecting the mesh, allocation
+                // failure on a corrupt/huge mesh, ...). Report it through the "Repair
+                // Failed" notification instead of letting it fall through to the
+                // generic unhandled-exception path (there is no dedicated handling
+                // for Slic3r::Exception/CriticalException anywhere in this codebase;
+                // an uncaught exception here is handled the same way regardless of
+                // its type).
+                try {
+                    std::rethrow_exception(exception);
+                } catch (const std::exception& e) {
+                    SPDLOG_WARN("Mesh repair failed: {}", e.what());
+                } catch (...) {
+                    throw;
+                }
+            }
+        )
+        .start();
+}
+#endif // SLIC3R_ENABLE_WIN10_MESH_REPAIR
 
 void SceneInteractor::modify_facets_annotations(
     const Domain::ElementRefs& volume_refs,
