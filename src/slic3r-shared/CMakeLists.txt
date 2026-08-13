@@ -242,6 +242,22 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/PresetUpdater/PresetUpdaterSourceRow.cpp
         include/Slic3r/App/PresetUpdater/PresetUpdaterVendorRow.hpp
         src/Slic3r/App/PresetUpdater/PresetUpdaterVendorRow.cpp
+        include/Slic3r/App/ColorMix/ColorMixUtils.hpp
+        src/Slic3r/App/ColorMix/ColorMixUtils.cpp
+        include/Slic3r/App/ColorMix/ColorMixRecipeRow.hpp
+        src/Slic3r/App/ColorMix/ColorMixRecipeRow.cpp
+        include/Slic3r/App/ColorMix/BarycentricRatioPicker.hpp
+        src/Slic3r/App/ColorMix/BarycentricRatioPicker.cpp
+        include/Slic3r/App/ColorMix/BlendRatioBar.hpp
+        src/Slic3r/App/ColorMix/BlendRatioBar.cpp
+        include/Slic3r/App/ColorMix/LayerSequenceBar.hpp
+        src/Slic3r/App/ColorMix/LayerSequenceBar.cpp
+        include/Slic3r/App/ColorMix/ExtruderFilterButton.hpp
+        src/Slic3r/App/ColorMix/ExtruderFilterButton.cpp
+        include/Slic3r/App/ColorMix/BlendRecipeTile.hpp
+        src/Slic3r/App/ColorMix/BlendRecipeTile.cpp
+        include/Slic3r/App/ColorMix/ColorMixDialog.hpp
+        src/Slic3r/App/ColorMix/ColorMixDialog.cpp
         include/Slic3r/App/SidebarToolHeadRow.hpp
         src/Slic3r/App/SidebarToolHeadRow.cpp
         include/Slic3r/App/PrinterNozzleRow.hpp

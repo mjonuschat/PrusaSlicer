@@ -25,8 +25,15 @@
 #include "Slic3r/App/AppServices.hpp"
 #include "Slic3r/App/AppConfigInteractor.hpp"
 #include "Slic3r/App/IDialogManager.hpp"
+#include "Slic3r/App/ColorMix/ColorMixDialog.hpp"
 #include "Slic3r/App/PrinterAdvancedSettingsDialog.hpp"
 #include "Slic3r/App/WarningPanel.hpp"
+
+using Slic3r::App::ColorMix::ColorMixDialog;
+using Slic3r::Biz::Preset::HwItemType;
+using Slic3r::Domain::ConfigContainer;
+using Slic3r::Domain::PrinterTechnology;
+using Slic3r::Domain::SelectionId;
 
 using namespace Slic3r::App::Yoga;
 using namespace Slic3r::Biz;
@@ -74,6 +81,9 @@ LogicalPrinterSettingsDialog::LogicalPrinterSettingsDialog(
         this
     );
 
+    m_color_mix_dialog =
+        content_item()->emplace_back<ColorMixDialog>(project_interactor, m_navigator, this);
+
     content_item()->set_width(350_fpx);
 
     content()->set_padding(0);
@@ -108,12 +118,25 @@ void LogicalPrinterSettingsDialog::on_preset_selection_changed(
     }
 }
 
-void LogicalPrinterSettingsDialog::on_config_container_selection_changed(
-    Domain::SelectionId project_id,
-    Domain::SelectionId config_container_id
+void LogicalPrinterSettingsDialog::on_hw_item_selection_changed(
+    SelectionId project_id,
+    SelectionId config_container_id,
+    HwItemType type
 )
 {
-    update_warning();
+    if (m_project_interactor.selected_project_id() == project_id
+        && m_project_interactor.selected_config_container_id() == config_container_id
+        && type == HwItemType::ToolItem)
+    {
+        this->update_color_mix_visibility();
+    }
+}
+
+void LogicalPrinterSettingsDialog::
+    on_config_container_selection_changed(SelectionId project_id, SelectionId config_container_id)
+{
+    this->update_warning();
+    this->update_color_mix_visibility();
 }
 
 void LogicalPrinterSettingsDialog::update_warning()
@@ -154,6 +177,11 @@ void LogicalPrinterSettingsDialog::on_selected_project_changed_final(size_t inde
 PrinterAdvancedSettingsDialog& LogicalPrinterSettingsDialog::printer_advanced_settings_dialog()
 {
     return *m_advanced_dialog;
+}
+
+ColorMixDialog& LogicalPrinterSettingsDialog::color_mix_dialog()
+{
+    return *m_color_mix_dialog;
 }
 
 void LogicalPrinterSettingsDialog::select_page_settings()
@@ -425,6 +453,25 @@ void LogicalPrinterSettingsDialog::create_page_settings()
     { button_advanced_setting->set_checked(true); };
     m_advanced_dialog->callbacks().closed = [button_advanced_setting]
     { button_advanced_setting->set_checked(false); };
+
+    m_color_mix_dialog->attach_to_center();
+
+    m_color_mix_button =
+        m_page_settings->emplace_back<LayoutButton>(_u8L("Virtual extruders - Color mix"));
+    m_color_mix_button->set_content_padding({0.f, 7_fpx});
+    m_color_mix_button->set_height(30_fpx);
+    m_color_mix_button->callbacks().action = [this]
+    {
+        if (m_color_mix_dialog->opened()) {
+            m_navigator.set_opened_dialog(this);
+        } else {
+            m_navigator.set_opened_dialog(m_color_mix_dialog);
+        }
+    };
+    m_color_mix_dialog->callbacks().opened = [this] { m_color_mix_button->set_checked(true); };
+    m_color_mix_dialog->callbacks().closed = [this] { m_color_mix_button->set_checked(false); };
+
+    this->update_color_mix_visibility();
 }
 
 void LogicalPrinterSettingsDialog::on_about_to_show()
@@ -445,6 +492,25 @@ void LogicalPrinterSettingsDialog::update_settings_data()
             printer_config.relative_path_to_assets() + printer_config.visual.thumbnail.value();
 
         m_printer_icon->set_image(image_path);
+    }
+
+    update_color_mix_visibility();
+}
+
+void LogicalPrinterSettingsDialog::update_color_mix_visibility()
+{
+    bool can_mix_colors = false;
+    if (m_project_interactor.selected_config_container_id() != Domain::INVALID_ID) {
+        const ConfigContainer& config_container = m_project_interactor.selected_config_container();
+
+        can_mix_colors = config_container.print_technology() == PrinterTechnology::FFF
+            && config_container.selected_preset().hw_config.material_slot_count() > 1;
+    }
+
+    m_color_mix_button->set_visible(can_mix_colors);
+
+    if (!can_mix_colors && m_color_mix_dialog->opened()) {
+        m_navigator.set_opened_dialog(this);
     }
 }
 

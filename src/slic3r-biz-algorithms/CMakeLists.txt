@@ -99,6 +99,8 @@ add_library(slic3r-biz-algorithms STATIC
     src/Slic3r/Biz/Algorithms/MiniZWrapper.cpp
     include/Slic3r/Biz/Algorithms/VirtualExtruder.hpp
     src/Slic3r/Biz/Algorithms/VirtualExtruder.cpp
+    include/Slic3r/Biz/Algorithms/VirtualExtruderPresets.hpp
+    src/Slic3r/Biz/Algorithms/VirtualExtruderPresets.cpp
 )
 target_include_directories(slic3r-biz-algorithms PUBLIC include)
 target_include_directories(slic3r-biz-algorithms PRIVATE src)

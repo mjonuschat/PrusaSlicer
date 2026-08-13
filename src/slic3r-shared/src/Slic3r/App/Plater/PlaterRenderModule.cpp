@@ -86,6 +86,7 @@
 #include "Slic3r/App/NumberEntryDialog.hpp"
 #include "Slic3r/App/InvalidDataDialog.hpp"
 #include "Slic3r/App/SidebarStackLayout.hpp"
+#include "Slic3r/App/ColorMix/ColorMixDialog.hpp"
 #include "Slic3r/App/LogicalPrinterSettingsDialog.hpp"
 #include "Slic3r/App/PhysicalPrinterSettingsDialog.hpp"
 #include "Slic3r/App/PhysicalPrinterAdvancedSettingsDialog.hpp"
@@ -803,6 +804,10 @@ void PlaterRenderModule::init_dialog_navigation()
     );
     m_dialog_navigation.insert_dialog(
         &m_sidebar_bed->logical_printer_settings_dialog().printer_advanced_settings_dialog(),
+        &m_sidebar_bed->logical_printer_settings_dialog()
+    );
+    m_dialog_navigation.insert_dialog(
+        &m_sidebar_bed->logical_printer_settings_dialog().color_mix_dialog(),
         &m_sidebar_bed->logical_printer_settings_dialog()
     );
 

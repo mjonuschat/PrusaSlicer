@@ -6,6 +6,10 @@
 
 #include <boost/nowide/convert.hpp>
 
+#include <algorithm>
+#include <cmath>
+#include <vector>
+
 namespace Slic3r::App::Imgui {
 
 static constexpr float TWO_PI = 2.0f * float(IM_PI);
@@ -648,6 +652,70 @@ bool is_dark(const ImColor color)
 ImColor contrast_color(ImColor color)
 {
     return is_dark(color) ? ImColor{240, 240, 240} : ImColor{10, 10, 10};
+}
+
+void draw_dashed_rounded_rect(
+    ImDrawList* draw_list,
+    const ImVec2& rect_min,
+    const ImVec2& rect_max,
+    ImU32 color,
+    float thickness,
+    float rounding,
+    float dash_length,
+    float gap_length
+)
+{
+    // AddLine() shifts both endpoints by half a pixel, which is exactly the inset AddRect() applies to its minimum.
+    const ImVec2 snapped_min{std::round(rect_min.x), std::round(rect_min.y)};
+    const ImVec2 snapped_max{std::round(rect_max.x) - 1.f, std::round(rect_max.y) - 1.f};
+
+    draw_list->PathClear();
+    draw_list->PathRect(snapped_min, snapped_max, rounding);
+    const ImVector<ImVec2>& path = draw_list->_Path;
+    std::vector<ImVec2> path_points(path.Data, path.Data + path.Size);
+    draw_list->PathClear();
+    if (path_points.size() < 2) {
+        return;
+    }
+
+    path_points.push_back(path_points.front());
+
+    bool pen_down        = true;
+    float phase_traveled = 0.f;
+    for (size_t i = 0; i + 1 < path_points.size(); ++i) {
+        const ImVec2 from = path_points[i];
+        const ImVec2 to   = path_points[i + 1];
+        const ImVec2 delta{to.x - from.x, to.y - from.y};
+        const float segment_length = std::sqrt(delta.x * delta.x + delta.y * delta.y);
+        if (segment_length <= 0.f) {
+            continue;
+        }
+
+        const ImVec2 direction{delta.x / segment_length, delta.y / segment_length};
+        float traveled = 0.f;
+        while (traveled < segment_length) {
+            const float phase_length = pen_down ? dash_length : gap_length;
+            const float step = std::min(phase_length - phase_traveled, segment_length - traveled);
+            if (pen_down) {
+                draw_list->AddLine(
+                    ImVec2(from.x + direction.x * traveled, from.y + direction.y * traveled),
+                    ImVec2(
+                        from.x + direction.x * (traveled + step),
+                        from.y + direction.y * (traveled + step)
+                    ),
+                    color,
+                    thickness
+                );
+            }
+
+            traveled += step;
+            phase_traveled += step;
+            if (phase_traveled >= phase_length - 1e-3f) {
+                pen_down       = !pen_down;
+                phase_traveled = 0.f;
+            }
+        }
+    }
 }
 
 } // namespace Slic3r::App::Imgui

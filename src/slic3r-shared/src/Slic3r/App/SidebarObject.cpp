@@ -20,6 +20,8 @@
 
 #include <fmt/format.h>
 
+using Slic3r::Domain::SelectionId;
+
 using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App {
@@ -171,6 +173,18 @@ public:
         reload(project_id);
     }
 
+    void on_config_container_selection_changed(
+        SelectionId project_id,
+        SelectionId config_container_id
+    ) override
+    {
+        ColorDropdown::on_config_container_selection_changed(project_id, config_container_id);
+
+        if (project_id == m_project_interactor.selected_project_id()) {
+            this->reload(project_id);
+        }
+    }
+
     void reload(std::size_t project_id)
     {
         const Domain::Project& project{m_project_interactor.workbench().project(project_id)};
@@ -200,12 +214,10 @@ public:
         if (extruder_ids.size() == 1) {
             const int extruder_id = *extruder_ids.begin();
 
-            // Translate the extruder ID to the item position.
-            const std::size_t item_index =
+            set_current_index(
                 this->index_of_extruder_id(extruder_id)
-                    .value_or(static_cast<std::size_t>(std::max(extruder_id, 0)));
-
-            set_current_index(item_index);
+                    .value_or(static_cast<std::size_t>(std::max(extruder_id, 0)))
+            );
         } else {
             set_current_index(std::nullopt);
         }
