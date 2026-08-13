@@ -31,6 +31,9 @@ public:
     /// Registers a job as work the user asked for and refreshes the progress notification.
     void begin_activity(Biz::PresetUpdater::JobId job_id, Activity activity);
 
+    /// Same as begin_activity for a check, without the progress notification.
+    void begin_silent_check();
+
     /// Retires a job. The notification closes once nothing the user asked for is left.
     void end_activity(Biz::PresetUpdater::JobId job_id);
 

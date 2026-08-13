@@ -39,10 +39,10 @@ Text* add_elided_text(Item* parent, const std::string& text)
     return item;
 }
 
-std::string summary_text(const PresetUpdaterSourceRowState& row)
+std::string summary_text(const PresetUpdater::SourceRowState& row)
 {
-    const PresetUpdaterSourceCounts& counts = row.counts;
-    const int pending                       = counts.pending();
+    const PresetUpdater::SourceCounts& counts = row.counts;
+    const int pending                         = counts.pending();
     if (pending == 0) {
         if (row.check_failed) {
             // TRN Preset updater source row. Nothing is known about this source.
@@ -82,7 +82,7 @@ std::string summary_text(const PresetUpdaterSourceRowState& row)
     return fmt::format(fmt::runtime(format), pending);
 }
 
-std::optional<Render::Icon> status_icon(const PresetUpdaterSourceRowState& row)
+std::optional<Render::Icon> status_icon(const PresetUpdater::SourceRowState& row)
 {
     if (!row.skipped_vendors.empty() || row.check_failed) {
         return Render::Icon::ErrorMarker;
@@ -99,10 +99,12 @@ std::optional<Render::Icon> status_icon(const PresetUpdaterSourceRowState& row)
 } // namespace
 
 PresetUpdaterSourceRow::PresetUpdaterSourceRow(
-    size_t index, const PresetUpdaterSourceRowState& data, PresetUpdaterModel& model
+    size_t index,
+    const PresetUpdater::SourceRowState& data,
+    PresetUpdater::PresetUpdaterController& controller
 ) :
-    Biz::DataObserver<PresetUpdaterSourceRowState>(index, data),
-    m_model(model)
+    Biz::DataObserver<PresetUpdater::SourceRowState>(index, data),
+    m_controller(controller)
 {
     set_orientation(Orientation::Vertical);
     set_gap(2_fpx);
@@ -119,7 +121,7 @@ PresetUpdaterSourceRow::PresetUpdaterSourceRow(
     m_vendor_container->set_flex_shrink(0);
     m_vendor_container->set_visible(false);
 
-    m_vendor_list_view = m_vendor_container->emplace_back<VendorListView>(VendorFactory{model});
+    m_vendor_list_view = m_vendor_container->emplace_back<VendorListView>(VendorFactory{controller});
     m_vendor_list_view->set_orientation(Orientation::Vertical);
     m_vendor_list_view->set_gap(2_fpx);
     m_vendor_list_view->set_flex_shrink(0);
@@ -149,7 +151,7 @@ void PresetUpdaterSourceRow::build_header()
         if (m_updating) {
             return;
         }
-        m_model.set_source_selected(state()->uuid, checked);
+        m_controller.set_source_selected(state()->uuid, checked);
     };
 
     m_arrow = lead_slot->emplace_back<LayoutButton>(std::string(), Render::Icon::CaretRight);
@@ -203,7 +205,7 @@ void PresetUpdaterSourceRow::build_header()
     m_remove_button->set_width(icon_button_size);
     m_remove_button->set_height(icon_button_size);
     m_remove_button->callbacks().action = [this]()
-    { m_model.remove_local_repository(state()->uuid); };
+    { m_controller.remove_local_repository(state()->uuid); };
 
     build_status_cell(header);
 
@@ -225,7 +227,8 @@ void PresetUpdaterSourceRow::build_header()
     // TRN Preset updater source row button. Applies every pending change of this source.
     m_update_all_button = m_action_slot->emplace_back<LayoutButton>(Biz::_u8L("Apply all"));
     m_update_all_button->set_flex_grow(1);
-    m_update_all_button->callbacks().action = [this]() { m_model.update_source(state()->uuid); };
+    m_update_all_button->callbacks().action = [this]()
+    { m_controller.update_source(state()->uuid); };
 }
 
 void PresetUpdaterSourceRow::build_status_cell(Item* header)
@@ -266,7 +269,7 @@ void PresetUpdaterSourceRow::set_expanded(bool expanded)
 
 void PresetUpdaterSourceRow::on_data_update()
 {
-    const PresetUpdaterSourceRowState* row = state();
+    const PresetUpdater::SourceRowState* row = state();
     if (row == nullptr) {
         return;
     }
@@ -295,7 +298,7 @@ void PresetUpdaterSourceRow::on_data_update()
     m_remove_button->set_visible(is_local);
     m_remove_button->set_enabled(!row->install_locked);
 
-    m_vendor_list_view->set_source_list(std::weak_ptr<PresetUpdaterVendorList>(row->vendors));
+    m_vendor_list_view->set_source_list(std::weak_ptr<PresetUpdater::VendorRowList>(row->vendors));
 
     const bool has_vendors = row->vendors->size() > 0;
     m_arrow->set_enabled(has_vendors);
@@ -316,27 +319,27 @@ void PresetUpdaterSourceRow::on_data_update()
     }
 
     switch (row->update_state) {
-    case PresetUpdaterSourceRowState::UpdateState::NotChecked:
+    case PresetUpdater::SourceRowState::UpdateState::NotChecked:
         m_status->set_current_index(StatusNotUsed);
         m_action_slot->set_current_index(ActionNone);
         break;
-    case PresetUpdaterSourceRowState::UpdateState::Waiting:
+    case PresetUpdater::SourceRowState::UpdateState::Waiting:
         m_status->set_current_index(StatusBlank);
         m_action_slot->set_current_index(ActionWaiting);
         break;
-    case PresetUpdaterSourceRowState::UpdateState::Checking:
+    case PresetUpdater::SourceRowState::UpdateState::Checking:
         m_status->set_current_index(StatusBlank);
         m_action_slot->set_current_index(ActionChecking);
         break;
-    case PresetUpdaterSourceRowState::UpdateState::Installing:
+    case PresetUpdater::SourceRowState::UpdateState::Installing:
         m_status->set_current_index(StatusBlank);
         m_action_slot->set_current_index(ActionInstalling);
         break;
-    case PresetUpdaterSourceRowState::UpdateState::UpToDate:
+    case PresetUpdater::SourceRowState::UpdateState::UpToDate:
         m_status->set_current_index(StatusSummary);
         m_action_slot->set_current_index(ActionNone);
         break;
-    case PresetUpdaterSourceRowState::UpdateState::HasUpdates:
+    case PresetUpdater::SourceRowState::UpdateState::HasUpdates:
         m_status->set_current_index(StatusSummary);
         m_action_slot->set_current_index(row->install_locked ? ActionNone : ActionApplyAll);
         break;

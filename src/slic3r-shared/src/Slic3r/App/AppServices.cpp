@@ -5,7 +5,7 @@
 #include "Slic3r/App/Platform/IFileExplorerHandler.hpp"
 #include "Slic3r/App/AppConfig.hpp"
 #include "Slic3r/App/AppConfigInteractor.hpp"
-#include "Slic3r/App/PresetUpdater/PresetUpdaterModel.hpp"
+#include "Slic3r/App/PresetUpdater/PresetUpdaterController.hpp"
 #include "Slic3r/App/Theme.hpp"
 
 namespace Slic3r::App {
@@ -45,9 +45,11 @@ void AppServices::set_app_config(std::unique_ptr<AppConfig>&& app_config)
         std::make_unique<AppConfigInteractor>(m_app_config->get_config_box_ptr());
 }
 
-void AppServices::set_preset_updater_model(std::unique_ptr<PresetUpdaterModel>&& model)
+void AppServices::set_preset_updater_controller(
+    std::unique_ptr<PresetUpdater::PresetUpdaterController>&& controller
+)
 {
-    m_preset_updater_model = std::move(model);
+    m_preset_updater_controller = std::move(controller);
 }
 
 void AppServices::set_theme(std::unique_ptr<Theme>&& theme)
@@ -85,15 +87,15 @@ AppConfigInteractor& AppServices::app_config_interactor() const
     return *m_app_config_interactor;
 }
 
-PresetUpdaterModel& AppServices::preset_updater_model() const
+PresetUpdater::PresetUpdaterController& AppServices::preset_updater_controller() const
 {
-    ASSERT(m_preset_updater_model != nullptr);
-    return *m_preset_updater_model;
+    ASSERT(m_preset_updater_controller != nullptr);
+    return *m_preset_updater_controller;
 }
 
-bool AppServices::has_preset_updater_model() const
+bool AppServices::has_preset_updater_controller() const
 {
-    return m_preset_updater_model != nullptr;
+    return m_preset_updater_controller != nullptr;
 }
 
 Theme& AppServices::theme() const

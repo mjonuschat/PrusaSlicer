@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Slic3r/App/PresetUpdater/PresetUpdaterModel.hpp"
+#include "Slic3r/App/PresetUpdater/PresetUpdaterController.hpp"
 #include "Slic3r/App/PresetUpdater/PresetUpdaterSourceRow.hpp"
 #include "Slic3r/App/Yoga/Dialog.hpp"
 #include "Slic3r/App/Yoga/ListView.hpp"
@@ -17,20 +17,22 @@ class Text;
 } // namespace Yoga
 
 
-/// One instance per render module, both bound to the single PresetUpdaterModel owned by AppServices.
-class PresetUpdaterDialog : public Yoga::Dialog, public IPresetUpdaterModelListener
+/// One instance per render module, all bound to the single controller owned by AppServices.
+class PresetUpdaterDialog : public Yoga::Dialog, public PresetUpdater::IPresetUpdaterControllerListener
 {
 public:
-    using SourceFactory = Yoga::
-        ViewFactory<PresetUpdaterSourceRow, PresetUpdaterSourceRowState, PresetUpdaterModel&>;
+    using SourceFactory = Yoga::ViewFactory<
+        PresetUpdaterSourceRow,
+        PresetUpdater::SourceRowState,
+        PresetUpdater::PresetUpdaterController&>;
     using SourceListView =
-        Yoga::ListView<PresetUpdaterSourceRow, PresetUpdaterSourceRowState, SourceFactory>;
-    using SourceSortFilter = Biz::ObservableListSortFilter<PresetUpdaterSourceRowState>;
+        Yoga::ListView<PresetUpdaterSourceRow, PresetUpdater::SourceRowState, SourceFactory>;
+    using SourceSortFilter = Biz::ObservableListSortFilter<PresetUpdater::SourceRowState>;
 
-    PresetUpdaterDialog(PresetUpdaterModel& model, Navigator& navigator);
+    PresetUpdaterDialog(PresetUpdater::PresetUpdaterController& controller, Navigator& navigator);
     ~PresetUpdaterDialog() override;
 
-    void on_preset_updater_model_changed() override;
+    void on_preset_updater_changed() override;
 
     void resize(const Yoga::SizeInfo& size_info) override;
 
@@ -41,11 +43,11 @@ private:
     void build_content();
     void build_footer(Yoga::Item* parent);
     void pick_zip_archive();
-    bool source_visible(const PresetUpdaterSourceRowState& source) const;
+    bool source_visible(const PresetUpdater::SourceRowState& source) const;
 
     void apply_size_limits(const Yoga::SizeInfo& size_info);
 
-    PresetUpdaterModel& m_model;
+    PresetUpdater::PresetUpdaterController& m_controller;
     Navigator& m_navigator;
 
     SourceListView* m_online_list_view{nullptr};

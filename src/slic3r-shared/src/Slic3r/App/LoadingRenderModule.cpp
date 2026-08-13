@@ -10,8 +10,10 @@
 
 namespace Slic3r::App {
 
-LoadingRenderModule::LoadingRenderModule(PresetUpdaterModel& model, Navigator& navigator) :
-    m_model(model),
+LoadingRenderModule::LoadingRenderModule(
+    PresetUpdater::PresetUpdaterController& controller, Navigator& navigator
+) :
+    m_controller(controller),
     m_navigator(navigator),
     m_menu_manager(m_command_registry),
     m_command_binding_manager(m_command_registry)
@@ -31,7 +33,7 @@ void LoadingRenderModule::on_init(
     Yoga::Item::set_imgui_render(&imgui_render);
     Yoga::Item::set_theme(&AppServices::instance().theme());
 
-    m_dialog.reset(std::make_unique<PresetUpdaterDialog>(m_model, m_navigator));
+    m_dialog.reset(std::make_unique<PresetUpdaterDialog>(m_controller, m_navigator));
     m_layout.append(m_dialog.release());
     m_dialog->attach_to_center();
 }

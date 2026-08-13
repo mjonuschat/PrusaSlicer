@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Slic3r/App/PresetUpdater/PresetUpdaterModel.hpp"
+#include "Slic3r/App/PresetUpdater/PresetUpdaterController.hpp"
 #include "Slic3r/App/PresetUpdater/PresetUpdaterVendorRow.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/App/Yoga/ListView.hpp"
@@ -26,17 +26,21 @@ class ToggleButton;
  * two dialog instances can be unrolled independently.
  */
 class PresetUpdaterSourceRow :
-    public Biz::DataObserver<PresetUpdaterSourceRowState>,
+    public Biz::DataObserver<PresetUpdater::SourceRowState>,
     public Yoga::Item
 {
 public:
-    using VendorFactory = Yoga::
-        ViewFactory<PresetUpdaterVendorRow, PresetUpdaterVendorRowState, PresetUpdaterModel&>;
+    using VendorFactory = Yoga::ViewFactory<
+        PresetUpdaterVendorRow,
+        PresetUpdater::VendorRowState,
+        PresetUpdater::PresetUpdaterController&>;
     using VendorListView =
-        Yoga::ListView<PresetUpdaterVendorRow, PresetUpdaterVendorRowState, VendorFactory>;
+        Yoga::ListView<PresetUpdaterVendorRow, PresetUpdater::VendorRowState, VendorFactory>;
 
     PresetUpdaterSourceRow(
-        size_t index, const PresetUpdaterSourceRowState& data, PresetUpdaterModel& model
+        size_t index,
+        const PresetUpdater::SourceRowState& data,
+        PresetUpdater::PresetUpdaterController& controller
     );
 
 protected:
@@ -66,7 +70,7 @@ private:
     void build_status_cell(Yoga::Item* header);
     void set_expanded(bool expanded);
 
-    PresetUpdaterModel& m_model;
+    PresetUpdater::PresetUpdaterController& m_controller;
 
     bool m_expanded{false};
 

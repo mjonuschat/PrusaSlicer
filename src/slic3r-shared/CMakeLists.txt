@@ -234,8 +234,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/PresetUpdater/PresetUpdaterInstallNotification.cpp
         include/Slic3r/App/PresetUpdater/PresetUpdaterProblemNotification.hpp
         src/Slic3r/App/PresetUpdater/PresetUpdaterProblemNotification.cpp
-        include/Slic3r/App/PresetUpdater/PresetUpdaterModel.hpp
-        src/Slic3r/App/PresetUpdater/PresetUpdaterModel.cpp
+        include/Slic3r/App/PresetUpdater/PresetUpdaterController.hpp
+        src/Slic3r/App/PresetUpdater/PresetUpdaterController.cpp
         include/Slic3r/App/PresetUpdater/PresetUpdaterDialog.hpp
         src/Slic3r/App/PresetUpdater/PresetUpdaterDialog.cpp
         include/Slic3r/App/PresetUpdater/PresetUpdaterSourceRow.hpp
@@ -1497,6 +1497,9 @@ if(SLIC3R_BUILD_TESTS)
         test/Slic3r/App/Scene/MouseBindingScheme.cpp
 
             test/Slic3r/App/Plater/SurfaceMesh.cpp
+
+            test/Slic3r/App/PresetUpdater/PresetUpdaterControllerStateTests.cpp
+            test/Slic3r/App/PresetUpdater/PresetUpdaterControllerTests.cpp
 
             test/Slic3r/App/Yoga/ListViewTests.cpp
             test/Slic3r/App/Yoga/LayoutTests.cpp

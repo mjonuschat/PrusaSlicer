@@ -17,7 +17,7 @@
 #include <Slic3r/App/ThumbnailStoreUpdater.hpp>
 #include <Slic3r/App/PopNotification/PopNotificationCenter.hpp>
 #include <Slic3r/App/AppServices.hpp>
-#include <Slic3r/App/PresetUpdater/PresetUpdaterModel.hpp>
+#include <Slic3r/App/PresetUpdater/PresetUpdaterController.hpp>
 #include <Slic3r/App/AppConfig.hpp>
 #include <Slic3r/App/AppConfigInteractor.hpp>
 #include <Slic3r/App/AppConfigProvider.hpp>
@@ -350,15 +350,28 @@ bool DesktopApp::OnInit()
         .add_listener<Biz::Connect::IConnectHandlerListener>(
             &app_services.pop_notification_center()
         );
-    app_services.set_preset_updater_model(
-        std::make_unique<PresetUpdaterModel>(m_project_interactor->preset_updater_interactor())
+    PresetUpdater::ControllerEnvironment preset_updater_environment;
+    preset_updater_environment.timer_queue = &platform_services.timer_queue();
+    preset_updater_environment.online_allowed =
+        []() { return AppServices::instance().app_config().get<bool>("enable_preset_update"); };
+    preset_updater_environment.request_render = []()
+    {
+        Biz::Platform::PlatformServices::instance().render_request_handler().request_render();
+    };
+
+    app_services.set_preset_updater_controller(
+        std::make_unique<PresetUpdater::PresetUpdaterController>(
+            m_project_interactor->preset_updater_interactor(),
+            std::move(preset_updater_environment)
+        )
     );
 
-    PresetUpdaterModel& preset_updater_model = app_services.preset_updater_model();
-    preset_updater_model.set_forced_check_finished_callback(
-        [this](bool has_forced) { on_forced_check_finished(has_forced); }
+    PresetUpdater::PresetUpdaterController& preset_updater_controller =
+        app_services.preset_updater_controller();
+    preset_updater_controller.set_forced_state_callback(
+        [this](bool has_forced) { on_forced_state(has_forced); }
     );
-    preset_updater_model.set_show_dialog_callback(
+    preset_updater_controller.set_show_dialog_callback(
         [this]()
         {
             if (m_init_completed) {
@@ -368,7 +381,7 @@ bool DesktopApp::OnInit()
             }
         }
     );
-    preset_updater_model.set_presets_installed_callback(
+    preset_updater_controller.set_presets_installed_callback(
         [this]()
         {
             if (m_init_completed) {
@@ -377,11 +390,12 @@ bool DesktopApp::OnInit()
             }
             // Whether the install cleared the forced state is the check's answer to give, not ours:
             // it reports presets installed even when some of the vendors failed.
-            AppServices::instance().preset_updater_model().start();
+            AppServices::instance().preset_updater_controller().start();
         }
     );
 
-    m_loading_module = std::make_unique<LoadingRenderModule>(preset_updater_model, m_navigator);
+    m_loading_module =
+        std::make_unique<LoadingRenderModule>(preset_updater_controller, m_navigator);
 
     m_project_saver = std::make_shared<ProjectSaver>(*m_project_interactor, *m_thumbnail_store);
 
@@ -393,7 +407,7 @@ bool DesktopApp::OnInit()
 
     // Queued as early as it can be: the job manager reports through the render request handler,
     // which only exists now, and nothing preset related has been touched yet.
-    preset_updater_model.start();
+    preset_updater_controller.start();
 
     m_navigator.set_canvas(canvas);
 
@@ -410,10 +424,15 @@ bool DesktopApp::OnInit()
     return true;
 }
 
-void DesktopApp::on_forced_check_finished(bool has_forced)
+void DesktopApp::on_forced_state(bool has_forced)
 {
     if (!has_forced) {
         finish_init();
+        return;
+    }
+
+    // Past the loading module the preset updater asks for its own dialog through the navigator.
+    if (m_init_completed) {
         return;
     }
 
@@ -562,14 +581,17 @@ void DesktopApp::finish_init()
             m_project_interactor->on_download_models({std::move(arg)});
         }
     }
+
+    // Last: the application is up, so the check can report what it finds without being in the way.
+    app_services.preset_updater_controller().start_background_check();
 }
 
 DesktopApp::~DesktopApp()
 {
     // Before m_project_interactor, which owns the interactor the model listens to and calls into.
     AppServices& app_services = AppServices::instance();
-    if (app_services.has_preset_updater_model()) {
-        app_services.preset_updater_model().shutdown();
+    if (app_services.has_preset_updater_controller()) {
+        app_services.preset_updater_controller().shutdown();
     }
 
     Biz::Platform::close();

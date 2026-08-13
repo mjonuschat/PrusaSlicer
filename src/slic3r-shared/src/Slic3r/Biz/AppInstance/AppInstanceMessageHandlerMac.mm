@@ -19,7 +19,6 @@
 
 -(void)add_observer:(NSString *)version_hash
 {
-    NSLog(@"adding observers");
     NSString *nsver = [NSString stringWithFormat: @"%@%@", @"OtherPrusaSlicerInstanceMessage", version_hash];
     [[NSDistributedNotificationCenter defaultCenter] addObserver:self selector:@selector(message_update:) name:nsver object:nil suspensionBehavior:NSNotificationSuspensionBehaviorDeliverImmediately];
     NSString *nsnover = [NSString stringWithFormat: @"%@", @"OtherPrusaSlicerMulticastMessage"];

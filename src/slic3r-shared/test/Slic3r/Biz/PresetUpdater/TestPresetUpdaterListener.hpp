@@ -33,6 +33,12 @@ class TestPresetUpdaterListener : public IPresetUpdaterResultListener
 public:
     TestPresetUpdaterListener(PresetUpdaterInteractor& preset_updater_interactor);
 
+    /// The listener dies before the interactor, and the dispatcher still runs what it has queued.
+    ~TestPresetUpdaterListener() override;
+
+    TestPresetUpdaterListener(const TestPresetUpdaterListener&)            = delete;
+    TestPresetUpdaterListener& operator=(const TestPresetUpdaterListener&) = delete;
+
     void start(ExpectedReconfiguration expected);
 
     void on_preset_updater_error(

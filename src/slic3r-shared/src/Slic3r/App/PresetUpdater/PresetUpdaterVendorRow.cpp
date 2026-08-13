@@ -86,10 +86,12 @@ Text* add_elided_text(Item* parent, const std::string& text)
 } // namespace
 
 PresetUpdaterVendorRow::PresetUpdaterVendorRow(
-    size_t index, const PresetUpdaterVendorRowState& data, PresetUpdaterModel& model
+    size_t index,
+    const PresetUpdater::VendorRowState& data,
+    PresetUpdater::PresetUpdaterController& controller
 ) :
-    Biz::DataObserver<PresetUpdaterVendorRowState>(index, data),
-    m_model(model)
+    Biz::DataObserver<PresetUpdater::VendorRowState>(index, data),
+    m_controller(controller)
 {
     set_orientation(Orientation::Horizontal);
     set_align_items(YGAlignCenter);
@@ -169,8 +171,8 @@ void PresetUpdaterVendorRow::build_action_slot()
     m_action_button->set_flex_grow(1);
     m_action_button->callbacks().action = [this]()
     {
-        const PresetUpdaterVendorRowState* row = state();
-        m_model.update_vendor(row->repo_id, row->vendor_id);
+        const PresetUpdater::VendorRowState* row = state();
+        m_controller.update_vendor(row->repo_id, row->vendor_id);
     };
 
     // TRN Preset updater vendor row. Install not started yet, another one is running.
@@ -206,8 +208,8 @@ void PresetUpdaterVendorRow::build_action_slot()
     m_retry_button->set_flex_shrink(0);
     m_retry_button->callbacks().action = [this]()
     {
-        const PresetUpdaterVendorRowState* row = state();
-        m_model.update_vendor(row->repo_id, row->vendor_id);
+        const PresetUpdater::VendorRowState* row = state();
+        m_controller.update_vendor(row->repo_id, row->vendor_id);
     };
 
     m_action->emplace_back<Item>();
@@ -215,7 +217,7 @@ void PresetUpdaterVendorRow::build_action_slot()
 
 void PresetUpdaterVendorRow::on_data_update()
 {
-    const PresetUpdaterVendorRowState* row = state();
+    const PresetUpdater::VendorRowState* row = state();
     if (row == nullptr) {
         return;
     }
@@ -258,19 +260,19 @@ void PresetUpdaterVendorRow::on_data_update()
     m_retry_button->set_visible(!row->install_locked);
 
     switch (row->install_state) {
-    case PresetUpdaterVendorRowState::InstallState::Idle:
+    case PresetUpdater::InstallState::Idle:
         m_action->set_current_index(row->install_locked ? ActionNone : ActionIdle);
         break;
-    case PresetUpdaterVendorRowState::InstallState::Queued:
+    case PresetUpdater::InstallState::Queued:
         m_action->set_current_index(ActionQueued);
         break;
-    case PresetUpdaterVendorRowState::InstallState::Running:
+    case PresetUpdater::InstallState::Running:
         m_action->set_current_index(ActionRunning);
         break;
-    case PresetUpdaterVendorRowState::InstallState::Done:
+    case PresetUpdater::InstallState::Done:
         m_action->set_current_index(ActionDone);
         break;
-    case PresetUpdaterVendorRowState::InstallState::Failed:
+    case PresetUpdater::InstallState::Failed:
         m_action->set_current_index(ActionFailed);
         break;
     }

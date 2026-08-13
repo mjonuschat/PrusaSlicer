@@ -72,6 +72,11 @@ TestPresetUpdaterListener::TestPresetUpdaterListener(
     );
 }
 
+TestPresetUpdaterListener::~TestPresetUpdaterListener()
+{
+    m_preset_updater_interactor.remove_listener<IPresetUpdaterResultListener>(this);
+}
+
 void TestPresetUpdaterListener::start(ExpectedReconfiguration expected) 
 {
     m_has_result = false;

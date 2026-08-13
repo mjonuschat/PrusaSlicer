@@ -17,6 +17,7 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/PresetUpdater/IPresetUpdaterResultListener.hpp"
 #include "Slic3r/Biz/PresetUpdater/PresetUpdaterInteractor.hpp"
+#include "Slic3r/Biz/SHA256.hpp"
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/nowide/filesystem.hpp>
@@ -25,8 +26,11 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/trompeloeil.hpp>
 
+#include <nlohmann/json.hpp>
+
 #include <chrono>
 #include <functional>
+#include <iomanip>
 #include <memory>
 #include <optional>
 #include <sstream>
@@ -78,6 +82,42 @@ inline std::string read_file(const fs::path& path)
     return buffer.str();
 }
 
+inline std::string file_sha256(const fs::path& path)
+{
+    std::ostringstream hex;
+    hex << std::hex << std::uppercase << std::setfill('0');
+    for (const unsigned char byte : Slic3r::Biz::sha256(read_file(path))) {
+        hex << std::setw(2) << static_cast<int>(byte);
+    }
+    return hex.str();
+}
+
+/// Restates the served hashes over the bytes actually on disk, which line endings make local.
+inline void rehash_version_manifests(const fs::path& root)
+{
+    boost::system::error_code ec;
+    for (fs::recursive_directory_iterator it(root); it != fs::recursive_directory_iterator();
+         it.increment(ec)) {
+        ASSERT(!ec);
+        if (!fs::is_regular_file(it->status()) || it->path().filename().string() != "manifest.json") {
+            continue;
+        }
+
+        nlohmann::json manifest = nlohmann::json::parse(read_file(it->path()));
+        for (nlohmann::json& entry : manifest) {
+            const fs::path file =
+                it->path().parent_path() / entry.at("filename").get<std::string>();
+            ASSERT(fs::exists(file));
+            entry["filehash"] = file_sha256(file);
+        }
+
+        boost::nowide::ofstream file(
+            it->path(), std::ios::out | std::ios::binary | std::ios::trunc
+        );
+        file << manifest.dump(4);
+    }
+}
+
 /// Captures every result the interactor dispatches so a test can assert on it afterwards.
 class CaptureListener : public IPresetUpdaterResultListener
 {
@@ -86,6 +126,15 @@ public:
     {
         m_interactor.add_listener<IPresetUpdaterResultListener>(this);
     }
+
+    /// The listener dies before the fixture, and the dispatcher still runs what it has queued.
+    ~CaptureListener() override
+    {
+        m_interactor.remove_listener<IPresetUpdaterResultListener>(this);
+    }
+
+    CaptureListener(const CaptureListener&)            = delete;
+    CaptureListener& operator=(const CaptureListener&) = delete;
 
     void reset()
     {
@@ -402,6 +451,7 @@ struct Fixture
     void put_server(const std::string& version)
     {
         copy_dir_content_local(resources_profile_path / ("server" + version), server_runtime_path);
+        rehash_version_manifests(server_runtime_path);
     }
 
     void put_installed(const std::string& version)

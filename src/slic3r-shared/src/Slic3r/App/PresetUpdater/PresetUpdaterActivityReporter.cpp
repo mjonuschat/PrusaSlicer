@@ -32,6 +32,11 @@ void PresetUpdaterActivityReporter::begin_activity(
     m_status.begin_activity(job_id, activity);
 }
 
+void PresetUpdaterActivityReporter::begin_silent_check()
+{
+    m_problems.rearm();
+}
+
 void PresetUpdaterActivityReporter::end_activity(Biz::PresetUpdater::JobId job_id)
 {
     m_status.end_activity(job_id);

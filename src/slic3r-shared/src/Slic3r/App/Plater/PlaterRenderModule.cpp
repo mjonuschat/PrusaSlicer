@@ -566,7 +566,7 @@ void PlaterRenderModule::init_scene_layout()
     );
 
     m_preset_updater_dialog = std::make_unique<PresetUpdaterDialog>(
-        AppServices::instance().preset_updater_model(),
+        AppServices::instance().preset_updater_controller(),
         *m_render_module_navigator
     );
 

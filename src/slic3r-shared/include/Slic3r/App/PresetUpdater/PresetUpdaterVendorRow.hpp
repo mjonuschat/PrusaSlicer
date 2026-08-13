@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Slic3r/App/PresetUpdater/PresetUpdaterModel.hpp"
+#include "Slic3r/App/PresetUpdater/PresetUpdaterController.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
 
 #include "Slic3r/Biz/DataObserver.hpp"
@@ -38,12 +38,14 @@ constexpr Yoga::Unit vendor_row_height{44, Yoga::Unit::Type::FigmaPixel};
  * Built once by the ListView and updated in place from on_data_update - children are never rebuilt.
  */
 class PresetUpdaterVendorRow :
-    public Biz::DataObserver<PresetUpdaterVendorRowState>,
+    public Biz::DataObserver<PresetUpdater::VendorRowState>,
     public Yoga::Item
 {
 public:
     PresetUpdaterVendorRow(
-        size_t index, const PresetUpdaterVendorRowState& data, PresetUpdaterModel& model
+        size_t index,
+        const PresetUpdater::VendorRowState& data,
+        PresetUpdater::PresetUpdaterController& controller
     );
 
 protected:
@@ -63,7 +65,7 @@ private:
 
     void build_action_slot();
 
-    PresetUpdaterModel& m_model;
+    PresetUpdater::PresetUpdaterController& m_controller;
 
     Yoga::Icon* m_state_icon{nullptr};
     Yoga::Text* m_name{nullptr};

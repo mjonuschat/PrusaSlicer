@@ -61,10 +61,10 @@ std::string up_to_date_label()
     return Biz::_u8L("Everything is up to date");
 }
 
-bool has_forced_vendor(const PresetUpdaterSourceRowState& source)
+bool has_forced_vendor(const PresetUpdater::SourceRowState& source)
 {
     for (size_t index = 0; index < source.vendors->size(); ++index) {
-        const PresetUpdaterVendorRowState& vendor = source.vendors->at(index);
+        const PresetUpdater::VendorRowState& vendor = source.vendors->at(index);
         if (vendor.skipped) {
             continue;
         }
@@ -79,10 +79,12 @@ bool has_forced_vendor(const PresetUpdaterSourceRowState& source)
 
 } // namespace
 
-PresetUpdaterDialog::PresetUpdaterDialog(PresetUpdaterModel& model, Navigator& navigator) :
+PresetUpdaterDialog::PresetUpdaterDialog(
+    PresetUpdater::PresetUpdaterController& controller, Navigator& navigator
+) :
     // TRN Preset updater dialog title.
     Dialog({Biz::_u8L("Preset sources & updates")}, "PresetUpdaterDialog"),
-    m_model(model),
+    m_controller(controller),
     m_navigator(navigator),
     m_online_filter(std::make_shared<SourceSortFilter>()),
     m_local_filter(std::make_shared<SourceSortFilter>())
@@ -102,15 +104,15 @@ PresetUpdaterDialog::PresetUpdaterDialog(PresetUpdaterModel& model, Navigator& n
 
     build_content();
 
-    m_model.add_listener<IPresetUpdaterModelListener>(this);
+    m_controller.add_listener<PresetUpdater::IPresetUpdaterControllerListener>(this);
 
-    callbacks().opened = [this]() { m_model.on_dialog_opened(); };
-    callbacks().closed = [this]() { m_model.on_dialog_closed(); };
+    callbacks().opened = [this]() { m_controller.on_dialog_opened(); };
+    callbacks().closed = [this]() { m_controller.on_dialog_closed(); };
 }
 
 PresetUpdaterDialog::~PresetUpdaterDialog()
 {
-    m_model.remove_listener<IPresetUpdaterModelListener>(this);
+    m_controller.remove_listener<PresetUpdater::IPresetUpdaterControllerListener>(this);
 }
 
 void PresetUpdaterDialog::build_content()
@@ -167,13 +169,13 @@ void PresetUpdaterDialog::build_content()
     m_offline_note->set_wrap_mode(Text::WrapMode::Wrap);
     m_offline_note->set_text_color(m_theme->color_imgui(Platform::Color::Warning));
 
-    m_online_list_view = sections->emplace_back<SourceListView>(SourceFactory{m_model});
+    m_online_list_view = sections->emplace_back<SourceListView>(SourceFactory{m_controller});
     m_online_list_view->set_orientation(Orientation::Vertical);
     m_online_list_view->set_gap(4_fpx);
     m_online_list_view->set_flex_shrink(0);
-    m_online_filter->set_filter_fn([this](const PresetUpdaterSourceRowState& source)
+    m_online_filter->set_filter_fn([this](const PresetUpdater::SourceRowState& source)
                                    { return source_visible(source); });
-    m_online_filter->set_source_model(&m_model.online_sources());
+    m_online_filter->set_source_model(&m_controller.online_sources());
     m_online_list_view->set_source_list(m_online_filter.get());
 
     Separator* sections_separator = sections->emplace_back<Separator>(Orientation::Horizontal);
@@ -221,20 +223,20 @@ void PresetUpdaterDialog::build_content()
         append_words(local_blurb, std::string_view{local_text}.substr(placeholder + 2));
     }
 
-    m_local_list_view = sections->emplace_back<SourceListView>(SourceFactory{m_model});
+    m_local_list_view = sections->emplace_back<SourceListView>(SourceFactory{m_controller});
     m_local_list_view->set_orientation(Orientation::Vertical);
     m_local_list_view->set_gap(4_fpx);
     m_local_list_view->set_flex_shrink(0);
-    m_local_filter->set_filter_fn([this](const PresetUpdaterSourceRowState& source)
+    m_local_filter->set_filter_fn([this](const PresetUpdater::SourceRowState& source)
                                   { return source_visible(source); });
-    m_local_filter->set_source_model(&m_model.local_sources());
+    m_local_filter->set_source_model(&m_controller.local_sources());
     m_local_list_view->set_source_list(m_local_filter.get());
 
     Separator* footer_separator = add_separator();
     footer_separator->set_flex_shrink(0);
     build_footer(content());
 
-    on_preset_updater_model_changed();
+    on_preset_updater_changed();
 }
 
 void PresetUpdaterDialog::build_footer(Item* parent)
@@ -254,9 +256,9 @@ void PresetUpdaterDialog::build_footer(Item* parent)
     m_update_everything_button->callbacks().action = [this]()
     {
         if (m_forced_mode) {
-            m_model.update_required();
+            m_controller.update_required();
         } else {
-            m_model.update_everything();
+            m_controller.update_everything();
         }
         close_action();
     };
@@ -275,13 +277,13 @@ void PresetUpdaterDialog::build_footer(Item* parent)
     m_exit_app_button->callbacks().action = [this]() { m_navigator.close_application(); };
 }
 
-bool PresetUpdaterDialog::source_visible(const PresetUpdaterSourceRowState& source) const
+bool PresetUpdaterDialog::source_visible(const PresetUpdater::SourceRowState& source) const
 {
     if (!m_forced_mode) {
         return true;
     }
-    if (source.update_state == PresetUpdaterSourceRowState::UpdateState::Waiting
-        || source.update_state == PresetUpdaterSourceRowState::UpdateState::Checking)
+    if (source.update_state == PresetUpdater::SourceRowState::UpdateState::Waiting
+        || source.update_state == PresetUpdater::SourceRowState::UpdateState::Checking)
     {
         return true;
     }
@@ -303,18 +305,16 @@ void PresetUpdaterDialog::pick_zip_archive()
             if (!result || file_paths.empty()) {
                 return;
             }
-            m_model.add_local_repository(file_paths.front());
+            m_controller.add_local_repository(file_paths.front());
         }
     );
 }
 
-void PresetUpdaterDialog::on_preset_updater_model_changed()
+void PresetUpdaterDialog::on_preset_updater_changed()
 {
-    const PresetUpdaterModel::Status status = m_model.status();
+    m_offline_note->set_visible(!m_controller.online_allowed());
 
-    m_offline_note->set_visible(!m_model.online_allowed());
-
-    const bool forced{m_model.has_forced_reconfigurations()};
+    const bool forced{m_controller.forced_mode()};
     const bool forced_state_cleared{m_forced_mode && !forced};
     if (m_forced_mode != forced) {
         m_forced_mode = forced;
@@ -327,15 +327,18 @@ void PresetUpdaterDialog::on_preset_updater_model_changed()
 
     // In forced mode the button installs the required vendors only, so anything else being
     // actionable must not make it look like there is something left to press.
-    const bool actionable{forced ? m_model.has_required_updates() :
-                                   m_model.has_actionable_updates()};
-    const bool busy{status == PresetUpdaterModel::Status::Installing
-                    || status == PresetUpdaterModel::Status::Checking
-                    || status == PresetUpdaterModel::Status::ListingSources};
+    const bool actionable{forced ? m_controller.has_required_updates() :
+                                   m_controller.has_actionable_updates()};
+    const bool busy{m_controller.busy()};
+
+    // Nothing running, every selected source answered, nothing gone wrong: only then is "up to
+    // date" a statement about the sources rather than about how far the check has got.
+    const bool settled{!busy && m_controller.fully_checked() && !m_controller.warned()};
+
     m_update_everything_button->set_enabled(actionable && !busy);
     if (forced) {
         m_update_everything_button->set_label(apply_required_label());
-    } else if (!actionable && status == PresetUpdaterModel::Status::UpToDate) {
+    } else if (!actionable && settled) {
         m_update_everything_button->set_label(up_to_date_label());
     } else {
         m_update_everything_button->set_label(apply_everything_label());
@@ -385,7 +388,7 @@ void PresetUpdaterDialog::apply_size_limits(const SizeInfo& size_info)
 
 void PresetUpdaterDialog::close_action()
 {
-    if (m_model.has_forced_reconfigurations()) {
+    if (m_controller.forced_mode()) {
         return;
     }
     m_navigator.set_modal_dialog(ModalDialog::None);

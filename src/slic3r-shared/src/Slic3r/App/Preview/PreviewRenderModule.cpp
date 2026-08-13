@@ -843,7 +843,7 @@ void PreviewRenderModule::init_scene_layout()
         std::make_unique<CrashedProjectsDialog>(m_project_interactor, *m_render_module_navigator);
 
     m_preset_updater_dialog = std::make_unique<PresetUpdaterDialog>(
-        AppServices::instance().preset_updater_model(),
+        AppServices::instance().preset_updater_controller(),
         *m_render_module_navigator
     );
 

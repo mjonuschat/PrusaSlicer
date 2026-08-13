@@ -9,7 +9,6 @@
 namespace Slic3r::App {
 
 class Navigator;
-class PresetUpdaterModel;
 
 /**
  * The surface the application runs on until the presets installed on this computer are known to be
@@ -22,7 +21,7 @@ class PresetUpdaterModel;
 class LoadingRenderModule : public Platform::AbstractRenderModule
 {
 public:
-    LoadingRenderModule(PresetUpdaterModel& model, Navigator& navigator);
+    LoadingRenderModule(PresetUpdater::PresetUpdaterController& controller, Navigator& navigator);
     ~LoadingRenderModule() override;
 
     void set_opened_preset_updater(bool opened);
@@ -58,7 +57,7 @@ protected:
     void on_screen_resized() override;
 
 private:
-    PresetUpdaterModel& m_model;
+    PresetUpdater::PresetUpdaterController& m_controller;
     Navigator& m_navigator;
 
     Yoga::RootItem m_layout;
