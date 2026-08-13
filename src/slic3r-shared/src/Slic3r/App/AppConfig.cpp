@@ -171,8 +171,8 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def = defs.add("enable_preset_update", typeid(bool));
     def->location = Domain::AppConfigLocation{};
     def->gui_type = GUIType::checkbox;
-    def->label = L("Enable Preset Management");
-    def->tooltip = L("Enable Preset Management.");
+    def->label = L("Update presets over the internet");
+    def->tooltip = L("Let the preset updater contact online sources. When off, presets are still installed from the files that come with the application and from local sources.");
     def->category = Domain::ConfigItemDef::Category::AppConfig_Services;
     def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_Services_General;
     def->init_fn = []() { return Domain::ConfigValue(true); };

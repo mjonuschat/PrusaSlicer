@@ -108,7 +108,7 @@ TEST_CASE("PresetUpdater queue mixes operation kinds without losing results", "[
     const PresetUpdater::JobId check = fx.interactor()
         .build_update_sync_and_reconfiguration_check(true, PresetUpdater::VerboseStyle::NoProgress, true);
     const PresetUpdater::JobId forced = fx.interactor().check_forced_reconfigurations();
-    const PresetUpdater::JobId cleanup = fx.interactor().cleanup_update_sync(true);
+    const PresetUpdater::JobId cleanup = fx.interactor().cleanup_update_sync();
 
     const std::vector<PresetUpdater::JobId> submitted{list, check, forced, cleanup};
     REQUIRE(fx.wait_for_finished(listener, submitted.size()));

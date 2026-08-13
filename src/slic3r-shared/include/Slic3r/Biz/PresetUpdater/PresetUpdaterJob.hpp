@@ -13,7 +13,6 @@ enum class JobState
     Succeeded,
     Failed,
     Canceled,
-    Disabled,
 };
 
 } // namespace Slic3r::Biz::PresetUpdater

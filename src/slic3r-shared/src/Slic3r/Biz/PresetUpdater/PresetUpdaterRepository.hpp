@@ -62,6 +62,11 @@ public:
         PresetUpdaterProcessStatus* process_status
     ) const = 0;
 
+    /**
+     * @brief Whether reaching this repository means reaching the network.
+     */
+    virtual bool is_online() const = 0;
+
     const PresetUpdaterRepositoryDescriptor& descriptor() const
     {
         return m_data;
@@ -148,6 +153,11 @@ public:
         PresetUpdaterProcessStatus* process_status
     ) const override;
 
+    bool is_online() const override
+    {
+        return true;
+    }
+
 private:
     bool get_file_inner(
         const std::string& url,
@@ -200,6 +210,11 @@ public:
         const boost::filesystem::path& target_path,
         PresetUpdaterProcessStatus* process_status
     ) const override;
+
+    bool is_online() const override
+    {
+        return false;
+    }
 
     static bool extract_local_archive_repository(
         PresetUpdaterRepositoryDescriptor& manifest_data,

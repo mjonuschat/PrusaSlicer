@@ -63,7 +63,7 @@ TEST_CASE("PresetUpdater lists sources and persists selection", "[preset_updater
     desired.push_back(PresetUpdater::SharedPresetUpdaterRepositoryInfo{info.descriptor, false});
 
     listener.reset();
-    fx.interactor().apply_repository_selection(true, desired);
+    fx.interactor().apply_repository_selection(desired);
     REQUIRE(fx.wait(listener));
     REQUIRE(listener.repos().size() == 1);
     CHECK_FALSE(listener.repos().front().selected);
@@ -96,7 +96,7 @@ TEST_CASE("PresetUpdater adds and removes a local repository", "[preset_updater]
     const fs::path local_zip = fx.resources_profile_path / "local_repo.zip";
     REQUIRE(fs::exists(local_zip));
 
-    fx.interactor().add_local_repository(true, local_zip);
+    fx.interactor().add_local_repository(local_zip);
     REQUIRE(fx.wait(listener));
     REQUIRE_FALSE(listener.got_error());
 
@@ -110,7 +110,7 @@ TEST_CASE("PresetUpdater adds and removes a local repository", "[preset_updater]
     CHECK(fs::exists(fx.data_dir / "local_repositories" / local_uuid));
 
     listener.reset();
-    fx.interactor().remove_local_repository(true, local_uuid);
+    fx.interactor().remove_local_repository(local_uuid);
     REQUIRE(fx.wait(listener));
     REQUIRE_FALSE(listener.got_error());
     for (const auto& repo : listener.repos()) {
@@ -291,7 +291,7 @@ TEST_CASE("PresetUpdater cleans up staged files and keeps installed profiles", "
 
     CaptureListener listener(fx.interactor());
 
-    fx.interactor().cleanup_update_sync(true);
+    fx.interactor().cleanup_update_sync();
     REQUIRE(fx.wait(listener));
     REQUIRE_FALSE(listener.got_error());
 
@@ -304,35 +304,83 @@ TEST_CASE("PresetUpdater cleans up staged files and keeps installed profiles", "
     CHECK(fs::exists(fx.installed_path / k_repo_name / (k_vendor_name + ".idx")));
 }
 
-TEST_CASE("PresetUpdater refuses actions when the app config disables preset updates", "[preset_updater]")
+TEST_CASE("PresetUpdater stays off the network when the app config forbids it", "[preset_updater]")
 {
     Fixture fx;
-    fx.put_server("100");
+    // The server offers 1.0.1, what came with the installation only 1.0.0. Anything the check
+    // reports above 1.0.0 could only have been downloaded.
+    fx.put_resources("100");
+    fx.put_server("101");
 
     CaptureListener listener(fx.interactor());
 
-    std::vector<PresetUpdater::JobId> refused;
-    refused.push_back(fx.interactor().build_update_sync_and_reconfiguration_check(
+    fx.interactor().build_update_sync_and_reconfiguration_check(
         false, PresetUpdater::VerboseStyle::NoProgress, true
-    ));
-    refused.push_back(fx.interactor().list_repositories(false));
-    refused.push_back(fx.interactor().cleanup_update_sync(false));
-    refused.push_back(fx.interactor().apply_repository_selection(
-        false, PresetUpdater::SharedPresetUpdaterRepositoryInfoVector{}
-    ));
-    refused.push_back(fx.interactor().add_local_repository(false, fx.resources_profile_path / "local_repo.zip"));
-    refused.push_back(fx.interactor().remove_local_repository(false, "no-such-uuid"));
+    );
+    REQUIRE(fx.wait(listener));
+    REQUIRE_FALSE(listener.got_error());
+    // A source that is deliberately not contacted is not a source that failed.
+    CHECK(listener.warnings().empty());
+    REQUIRE(listener.reconfigurations().has_value());
+    REQUIRE(listener.reconfigurations()->new_vendors().size() == 1);
+    CHECK(
+        listener.reconfigurations()->new_vendors().front().recommended_version
+        == Slic3r::Semver{1, 0, 0}
+    );
 
-    // A refused job does no work, but it is still identifiable and still terminated - a caller
-    // showing queued work must never be left with a row that can never be retired.
-    REQUIRE(fx.wait_for_finished(listener, refused.size()));
-    CHECK_FALSE(listener.has_result());
-    CHECK(fx.interactor().pending_job_count() == 0);
+    const auto reconfigurations = *listener.reconfigurations();
 
-    for (PresetUpdater::JobId job_id : refused) {
-        CHECK(job_id != PresetUpdater::k_invalid_job_id);
-        CHECK(listener.state_of(job_id) == PresetUpdater::JobState::Disabled);
+    listener.reset();
+    fx.interactor().perform_reconfigurations(reconfigurations);
+    REQUIRE(fx.wait(listener));
+    REQUIRE_FALSE(listener.got_error());
+    CHECK(listener.performed());
+
+    const fs::path installed_vendor_dir = fx.installed_path / k_repo_name / k_vendor_name;
+    CHECK(fs::exists(installed_vendor_dir / "vendor.yaml"));
+    CHECK(read_file(installed_vendor_dir / "vendor.yaml").find("1.0.0") != std::string::npos);
+}
+
+TEST_CASE("PresetUpdater manages local sources when the app config forbids the network", "[preset_updater]")
+{
+    Fixture fx;
+
+    CaptureListener listener(fx.interactor());
+
+    const fs::path local_zip = fx.resources_profile_path / "local_repo.zip";
+    REQUIRE(fs::exists(local_zip));
+
+    fx.interactor().add_local_repository(local_zip);
+    REQUIRE(fx.wait(listener));
+    REQUIRE_FALSE(listener.got_error());
+
+    std::string local_uuid;
+    for (const auto& repo : listener.repos()) {
+        if (!repo.descriptor.unzipped_data_path.empty()) {
+            local_uuid = repo.descriptor.uuid;
+        }
     }
+    REQUIRE_FALSE(local_uuid.empty());
+
+    listener.reset();
+    fx.interactor().list_repositories(false);
+    REQUIRE(fx.wait(listener));
+    REQUIRE_FALSE(listener.got_error());
+    CHECK(listener.warnings().empty());
+    CHECK(
+        std::any_of(
+            listener.repos().begin(),
+            listener.repos().end(),
+            [&local_uuid](const PresetUpdater::SharedPresetUpdaterRepositoryInfo& repo)
+            { return repo.descriptor.uuid == local_uuid; }
+        )
+    );
+
+    listener.reset();
+    fx.interactor().remove_local_repository(local_uuid);
+    REQUIRE(fx.wait(listener));
+    REQUIRE_FALSE(listener.got_error());
+    CHECK_FALSE(fs::exists(fx.data_dir / "local_repositories" / local_uuid));
 }
 
 TEST_CASE("PresetUpdater reports an unhandled worker exception as an error", "[preset_updater]")

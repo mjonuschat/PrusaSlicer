@@ -46,13 +46,16 @@ public:
     /**
      * @brief Does full construction of update_sync folder and checks reconfigurations.
      * Success is on_preset_updater_reconfigurations_list.
+     * @param online_allowed when false the job touches no network at all: the source list is taken
+     * from the data dir and online sources are left with whatever is already staged for them. What
+     * comes with the installation and what local sources offer is staged and checked either way.
      * @param ignore_hash should be true ONLY for testing purpose.
      * @param source_list fetches the repository manifest from the server first. Pass UseStored to
      * check against the source list already in the data dir, which needs no network - the listing
      * or selection this check follows has just written it.
      */
     JobId build_update_sync_and_reconfiguration_check(
-        bool app_config_preset_updater_allowed,
+        bool online_allowed,
         VerboseStyle verbose,
         bool ignore_hash            = false,
         SourceListSync source_list  = SourceListSync::Fetch
@@ -72,37 +75,31 @@ public:
      * Success is on_preset_updater_repository_selection_performed.
      * Use list_repositories to query sources without changing the selection.
      */
-    JobId apply_repository_selection(
-        bool app_config_preset_updater_allowed,
-        const SharedPresetUpdaterRepositoryInfoVector& repos
-    );
+    JobId apply_repository_selection(const SharedPresetUpdaterRepositoryInfoVector& repos);
 
     /**
      * @brief Adds local repository to app manifest file, unzipping it into the data dir.
      * Success is on_preset_updater_repository_info_vector. Any other repository sharing the id of
      * the added one is unselected, because only one repository per id may be selected at a time.
      */
-    JobId add_local_repository(
-        bool app_config_preset_updater_allowed, const boost::filesystem::path& zip_path
-    );
+    JobId add_local_repository(const boost::filesystem::path& zip_path);
 
     /**
      * @brief Removes local repository from app manifest file.
      * Success is on_preset_updater_repository_info_vector.
      */
-    JobId remove_local_repository(
-        bool app_config_preset_updater_allowed, const std::string& uuid
-    );
+    JobId remove_local_repository(const std::string& uuid);
 
     /**
      * @brief Lists all known source repositories.
      * Success is on_preset_updater_repository_info_vector.
+     * @param online_allowed when false the stored source list is used whatever force_sync says.
      * @param force_sync fetches the repository manifest from the server first. Pass false to list
      * what is already stored in the data dir, which needs no network.
      */
-    JobId list_repositories(bool app_config_preset_updater_allowed, bool force_sync = true);
+    JobId list_repositories(bool online_allowed, bool force_sync = true);
 
-    JobId cleanup_update_sync(bool app_config_preset_updater_allowed);
+    JobId cleanup_update_sync();
 
     /**
      * @brief Cancels one job: a running one is asked to stop without blocking the caller, a queued
@@ -155,7 +152,6 @@ private:
 
     bool accepts_work() const;
     JobId enqueue(JobBody body);
-    JobId refuse_disabled();
     void start_next();
     void finish_running(JobId job_id, JobState state);
     bool request_running_stop();

@@ -28,7 +28,16 @@ public:
     PresetUpdaterRepositorySync& operator=(const PresetUpdaterRepositorySync&) = delete;
     ~PresetUpdaterRepositorySync()                                             = default;
 
-    void sync(const SharedRepositoryVector& repositories, PresetUpdaterProcessStatus* process_status) const;
+    /**
+     * @brief Stages from resources for every repository, then from the repositories themselves.
+     * @param online_allowed when false, online repositories are left untouched - what is already
+     * staged for them stays, and nothing is fetched.
+     */
+    void sync(
+        const SharedRepositoryVector& repositories,
+        bool online_allowed,
+        PresetUpdaterProcessStatus* process_status
+    ) const;
 
 private:
     /**

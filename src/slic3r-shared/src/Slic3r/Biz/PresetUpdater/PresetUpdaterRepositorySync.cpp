@@ -621,6 +621,7 @@ SyncOperations calculate_sync_operations(
 
 void PresetUpdaterRepositorySync::sync(
     const SharedRepositoryVector& repositories,
+    bool online_allowed,
     PresetUpdaterProcessStatus* process_status
 ) const
 {
@@ -651,6 +652,13 @@ void PresetUpdaterRepositorySync::sync(
     for (const AbstractPresetUpdaterRepository* repo : repositories) {
         if (process_status->get_canceled()) {
             break;
+        }
+        if (repo->is_online() && !online_allowed) {
+            SPDLOG_INFO(
+                "Preset updates over the internet are turned off. Skipping source {}.",
+                repo->descriptor().id
+            );
+            continue;
         }
         this->sync_repository(temp_dir / repo->descriptor().id, repo, process_status);
 

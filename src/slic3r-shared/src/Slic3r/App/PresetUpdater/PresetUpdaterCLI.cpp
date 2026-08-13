@@ -40,10 +40,10 @@ void PresetUpdaterCLI::start(const ActionParams& action, const std::string data)
     } else if (action.preset_updater_add_local) {
         ASSERT(!data.empty());
         boost::filesystem::path path(data);
-        m_preset_updater_interactor.add_local_repository(true, path);
+        m_preset_updater_interactor.add_local_repository(path);
     } else if (action.preset_updater_remove_local) {
         ASSERT(!data.empty());
-        m_preset_updater_interactor.remove_local_repository(true, data);
+        m_preset_updater_interactor.remove_local_repository(data);
     } else if (action.preset_updater_list_repos) {
         m_preset_updater_interactor.list_repositories(true);
     } else if (action.preset_updater_switch_repo) {
@@ -51,7 +51,7 @@ void PresetUpdaterCLI::start(const ActionParams& action, const std::string data)
         m_repo_to_switch = data;
         m_preset_updater_interactor.list_repositories(true);
     } else if (action.preset_updater_cleanup) {
-        m_preset_updater_interactor.cleanup_update_sync(true);
+        m_preset_updater_interactor.cleanup_update_sync();
     } else {
         ASSERT(false);
     }
@@ -86,11 +86,7 @@ void PresetUpdaterCLI::on_preset_updater_job_finished(
     Biz::PresetUpdater::JobId job_id, Biz::PresetUpdater::JobState state
 )
 {
-    if (state == Biz::PresetUpdater::JobState::Disabled) {
-        nlohmann::json j = {{"error", "Preset updates are disabled in application configuration."}};
-        printf("%s\n", j.dump(-1).c_str());
-        m_has_result = true;
-    } else if (state == Biz::PresetUpdater::JobState::Canceled) {
+    if (state == Biz::PresetUpdater::JobState::Canceled) {
         m_has_result = true;
     }
 }
@@ -162,7 +158,7 @@ void PresetUpdaterCLI::on_preset_updater_repository_info_vector(
             }
         }
         m_repo_to_switch.clear();
-        m_preset_updater_interactor.apply_repository_selection(true, updated_descriptor);
+        m_preset_updater_interactor.apply_repository_selection(updated_descriptor);
     } else {
         if (!warnings.empty()) {
             nlohmann::json j = {{"result", descriptor},{"warnings", warnings}};

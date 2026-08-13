@@ -85,17 +85,6 @@ JobId PresetUpdaterInteractor::enqueue(JobBody body)
     return job_id;
 }
 
-JobId PresetUpdaterInteractor::refuse_disabled()
-{
-    if (!accepts_work()) {
-        return k_invalid_job_id;
-    }
-
-    const JobId job_id = m_next_job_id++;
-    dispatch_job_finished(job_id, JobState::Disabled);
-    return job_id;
-}
-
 void PresetUpdaterInteractor::start_next()
 {
     if (!accepts_work() || m_running.has_value() || m_queue.empty()) {
@@ -261,18 +250,14 @@ JobId PresetUpdaterInteractor::check_forced_reconfigurations()
 }
 
 JobId PresetUpdaterInteractor::build_update_sync_and_reconfiguration_check(
-    bool app_config_preset_updater_allowed,
+    bool online_allowed,
     VerboseStyle verbose,
     bool ignore_hash /*= false*/,
     SourceListSync source_list /*= SourceListSync::Fetch*/
 )
 {
-    if (!app_config_preset_updater_allowed) {
-        return refuse_disabled();
-    }
-
     return enqueue(
-        [this, verbose, ignore_hash, source_list](
+        [this, online_allowed, verbose, ignore_hash, source_list](
             JThread::StopToken stop_token,
             Platform::JobManager::ProgressTracker progress_tracker,
             JobId job_id
@@ -291,7 +276,7 @@ JobId PresetUpdaterInteractor::build_update_sync_and_reconfiguration_check(
                 return JobState::Failed;
             }
 
-            if (source_list == SourceListSync::Fetch) {
+            if (source_list == SourceListSync::Fetch && online_allowed) {
                 repo_database.sync(&process_status);
                 if (process_status.has_error()) {
                     dispatch_error(
@@ -305,7 +290,7 @@ JobId PresetUpdaterInteractor::build_update_sync_and_reconfiguration_check(
             }
 
             const SharedRepositoryVector& repos = repo_database.get_selected_repositories();
-            archive_sync.sync(repos, &process_status);
+            archive_sync.sync(repos, online_allowed, &process_status);
             if (process_status.has_error()) {
                 dispatch_error(job_id, process_status.get_error(), process_status.get_error_reason());
                 return JobState::Failed;
@@ -368,13 +353,9 @@ JobId PresetUpdaterInteractor::perform_reconfigurations(
 }
 
 JobId PresetUpdaterInteractor::apply_repository_selection(
-    bool app_config_preset_updater_allowed, const SharedPresetUpdaterRepositoryInfoVector& repos
+    const SharedPresetUpdaterRepositoryInfoVector& repos
 )
 {
-    if (!app_config_preset_updater_allowed) {
-        return refuse_disabled();
-    }
-
     return enqueue(
         [this, repos](
             JThread::StopToken stop_token,
@@ -408,14 +389,8 @@ JobId PresetUpdaterInteractor::apply_repository_selection(
     );
 }
 
-JobId PresetUpdaterInteractor::add_local_repository(
-    bool app_config_preset_updater_allowed, const boost::filesystem::path& zip_path
-)
+JobId PresetUpdaterInteractor::add_local_repository(const boost::filesystem::path& zip_path)
 {
-    if (!app_config_preset_updater_allowed) {
-        return refuse_disabled();
-    }
-
     return enqueue(
         [this, zip_path](
             JThread::StopToken stop_token,
@@ -449,14 +424,8 @@ JobId PresetUpdaterInteractor::add_local_repository(
     );
 }
 
-JobId PresetUpdaterInteractor::remove_local_repository(
-    bool app_config_preset_updater_allowed, const std::string& uuid
-)
+JobId PresetUpdaterInteractor::remove_local_repository(const std::string& uuid)
 {
-    if (!app_config_preset_updater_allowed) {
-        return refuse_disabled();
-    }
-
     return enqueue(
         [this, uuid](
             JThread::StopToken stop_token,
@@ -490,16 +459,10 @@ JobId PresetUpdaterInteractor::remove_local_repository(
     );
 }
 
-JobId PresetUpdaterInteractor::list_repositories(
-    bool app_config_preset_updater_allowed, bool force_sync /*= true*/
-)
+JobId PresetUpdaterInteractor::list_repositories(bool online_allowed, bool force_sync /*= true*/)
 {
-    if (!app_config_preset_updater_allowed) {
-        return refuse_disabled();
-    }
-
     return enqueue(
-        [this, force_sync](
+        [this, force_sync = force_sync && online_allowed](
             JThread::StopToken stop_token,
             Platform::JobManager::ProgressTracker progress_tracker,
             JobId job_id
@@ -534,12 +497,8 @@ JobId PresetUpdaterInteractor::list_repositories(
     );
 }
 
-JobId PresetUpdaterInteractor::cleanup_update_sync(bool app_config_preset_updater_allowed)
+JobId PresetUpdaterInteractor::cleanup_update_sync()
 {
-    if (!app_config_preset_updater_allowed) {
-        return refuse_disabled();
-    }
-
     return enqueue(
         [this](
             JThread::StopToken stop_token,

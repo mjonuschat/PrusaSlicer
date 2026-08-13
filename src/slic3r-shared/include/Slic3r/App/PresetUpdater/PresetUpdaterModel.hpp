@@ -126,8 +126,7 @@ public:
         Checking,
         Installing,
         UpToDate,
-        Warned,
-        Disabled
+        Warned
     };
 
     explicit PresetUpdaterModel(
@@ -170,6 +169,14 @@ public:
     bool has_required_updates() const;
 
     bool has_forced_reconfigurations() const;
+
+    /**
+     * @brief Whether the preset updater may use the network at all.
+     *
+     * When false, sources are listed from the data dir, online sources are never contacted, and
+     * only what comes with the installation and what local sources offer can be installed.
+     */
+    bool online_allowed() const;
 
     Status status() const;
 
@@ -232,8 +239,6 @@ private:
 
     using SourceMutator = std::function<void(PresetUpdaterSourceRowState&)>;
     using VendorMutator = std::function<void(PresetUpdaterVendorRowState&)>;
-
-    static bool updates_enabled();
 
     void start_listing();
     void start_check();

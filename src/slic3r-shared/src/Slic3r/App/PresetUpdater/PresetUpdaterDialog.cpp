@@ -158,6 +158,15 @@ void PresetUpdaterDialog::build_content()
     Text* online_blurb            = sections->emplace_back<Text>(online_text);
     online_blurb->set_wrap_mode(Text::WrapMode::Wrap);
 
+    // TRN Preset updater dialog. Shown under the "Online sources" heading.
+    const std::string offline_text = Biz::_u8L(
+        "Checking these sources over the internet is turned off in Preferences. Presets are still "
+        "installed from the files that come with the application and from local sources."
+    );
+    m_offline_note = sections->emplace_back<Text>(offline_text);
+    m_offline_note->set_wrap_mode(Text::WrapMode::Wrap);
+    m_offline_note->set_text_color(m_theme->color_imgui(Platform::Color::Warning));
+
     m_online_list_view = sections->emplace_back<SourceListView>(SourceFactory{m_model});
     m_online_list_view->set_orientation(Orientation::Vertical);
     m_online_list_view->set_gap(4_fpx);
@@ -220,11 +229,6 @@ void PresetUpdaterDialog::build_content()
                                   { return source_visible(source); });
     m_local_filter->set_source_model(&m_model.local_sources());
     m_local_list_view->set_source_list(m_local_filter.get());
-
-    // TRN Preset updater dialog. Shown instead of the source lists.
-    const std::string disabled_text = Biz::_u8L("Automatic preset updates are disabled in Preferences.");
-    m_empty_state = sections->emplace_back<Text>(disabled_text);
-    m_empty_state->set_wrap_mode(Text::WrapMode::Wrap);
 
     Separator* footer_separator = add_separator();
     footer_separator->set_flex_shrink(0);
@@ -308,7 +312,7 @@ void PresetUpdaterDialog::on_preset_updater_model_changed()
 {
     const PresetUpdaterModel::Status status = m_model.status();
 
-    m_empty_state->set_visible(status == PresetUpdaterModel::Status::Disabled);
+    m_offline_note->set_visible(!m_model.online_allowed());
 
     const bool forced{m_model.has_forced_reconfigurations()};
     const bool forced_state_cleared{m_forced_mode && !forced};
@@ -318,9 +322,8 @@ void PresetUpdaterDialog::on_preset_updater_model_changed()
         m_local_filter->invalidate();
     }
 
-    const bool local_sources_enabled{status != PresetUpdaterModel::Status::Disabled && !forced};
-    m_add_zip_button->set_enabled(local_sources_enabled);
-    m_repo_link_button->set_enabled(local_sources_enabled);
+    m_add_zip_button->set_enabled(!forced);
+    m_repo_link_button->set_enabled(!forced);
 
     // In forced mode the button installs the required vendors only, so anything else being
     // actionable must not make it look like there is something left to press.

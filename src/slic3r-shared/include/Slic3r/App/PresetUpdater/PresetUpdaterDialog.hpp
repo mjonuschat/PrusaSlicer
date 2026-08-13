@@ -56,7 +56,7 @@ private:
 
     bool m_forced_mode{false};
 
-    Yoga::Text* m_empty_state{nullptr};
+    Yoga::Text* m_offline_note{nullptr};
 
     Yoga::LayoutButton* m_add_zip_button{nullptr};
     Yoga::LayoutButton* m_repo_link_button{nullptr};

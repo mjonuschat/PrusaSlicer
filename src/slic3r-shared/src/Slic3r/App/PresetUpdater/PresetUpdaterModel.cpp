@@ -187,7 +187,7 @@ void PresetUpdaterModel::shutdown()
     );
 }
 
-bool PresetUpdaterModel::updates_enabled()
+bool PresetUpdaterModel::online_allowed() const
 {
     return AppServices::instance().app_config().get<bool>("enable_preset_update");
 }
@@ -443,26 +443,14 @@ void PresetUpdaterModel::start_listing()
     ++m_commit_generation;
     m_commit_armed = false;
 
-    // Forced changes overrule the preference: installing them needs the sources listed.
-    if (!updates_enabled() && !has_forced_reconfigurations()) {
-        m_online_sources.reset(std::vector<PresetUpdaterSourceRowState>{});
-        m_local_sources.reset(std::vector<PresetUpdaterSourceRowState>{});
-        set_status(Status::Disabled);
-        return;
-    }
-
     set_status(Status::ListingSources);
     m_activity_reporter.begin_activity(
-        m_preset_updater_interactor.list_repositories(true), Activity::ListingSources
+        m_preset_updater_interactor.list_repositories(online_allowed()), Activity::ListingSources
     );
 }
 
 void PresetUpdaterModel::start_check()
 {
-    if (!updates_enabled() && !has_forced_reconfigurations()) {
-        return;
-    }
-
     m_problem_warnings.clear();
     m_operation_failed = false;
 
@@ -484,7 +472,7 @@ void PresetUpdaterModel::start_check()
 
     set_status(Status::Checking);
     m_check_job = m_preset_updater_interactor.build_update_sync_and_reconfiguration_check(
-        true,
+        online_allowed(),
         Biz::PresetUpdater::VerboseStyle::NoProgress,
         false,
         Biz::PresetUpdater::SourceListSync::UseStored
@@ -598,16 +586,12 @@ void PresetUpdaterModel::commit_selection()
 
     m_commit_dirty     = false;
     m_operation_failed = false;
-    m_selection_job =
-        m_preset_updater_interactor.apply_repository_selection(true, m_working_selection);
+    m_selection_job = m_preset_updater_interactor.apply_repository_selection(m_working_selection);
     m_activity_reporter.begin_activity(m_selection_job, Activity::ApplyingSelection);
 }
 
 void PresetUpdaterModel::set_source_selected(const std::string& uuid, bool selected)
 {
-    if (!updates_enabled()) {
-        return;
-    }
     if (selection_locked(uuid)) {
         return;
     }
@@ -659,30 +643,22 @@ void PresetUpdaterModel::set_source_selected(const std::string& uuid, bool selec
 
 void PresetUpdaterModel::add_local_repository(const boost::filesystem::path& zip_path)
 {
-    if (!updates_enabled()) {
-        return;
-    }
-
     cancel_pending_check();
     m_operation_failed = false;
     set_status(Status::ListingSources);
     const Biz::PresetUpdater::JobId job_id =
-        m_preset_updater_interactor.add_local_repository(true, zip_path);
+        m_preset_updater_interactor.add_local_repository(zip_path);
     m_job_subjects[job_id] = zip_path.filename().string();
     m_activity_reporter.begin_activity(job_id, Activity::AddingSource);
 }
 
 void PresetUpdaterModel::remove_local_repository(const std::string& uuid)
 {
-    if (!updates_enabled()) {
-        return;
-    }
-
     cancel_pending_check();
     m_operation_failed = false;
     set_status(Status::ListingSources);
     const Biz::PresetUpdater::JobId job_id =
-        m_preset_updater_interactor.remove_local_repository(true, uuid);
+        m_preset_updater_interactor.remove_local_repository(uuid);
     m_job_subjects[job_id] = source_name_of_uuid(uuid);
     m_activity_reporter.begin_activity(job_id, Activity::RemovingSource);
 }
@@ -1033,7 +1009,7 @@ void PresetUpdaterModel::on_preset_updater_forced_reconfigurations_list(
 
     // Deliberately not tracked as an activity: nobody asked for this one.
     m_preset_updater_interactor.build_update_sync_and_reconfiguration_check(
-        updates_enabled(), Biz::PresetUpdater::VerboseStyle::NoProgress
+        online_allowed(), Biz::PresetUpdater::VerboseStyle::NoProgress
     );
 }
 
@@ -1291,7 +1267,7 @@ void PresetUpdaterModel::on_preset_updater_repository_selection_performed(
     if (!dialog_open()) {
         m_activity_reporter.begin_activity(
             m_preset_updater_interactor.build_update_sync_and_reconfiguration_check(
-                updates_enabled(),
+                online_allowed(),
                 Biz::PresetUpdater::VerboseStyle::NoProgress,
                 false,
                 Biz::PresetUpdater::SourceListSync::UseStored
@@ -1323,10 +1299,6 @@ void PresetUpdaterModel::on_preset_updater_job_finished(
     }
 
     m_activity_reporter.end_activity(job_id);
-
-    if (state == Biz::PresetUpdater::JobState::Disabled) {
-        set_status(Status::Disabled);
-    }
 
     const auto install_job = m_install_jobs.find(job_id);
     if (install_job != m_install_jobs.end()) {
