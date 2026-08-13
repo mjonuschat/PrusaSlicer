@@ -57,6 +57,7 @@ namespace pt = boost::property_tree;
 #include "libslic3r/CustomGCode.hpp"
 #include "Slic3r/Biz/Algorithms/MiniZWrapper.hpp"
 #include "Slic3r/Biz/Utils/XmlEscape.hpp"
+#include "Slic3r/Biz/Config/Legacy/LegacyCustomGCodesList.hpp"
 
 using Slic3r::Domain::TriangleMesh;
 using Slic3r::Domain::Index3;
@@ -407,6 +408,32 @@ static void handle_legacy_project_loaded(
     Slic3rLegacy::DynamicPrintConfig& config,
     const boost::optional<Slic3r::Semver>& prusaslicer_generator_version
 ) {
+    if (auto* opt_start_gcode = config.option<Slic3rLegacy::ConfigOptionString>("start_gcode", false))
+    {
+        using namespace Config::Legacy;
+        ASSERT(legacy_start_gcodes.size() == legacy_start_gcodes_replacements.size());
+        for (std::size_t i{}; i < legacy_start_gcodes.size(); ++i) {
+            const std::string& legacy{legacy_start_gcodes[i]};
+            const std::string& replacement{legacy_start_gcodes_replacements[i]};
+            if (opt_start_gcode->value == legacy) {
+                opt_start_gcode->value = replacement;
+            }
+        }
+    }
+
+    if (auto* opt_toolchange_gcode = config.option<Slic3rLegacy::ConfigOptionString>("toolchange_gcode", false))
+    {
+        using namespace Config::Legacy;
+        ASSERT(legacy_toolchange_gcodes.size() == legacy_toolchange_gcodes_replacements.size());
+        for (std::size_t i{}; i < legacy_toolchange_gcodes.size(); ++i) {
+            const std::string& legacy{legacy_toolchange_gcodes[i]};
+            const std::string& replacement{legacy_toolchange_gcodes_replacements[i]};
+            if (opt_toolchange_gcode->value == legacy) {
+                opt_toolchange_gcode->value = replacement;
+            }
+        }
+    }
+
     auto *opt_filament_change_time = config.option<Slic3rLegacy::ConfigOptionFloat>("filament_change_time", true);
     if (Slic3rLegacy::is_XL_printer(config)) {
         opt_filament_change_time->value = 4.5;
