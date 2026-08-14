@@ -3,6 +3,9 @@
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/TriangleMesh.hpp"
 
+using Slic3r::Domain::TriangleSelector::TriangleSplittingData;
+using Slic3r::Domain::TriangleSelector::TriangleStateType;
+
 namespace Slic3r::Domain {
 
 ModelObject* ModelVolume::get_object() const { return this->object; }
@@ -153,6 +156,17 @@ bool ModelVolume::is_fdm_support_painted() const { return !this->supported_facet
 bool ModelVolume::is_seam_painted() const { return !this->seam_facets.empty(); }
 
 bool ModelVolume::is_mm_painted() const { return !this->mm_segmentation_facets.empty(); }
+
+bool ModelVolume::is_fully_mm_painted() const
+{
+    if (!this->is_mm_painted()) {
+        return false;
+    }
+
+    // A volume is fully painted when no facet (or child of a split facet) keeps the default (NONE) state.
+    const TriangleSplittingData& data = this->mm_segmentation_facets.get_data();
+    return !data.used_states[static_cast<size_t>(TriangleStateType::NONE)];
+}
 
 bool ModelVolume::is_fuzzy_skin_painted() const { return !this->fuzzy_skin_facets.empty(); }
 
