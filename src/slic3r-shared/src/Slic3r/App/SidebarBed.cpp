@@ -206,6 +206,13 @@ void SidebarBed::on_selected_bed_instances_changed(
     m_bed_name->set_text(bed_instance->name());
 }
 
+void SidebarBed::refresh_material_combobox_label_color()
+{
+    bool is_modified_preset =
+        m_project_interactor.preset_interactor().printer_cbi().config_box_list().lock()->is_dirty();
+    m_logical_printer_button->set_printer_name(m_selected_printer_preset_name, is_modified_preset);
+}
+
 void SidebarBed::on_preset_value_changed(
     Domain::SelectionId project_id,
     Domain::SelectionId config_container_id,
@@ -225,9 +232,12 @@ void SidebarBed::on_preset_value_changed(
         }
     }
 
-    bool is_modified_preset =
-        m_project_interactor.preset_interactor().printer_cbi().config_box_list().lock()->is_dirty();
-    m_logical_printer_button->set_printer_name(m_selected_printer_preset_name, is_modified_preset);
+    refresh_material_combobox_label_color();
+}
+
+void SidebarBed::on_preset_bundles_loaded()
+{
+    refresh_material_combobox_label_color();
 }
 
 LogicalPrinterSettingsDialog& SidebarBed::logical_printer_settings_dialog()

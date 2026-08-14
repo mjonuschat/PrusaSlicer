@@ -47,6 +47,8 @@ public:
         const Domain::ConfigItem& item
     ) override;
 
+    void on_preset_bundles_loaded() override;
+
     void on_config_container_selection_changed(
         Domain::SelectionId project_id,
         Domain::SelectionId config_container_id

@@ -236,6 +236,12 @@ void SidebarPrint::on_preset_value_changed(
     }
 }
 
+void SidebarPrint::on_preset_bundles_loaded()
+{
+    refresh_print_combobox_label_color();
+    refresh_tools_comboboxes_label_colors();
+}
+
 void SidebarPrint::on_config_container_selection_changed(
     Domain::SelectionId project_id,
     Domain::SelectionId config_container_id

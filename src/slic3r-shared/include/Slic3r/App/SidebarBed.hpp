@@ -55,10 +55,14 @@ public:
         Domain::SelectionId config_container_id,
         const Domain::ConfigItem& item
     ) override;
+    void on_preset_bundles_loaded() override;
 
     LogicalPrinterSettingsDialog& logical_printer_settings_dialog();
     PrinterAddDialog& printer_add_dialog();
     MaterialSelectionDialog& material_selection_dialog();
+
+private:
+    void refresh_material_combobox_label_color();
 
 private:
     Biz::ListenerScope<

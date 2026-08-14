@@ -318,8 +318,18 @@ void PresetInteractor::load_preset_bundle(const IO::BundlePaths& bundle_paths)
 
     m_workbench.set_preset_bundle(std::move(*preset_bundle_opt));
     ListenerInvokeLaterBag bag;
-    if (m_selected_project_id != Domain::INVALID_ID)
+    if (m_selected_project_id != Domain::INVALID_ID) {
         fill_printer_presets(false, bag);
+        bag.add([this]
+        {
+            invoke_listeners<IPresetChangedListener>(
+                [](IPresetChangedListener* listener)
+                {
+                    listener->on_preset_bundles_loaded();
+                }
+            );
+        });
+    }
 }
 
 namespace {

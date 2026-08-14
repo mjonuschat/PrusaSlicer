@@ -50,6 +50,9 @@ public:
         HwItemType type
     )
     {}
+
+    virtual void on_preset_bundles_loaded()
+    {}
 };
 
 } // namespace Slic3r::Biz::Preset
