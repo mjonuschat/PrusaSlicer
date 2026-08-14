@@ -14,7 +14,11 @@ public:
 
     void start(const ActionParams& action, const std::string data);
 
-    void on_preset_updater_error(Biz::PresetUpdater::JobId job_id, const std::string& body) override;
+    void on_preset_updater_error(
+        Biz::PresetUpdater::JobId job_id,
+        const std::string& body,
+        Biz::PresetUpdater::PresetUpdaterReason reason
+    ) override;
 
     void on_preset_updater_forced_reconfigurations_list(
         Biz::PresetUpdater::JobId job_id,

@@ -8,7 +8,6 @@
 #include "Slic3r/App/WX/RammingDialog.hpp"
 #include "Slic3r/App/WX/WidgetsConfig.hpp"
 #include "Slic3r/App/WX/LoadStepDialog.hpp"
-#include "Slic3r/App/WX/PresetSourceDialog.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include <Slic3r/App/WX/I18N.hpp>
 #include "Slic3r/Domain/Preset/Types.hpp"
@@ -375,71 +374,6 @@ std::optional<Biz::StepLoadDialogResult> DialogManager::show_load_step_dialog(
 void DialogManager::open_in_browser(const std::string& link, int flag)
 {
     wxLaunchDefaultBrowser(from_u8(link), flag);
-}
-
-Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector
-DialogManager::show_preset_sources_dialog(
-    const Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector& repository_info
-)
-{ 
-    PresetSourceDialog dlg(repository_info);
-    if (dlg.ShowModal() == wxID_OK)
-    {
-        return dlg.result();
-    }
-    return {};
-}
-
-void DialogManager::show_forced_reconfigurations_dialog(
-    const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
-    const std::function<void(bool)>& callback
-)
-{
-    fmt::memory_buffer buf;
-    
-    fmt::format_to(
-        std::back_inserter(buf),
-        "{}\n\n{}\n",
-        Biz::_u8L("The application requires the following configuration updates to continue running safely."),
-        Biz::_u8L("Required Updates:")
-    );
-
-    const std::string update_name = Biz::_u8L("Forced Update");
-    for (const auto& reconf : reconfigurations.forced_updates()) {
-        fmt::format_to(std::back_inserter(buf), "- {}/{} ({})\n", reconf.vendor_repo_id, reconf.vendor_id, update_name);
-    }
-    
-    const std::string downgrade_name = Biz::_u8L("Forced Downgrade");
-    for (const auto& reconf : reconfigurations.forced_downgrades()) {
-        fmt::format_to(std::back_inserter(buf), "- {}/{} ({})\n", reconf.vendor_repo_id, reconf.vendor_id, downgrade_name);
-    }
-
-    fmt::format_to(
-        std::back_inserter(buf),
-        "\n{}",
-        Biz::_u8L("Would you like to perform the updates now or terminate the application?")
-    );
-
-    std::string dialog_msg = fmt::to_string(buf);
-
-    wxDialog dlg(wxTheApp->GetTopWindow(), wxID_ANY, from_u8(Biz::_u8L("Required Configuration Updates")));
-
-    wxBoxSizer* main_sizer = new wxBoxSizer(wxVERTICAL);
-    wxStaticText* text = new wxStaticText(&dlg, wxID_ANY, from_u8(dialog_msg));
-    main_sizer->Add(text, 1, wxALL | wxEXPAND, 15);
-    
-    wxBoxSizer* button_sizer = new wxBoxSizer(wxHORIZONTAL);    
-    wxButton* btn_accept = new wxButton(&dlg, wxID_OK, from_u8(Biz::_u8L("Accept")));
-    wxButton* btn_quit = new wxButton(&dlg, wxID_CANCEL, from_u8(Biz::_u8L("Quit")));
-    
-    button_sizer->Add(btn_accept, 0, wxRIGHT, 10);
-    button_sizer->Add(btn_quit, 0, 0, 0);
-    main_sizer->Add(button_sizer, 0, wxALIGN_RIGHT | wxBOTTOM | wxRIGHT, 15);
-
-    dlg.SetSizerAndFit(main_sizer);
-    dlg.CenterOnParent();
-
-    callback(dlg.ShowModal() == wxID_OK);
 }
 
 } // namespace Slic3r::App::WX

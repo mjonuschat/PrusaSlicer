@@ -5,6 +5,7 @@
 #include "Slic3r/App/Platform/IFileExplorerHandler.hpp"
 #include "Slic3r/App/AppConfig.hpp"
 #include "Slic3r/App/AppConfigInteractor.hpp"
+#include "Slic3r/App/PresetUpdater/PresetUpdaterModel.hpp"
 #include "Slic3r/App/Theme.hpp"
 
 namespace Slic3r::App {
@@ -44,6 +45,11 @@ void AppServices::set_app_config(std::unique_ptr<AppConfig>&& app_config)
         std::make_unique<AppConfigInteractor>(m_app_config->get_config_box_ptr());
 }
 
+void AppServices::set_preset_updater_model(std::unique_ptr<PresetUpdaterModel>&& model)
+{
+    m_preset_updater_model = std::move(model);
+}
+
 void AppServices::set_theme(std::unique_ptr<Theme>&& theme)
 {
     m_theme = std::move(theme);
@@ -77,6 +83,17 @@ AppConfigInteractor& AppServices::app_config_interactor() const
 {
     ASSERT(m_app_config_interactor != nullptr);
     return *m_app_config_interactor;
+}
+
+PresetUpdaterModel& AppServices::preset_updater_model() const
+{
+    ASSERT(m_preset_updater_model != nullptr);
+    return *m_preset_updater_model;
+}
+
+bool AppServices::has_preset_updater_model() const
+{
+    return m_preset_updater_model != nullptr;
 }
 
 Theme& AppServices::theme() const

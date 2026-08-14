@@ -226,6 +226,22 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/LogicalPrinterSettingsButton.cpp
         include/Slic3r/App/PrinterAddDialog.hpp
         src/Slic3r/App/PrinterAddDialog.cpp
+        include/Slic3r/App/PresetUpdater/PresetUpdaterActivityReporter.hpp
+        src/Slic3r/App/PresetUpdater/PresetUpdaterActivityReporter.cpp
+        include/Slic3r/App/PresetUpdater/PresetUpdaterStatusNotification.hpp
+        src/Slic3r/App/PresetUpdater/PresetUpdaterStatusNotification.cpp
+        include/Slic3r/App/PresetUpdater/PresetUpdaterInstallNotification.hpp
+        src/Slic3r/App/PresetUpdater/PresetUpdaterInstallNotification.cpp
+        include/Slic3r/App/PresetUpdater/PresetUpdaterProblemNotification.hpp
+        src/Slic3r/App/PresetUpdater/PresetUpdaterProblemNotification.cpp
+        include/Slic3r/App/PresetUpdater/PresetUpdaterModel.hpp
+        src/Slic3r/App/PresetUpdater/PresetUpdaterModel.cpp
+        include/Slic3r/App/PresetUpdater/PresetUpdaterDialog.hpp
+        src/Slic3r/App/PresetUpdater/PresetUpdaterDialog.cpp
+        include/Slic3r/App/PresetUpdater/PresetUpdaterSourceRow.hpp
+        src/Slic3r/App/PresetUpdater/PresetUpdaterSourceRow.cpp
+        include/Slic3r/App/PresetUpdater/PresetUpdaterVendorRow.hpp
+        src/Slic3r/App/PresetUpdater/PresetUpdaterVendorRow.cpp
         include/Slic3r/App/SidebarToolHeadRow.hpp
         src/Slic3r/App/SidebarToolHeadRow.cpp
         include/Slic3r/App/PrinterNozzleRow.hpp
@@ -297,6 +313,8 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/TopBar.hpp
         src/Slic3r/App/MenuCommandRegistrar.cpp
         include/Slic3r/App/MenuCommandRegistrar.hpp
+        src/Slic3r/App/OpenBrowser.cpp
+        include/Slic3r/App/OpenBrowser.hpp
         include/Slic3r/App/PageEntryButton.hpp
         src/Slic3r/App/PageEntryButton.cpp
         src/Slic3r/App/ProjectButton.cpp
@@ -1112,6 +1130,7 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/Biz/PresetUpdater/PresetUpdaterJob.hpp
         include/Slic3r/Biz/PresetUpdater/PresetUpdaterReconfigurationList.hpp
         include/Slic3r/Biz/PresetUpdater/PresetUpdaterRepositoryDescriptor.hpp
+        include/Slic3r/Biz/PresetUpdater/PresetUpdaterReason.hpp
         include/Slic3r/Biz/PresetUpdater/PresetUpdaterWarning.hpp
         src/Slic3r/Biz/PresetUpdater/PresetUpdaterProcessStatus.hpp
         src/Slic3r/Biz/PresetUpdater/PresetUpdaterProcessStatus.cpp
@@ -1131,15 +1150,13 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/PresetUpdater/PresetUpdaterFileHash.cpp
         src/Slic3r/Biz/PresetUpdater/PresetUpdaterRepositoryDescriptor.cpp
 
-        include/Slic3r/App/PresetUpdaterUI.hpp
-        src/Slic3r/App/PresetUpdaterUI.cpp
         include/Slic3r/App/AppConfig.hpp
         src/Slic3r/App/AppConfig.cpp
         include/Slic3r/App/AppConfigInteractor.hpp
         src/Slic3r/App/AppConfigInteractor.cpp
         include/Slic3r/App/IAppConfigChangedListener.hpp
-        include/Slic3r/App/PresetUpdaterCLI.hpp
-        src/Slic3r/App/PresetUpdaterCLI.cpp
+        include/Slic3r/App/PresetUpdater/PresetUpdaterCLI.hpp
+        src/Slic3r/App/PresetUpdater/PresetUpdaterCLI.cpp
         include/Slic3r/App/AppSettingsAdvanced.hpp
         src/Slic3r/App/AppSettingsAdvanced.cpp
 

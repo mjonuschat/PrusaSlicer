@@ -94,6 +94,7 @@
 #include "Slic3r/App/MaterialSettingsDialog.hpp"
 #include "Slic3r/App/PrintSettingsDialog.hpp"
 #include "Slic3r/App/PrinterAddDialog.hpp"
+#include "Slic3r/App/PresetUpdater/PresetUpdaterDialog.hpp"
 #include "Slic3r/App/UIItemCommand.hpp"
 #include "Slic3r/App/MenuBuilder.hpp"
 #include "Slic3r/App/AppConfig.hpp"
@@ -175,6 +176,7 @@ void PlaterRenderModule::set_modal_dialog(ModalDialog modal_dialog)
     handle_dialog(m_welcome_dialog.get(), ModalDialog::Welcome);
     handle_dialog(m_number_entry_dialog.get(), ModalDialog::NumberEntry);
     handle_dialog(m_crashed_projects_dialog.get(), ModalDialog::CrashedProjects);
+    handle_dialog(m_preset_updater_dialog.get(), ModalDialog::PresetUpdater);
 
     request_render();
 }
@@ -563,6 +565,11 @@ void PlaterRenderModule::init_scene_layout()
         *m_render_module_navigator
     );
 
+    m_preset_updater_dialog = std::make_unique<PresetUpdaterDialog>(
+        AppServices::instance().preset_updater_model(),
+        *m_render_module_navigator
+    );
+
     m_welcome_dialog = std::make_unique<WelcomeDialog>(m_project_interactor);
 
     m_invalid_data_dialog = std::make_unique<InvalidDataDialog>(
@@ -629,7 +636,8 @@ void PlaterRenderModule::init_scene_layout()
         m_welcome_dialog.release(),
         m_invalid_data_dialog.release(),
         m_plugin_system.init_dialog().release(),
-        m_crashed_projects_dialog.release()
+        m_crashed_projects_dialog.release(),
+        m_preset_updater_dialog.release()
     ));
     m_layout->init();
 
@@ -806,6 +814,7 @@ void PlaterRenderModule::init_dialog_navigation()
 
     m_dialog_navigation.insert_dialog(&m_sidebar_print->print_settings_dialog());
     m_dialog_navigation.insert_dialog(m_invalid_data_dialog.get());
+    m_dialog_navigation.insert_dialog(m_preset_updater_dialog.get());
 
     m_dialog_navigation.insert_dialog(&m_sidebar_action_buttons->physical_printer_settings_dialog());
     m_dialog_navigation.insert_dialog(

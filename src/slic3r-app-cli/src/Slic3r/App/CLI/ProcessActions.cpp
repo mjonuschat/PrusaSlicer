@@ -6,7 +6,7 @@
 #include "Slic3r/App/CLI/ProfilesSharingUtils.hpp"
 #include "Slic3r/App/ConfigModelDump.hpp"
 #include "Slic3r/App/Init.hpp"
-#include "Slic3r/App/PresetUpdaterCLI.hpp"
+#include "Slic3r/App/PresetUpdater/PresetUpdaterCLI.hpp"
 #include "Slic3r/Biz/Algorithms/Model.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Biz/Config/SelectedPresetJson.hpp"
@@ -96,7 +96,11 @@ struct PresetUpdaterApprovalListener : public Biz::PresetUpdater::IPresetUpdater
     std::promise<bool> promise_approved;
     std::atomic<bool> resolved{false};
 
-    void on_preset_updater_error(Biz::PresetUpdater::JobId, const std::string& body) override
+    void on_preset_updater_error(
+        Biz::PresetUpdater::JobId,
+        const std::string& body,
+        Biz::PresetUpdater::PresetUpdaterReason
+    ) override
     {
         if (!resolved.exchange(true)) {
             promise_approved.set_value(false);

@@ -21,7 +21,8 @@ PlaterRenderLayout::PlaterRenderLayout(
     std::unique_ptr<WelcomeDialog> welcome_dialog,
     std::unique_ptr<InvalidDataDialog> invalid_data_dialog,
     std::unique_ptr<Lua::PluginDialog> plugin_dialog,
-    std::unique_ptr<CrashedProjectsDialog> crashed_projects_dialog
+    std::unique_ptr<CrashedProjectsDialog> crashed_projects_dialog,
+    std::unique_ptr<PresetUpdaterDialog> preset_updater_dialog
 ) :
     AbstractRenderLayout(
         navigator,
@@ -34,7 +35,8 @@ PlaterRenderLayout::PlaterRenderLayout(
         std::move(sidebar_print),
         std::move(sidebar_object),
         std::move(number_entry_dialog),
-        std::move(crashed_projects_dialog)
+        std::move(crashed_projects_dialog),
+        std::move(preset_updater_dialog)
     ),
     m_sidebar_action_buttons(std::move(sidebar_action_buttons)),
     m_history(std::move(history)),

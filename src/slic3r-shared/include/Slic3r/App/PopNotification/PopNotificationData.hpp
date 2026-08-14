@@ -27,8 +27,9 @@ enum class PopNotificationType
     ConnectError,
     FileExplorerError,
     PresetUpdaterStatus,
+    PresetUpdaterInstalled,
     PresetUpdateAvailable,
-    PresetUpdaterWarning,
+    PresetUpdaterProblem,
     PresetUpdaterError,
     PluginInstallationError,
     PluginInstallationSuccess

@@ -420,6 +420,7 @@ void PreviewRenderModule::set_modal_dialog(ModalDialog modal_dialog)
 
     handle_dialog(m_preferences_dialog.get(), ModalDialog::Preferences);
     handle_dialog(m_crashed_projects_dialog.get(), ModalDialog::CrashedProjects);
+    handle_dialog(m_preset_updater_dialog.get(), ModalDialog::PresetUpdater);
 
     request_render();
 }
@@ -841,6 +842,11 @@ void PreviewRenderModule::init_scene_layout()
     m_crashed_projects_dialog =
         std::make_unique<CrashedProjectsDialog>(m_project_interactor, *m_render_module_navigator);
 
+    m_preset_updater_dialog = std::make_unique<PresetUpdaterDialog>(
+        AppServices::instance().preset_updater_model(),
+        *m_render_module_navigator
+    );
+
     // >> This code is same for Plater/PreviewRenderModule
     m_top_bar = std::make_unique<TopBar>(
         &m_project_interactor,
@@ -887,7 +893,8 @@ void PreviewRenderModule::init_scene_layout()
         m_sidebar_auto_reslice.release(),
         m_number_entry_dialog.release(),
         m_invalid_data_dialog.release(),
-        m_crashed_projects_dialog.release()
+        m_crashed_projects_dialog.release(),
+        m_preset_updater_dialog.release()
     ));
     m_layout->init();
 
@@ -1059,6 +1066,7 @@ void PreviewRenderModule::init_dialog_navigation()
 
     m_dialog_navigation.insert_dialog(&m_sidebar_print->print_settings_dialog());
     m_dialog_navigation.insert_dialog(m_invalid_data_dialog.get());
+    m_dialog_navigation.insert_dialog(m_preset_updater_dialog.get());
 
     m_dialog_navigation.insert_dialog(&m_sidebar_action_buttons->physical_printer_settings_dialog());
     m_dialog_navigation.insert_dialog(

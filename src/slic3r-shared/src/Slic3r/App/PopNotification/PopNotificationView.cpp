@@ -1,5 +1,6 @@
 #include "Slic3r/App/PopNotification/PopNotificationView.hpp"
 
+#include "Slic3r/App/Imgui/ImguiExtension.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/ProgressBar.hpp"
@@ -363,7 +364,7 @@ void PopNotificationView::basic_mid_buttons_layout(
                     }
                 );
         };
-        button->set_background_color(button_color());
+        style_button(button);
         button->set_margin({0_fpx, 0_fpx, 5_fpx, 0_fpx});
         if (button->label_object()) {
             button->label_object()->set_margin({5_fpx, 2_fpx, 5_fpx, 2_fpx});
@@ -522,9 +523,9 @@ void PopNotificationView::update_buttons(const std::vector<PopNotificationButton
         return;
     for (size_t i = 0; i < buttons.size(); i++) {
         if (m_buttons.size() <= i) {
-            m_buttons.emplace_back(
+            style_button(m_buttons.emplace_back(
                 m_button_line->emplace_back<Yoga::LayoutButton>(buttons[i].text)
-            );
+            ));
         }
         if (m_buttons[i]->label() != buttons[i].text) {
             m_buttons[i]->set_label(buttons[i].text);
@@ -563,7 +564,7 @@ ImColor PopNotificationView::text_color() const
     return m_theme->color_imgui(Platform::Color::Text);
 }
 
-Platform::Color PopNotificationView::button_color() const
+std::optional<Platform::Color> PopNotificationView::button_accent_color() const
 {
     switch (m_state->level) {
     case PopNotificationLevel::Warning:
@@ -571,8 +572,38 @@ Platform::Color PopNotificationView::button_color() const
     case PopNotificationLevel::Error:
         return Platform::Color::Error;
     default:
-        return Platform::Color::Button;
+        return std::nullopt;
     }
+}
+
+ImColor PopNotificationView::readable_accent_color(const ImColor& accent) const
+{
+    const ImColor background      = m_theme->color_imgui(Platform::Color::Button);
+    const bool    dark_background = Imgui::is_dark(background);
+    if (dark_background != Imgui::is_dark(accent)) {
+        return accent;
+    }
+    return Imgui::adjust_brightness(accent, dark_background ? 1.6f : 0.6f);
+}
+
+void PopNotificationView::style_button(Yoga::LayoutButton* button) const
+{
+    button->set_background_color(Platform::Color::Button);
+
+    const std::optional<Platform::Color> accent = button_accent_color();
+    if (!accent) {
+        button->set_label_color(text_color());
+        button->set_background_border_width(0.f);
+        return;
+    }
+
+    const ImColor accent_color = m_theme->color_imgui(*accent);
+    button->set_label_color(readable_accent_color(accent_color));
+    button->set_background_color_border(
+        accent_color,
+        Imgui::adjust_brightness(accent_color, 1.25f)
+    );
+    button->set_background_border_width((1_fpx).value);
 }
 
 } // namespace Slic3r::App::PopNotification

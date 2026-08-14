@@ -14,6 +14,7 @@
 #include "Slic3r/App/SidebarObject.hpp"
 #include "Slic3r/App/PreferencesDialog.hpp"
 #include "Slic3r/App/NumberEntryDialog.hpp"
+#include "Slic3r/App/PresetUpdater/PresetUpdaterDialog.hpp"
 #include "Slic3r/App/IAppConfigChangedListener.hpp"
 #include "Slic3r/App/CrashedProjectsDialog.hpp"
 
@@ -54,7 +55,8 @@ public:
         std::unique_ptr<SidebarPrint> sidebar_print,
         std::unique_ptr<SidebarObject> sidebar_object,
         std::unique_ptr<NumberEntryDialog> numbers_entry_dialog,
-        std::unique_ptr<CrashedProjectsDialog> crashed_projects_dialog
+        std::unique_ptr<CrashedProjectsDialog> crashed_projects_dialog,
+        std::unique_ptr<PresetUpdaterDialog> preset_updater_dialog
     );
     virtual ~AbstractRenderLayout();
     AbstractRenderLayout(const AbstractRenderLayout& other)            = delete;
@@ -145,6 +147,7 @@ protected:
     Yoga::Passthrough<PreferencesDialog> m_preferences_dialog;
     Yoga::Passthrough<NumberEntryDialog> m_numbers_entry_dialog;
     Yoga::Passthrough<CrashedProjectsDialog> m_crashed_projects_dialog;
+    Yoga::Passthrough<PresetUpdaterDialog> m_preset_updater_dialog;
 };
 
 } // namespace Slic3r::App

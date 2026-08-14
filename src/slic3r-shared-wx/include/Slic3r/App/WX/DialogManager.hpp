@@ -107,15 +107,6 @@ public:
 
     void open_in_browser(const std::string& link, int flag) override;
 
-    Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector show_preset_sources_dialog(
-        const Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector& repository_info
-    ) override;
-
-    void show_forced_reconfigurations_dialog(
-        const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
-        const std::function<void(bool)>& callback
-    ) override;
-
 private:
     boost::filesystem::path m_last_dir;
 };

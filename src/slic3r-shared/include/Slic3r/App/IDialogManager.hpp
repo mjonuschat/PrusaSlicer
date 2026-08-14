@@ -98,15 +98,6 @@ public:
     virtual std::string show_ramming_dialog(const std::string& ramming_parameters) = 0;
 
     virtual void open_in_browser(const std::string& link, int flag) = 0;
-
-    virtual Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector show_preset_sources_dialog(
-        const Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector& repository_info
-    ) = 0;
-
-    virtual void show_forced_reconfigurations_dialog(
-        const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
-        const std::function<void(bool)>& callback
-    ) = 0;
 };
 
 } // namespace Slic3r::App

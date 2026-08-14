@@ -154,7 +154,8 @@ std::string MenuBuilder::item_name_translated(UniversalMenuItemName menu_item_na
                 case MenuItemName::OnlinePresetUpdate:
                     return Biz::_u8L("Update from Online Presets");
                 case MenuItemName::PresetReposManagement:
-                    return Biz::_u8L("Preset Update Management");
+                    // TRN Main menu item. Opens the preset sources and updates dialog.
+                    return Biz::_u8L("Preset Sources & Updates");
                 case MenuItemName::ArrangeBed:
                     return Biz::_u8L("Arrange Bed");
                 case MenuItemName::ArrangeSelectionBed:

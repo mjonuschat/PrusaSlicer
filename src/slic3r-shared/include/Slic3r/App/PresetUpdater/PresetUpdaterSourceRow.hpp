@@ -1,0 +1,98 @@
+#pragma once
+
+#include "Slic3r/App/PresetUpdater/PresetUpdaterModel.hpp"
+#include "Slic3r/App/PresetUpdater/PresetUpdaterVendorRow.hpp"
+#include "Slic3r/App/Yoga/Item.hpp"
+#include "Slic3r/App/Yoga/ListView.hpp"
+
+#include "Slic3r/Biz/DataObserver.hpp"
+
+namespace Slic3r::App {
+
+namespace Yoga {
+class Icon;
+class LayoutButton;
+class Separator;
+class StackLayout;
+class Text;
+class ToggleButton;
+} // namespace Yoga
+
+/**
+ * @brief One preset source: whether it is used, what is known about it, and its vendors.
+ *
+ * Built once by the ListView and updated in place from on_data_update - children are never rebuilt.
+ * Whether the vendor list is unrolled is view state and deliberately not part of the model, so the
+ * two dialog instances can be unrolled independently.
+ */
+class PresetUpdaterSourceRow :
+    public Biz::DataObserver<PresetUpdaterSourceRowState>,
+    public Yoga::Item
+{
+public:
+    using VendorFactory = Yoga::
+        ViewFactory<PresetUpdaterVendorRow, PresetUpdaterVendorRowState, PresetUpdaterModel&>;
+    using VendorListView =
+        Yoga::ListView<PresetUpdaterVendorRow, PresetUpdaterVendorRowState, VendorFactory>;
+
+    PresetUpdaterSourceRow(
+        size_t index, const PresetUpdaterSourceRowState& data, PresetUpdaterModel& model
+    );
+
+protected:
+    void on_data_update() override;
+    void on_index_update() override;
+
+private:
+
+    enum StatusPage : size_t
+    {
+        StatusNotUsed = 0,
+        StatusBlank   = 1,
+        StatusSummary = 2
+    };
+
+    /// @note Must match the order the pages are added to m_action_slot.
+    enum ActionPage : size_t
+    {
+        ActionNone       = 0,
+        ActionWaiting    = 1,
+        ActionChecking   = 2,
+        ActionInstalling = 3,
+        ActionApplyAll   = 4
+    };
+
+    void build_header();
+    void build_status_cell(Yoga::Item* header);
+    void set_expanded(bool expanded);
+
+    PresetUpdaterModel& m_model;
+
+    bool m_expanded{false};
+
+    bool m_updating{false};
+
+    Yoga::ToggleButton* m_tick{nullptr};
+    Yoga::LayoutButton* m_arrow{nullptr};
+    Yoga::Text* m_name{nullptr};
+    Yoga::LayoutButton* m_info_badge{nullptr};
+    Yoga::Text* m_description{nullptr};
+
+    Yoga::Item* m_icon_slot{nullptr};
+    Yoga::LayoutButton* m_reveal_button{nullptr};
+    Yoga::LayoutButton* m_remove_button{nullptr};
+
+    Yoga::StackLayout* m_action_slot{nullptr};
+    Yoga::LayoutButton* m_update_all_button{nullptr};
+
+    Yoga::StackLayout* m_status{nullptr};
+    Yoga::Text* m_summary_text{nullptr};
+    Yoga::Icon* m_summary_icon{nullptr};
+
+    Yoga::Separator* m_separator{nullptr};
+
+    Yoga::Item* m_vendor_container{nullptr};
+    VendorListView* m_vendor_list_view{nullptr};
+};
+
+} // namespace Slic3r::App

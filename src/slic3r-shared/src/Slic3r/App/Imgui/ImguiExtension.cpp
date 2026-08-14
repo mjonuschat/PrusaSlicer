@@ -639,7 +639,7 @@ void move_window_to_bounds(const ImVec2& available_size, ImRect& window)
     window.Max.y = std::round(window.Max.y);
 }
 
-static bool is_dark(const ImColor color)
+bool is_dark(const ImColor color)
 {
     float luminance{0.299f * color.Value.x + 0.587f * color.Value.y + 0.114f * color.Value.z};
     return luminance < 0.5f;

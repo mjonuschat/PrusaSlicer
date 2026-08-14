@@ -95,6 +95,8 @@ void colored_circle_marker_aligned(float align_x, const std::string& label_str, 
 
 void move_window_to_bounds(const ImVec2& available_size, ImRect& window);
 
+bool is_dark(ImColor color);
+
 ImColor contrast_color(ImColor color);
 
 } // namespace Slic3r::App::Imgui

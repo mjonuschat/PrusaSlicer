@@ -245,6 +245,7 @@ private:
     Yoga::Passthrough<NumberEntryDialog> m_number_entry_dialog;
     Yoga::Passthrough<InvalidDataDialog> m_invalid_data_dialog;
     Yoga::Passthrough<CrashedProjectsDialog> m_crashed_projects_dialog;
+    Yoga::Passthrough<PresetUpdaterDialog> m_preset_updater_dialog;
     // temporary variable to allow to switch yoga layout on/off
 
     ToolBarButton* m_button_travels           = nullptr;

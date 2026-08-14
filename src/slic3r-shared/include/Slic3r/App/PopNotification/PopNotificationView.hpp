@@ -5,6 +5,7 @@
 #include "Slic3r/App/Yoga/Window.hpp"
 #include "Slic3r/App/Render/ImguiTypes.hpp"
 
+#include <optional>
 #include <variant>
 
 namespace Slic3r::App::Yoga {
@@ -82,6 +83,8 @@ private:
     void update_progress(int progress);
 
     ImColor text_color() const;
-    Platform::Color button_color() const;
+    std::optional<Platform::Color> button_accent_color() const;
+    ImColor readable_accent_color(const ImColor& accent) const;
+    void style_button(Yoga::LayoutButton* button) const;
 };
 } // namespace Slic3r::App::PopNotification

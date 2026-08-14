@@ -41,6 +41,7 @@ class ToolBarSwitchButton;
 class NumberEntryDialog;
 class CrashedProjectsDialog;
 class ProjectSaver;
+class PresetUpdaterDialog;
 } // namespace Slic3r::App
 
 namespace Slic3r::App::Lua {
@@ -261,6 +262,7 @@ private:
     Yoga::Passthrough<History> m_history;
     Yoga::Passthrough<PreferencesDialog> m_preferences_dialog;
     Yoga::Passthrough<NumberEntryDialog> m_number_entry_dialog;
+    Yoga::Passthrough<PresetUpdaterDialog> m_preset_updater_dialog;
     Yoga::Passthrough<WelcomeDialog> m_welcome_dialog;
     Yoga::Passthrough<InvalidDataDialog> m_invalid_data_dialog;
     Yoga::Passthrough<CrashedProjectsDialog> m_crashed_projects_dialog;

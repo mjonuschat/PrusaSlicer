@@ -1,4 +1,4 @@
-#include "Slic3r/App/PresetUpdaterCLI.hpp"
+#include "Slic3r/App/PresetUpdater/PresetUpdaterCLI.hpp"
 
 #include "Slic3r/Log.hpp"
 #include <boost/filesystem.hpp>
@@ -57,7 +57,11 @@ void PresetUpdaterCLI::start(const ActionParams& action, const std::string data)
     }
 }
 
-void PresetUpdaterCLI::on_preset_updater_error(Biz::PresetUpdater::JobId job_id, const std::string& body)
+void PresetUpdaterCLI::on_preset_updater_error(
+    Biz::PresetUpdater::JobId job_id,
+    const std::string& body,
+    Biz::PresetUpdater::PresetUpdaterReason
+)
 {
     nlohmann::json j = {{"error", body}};
     printf("%s\n",j.dump(-1).c_str());

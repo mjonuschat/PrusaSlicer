@@ -12,7 +12,8 @@ enum class ModalDialog
     Preferences,
     CrashedProjects,
     Welcome,
-    NumberEntry
+    NumberEntry,
+    PresetUpdater
 };
 
 } // namespace Slic3r::App

@@ -102,15 +102,6 @@ private:
 
     void reload_selection_from_disk();
 
-    struct OpenBrowserParams
-    {
-        std::string url;
-        bool force_remember_choice{true};
-        bool is_localized_url{false};
-    };
-
-    void open_browser(OpenBrowserParams params);
-
     Platform::AbstractRenderModule& m_render_module;
     MenuManager& m_menu_manager;
     Biz::ProjectInteractor& m_project_interactor;

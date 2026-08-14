@@ -17,6 +17,7 @@
 #include <Slic3r/App/ThumbnailStoreUpdater.hpp>
 #include <Slic3r/App/PopNotification/PopNotificationCenter.hpp>
 #include <Slic3r/App/AppServices.hpp>
+#include <Slic3r/App/PresetUpdater/PresetUpdaterModel.hpp>
 #include <Slic3r/App/AppConfig.hpp>
 #include <Slic3r/App/AppConfigInteractor.hpp>
 #include <Slic3r/App/AppConfigProvider.hpp>
@@ -366,10 +367,9 @@ bool DesktopApp::OnInit()
     if (scrn && is_editor)
         scrn->SetText(WX::_L("Initializing Prepare Mode") + dots);
 
-    m_project_interactor->preset_updater_interactor()
-        .add_listener<Biz::PresetUpdater::IPresetUpdaterResultListener>(
-            &app_services.pop_notification_center()
-        );
+    app_services.set_preset_updater_model(
+        std::make_unique<PresetUpdaterModel>(m_project_interactor->preset_updater_interactor())
+    );
 
     std::shared_ptr<ProjectSaver> project_saver =
         std::make_shared<ProjectSaver>(*m_project_interactor, *thumbnail_store);
@@ -437,12 +437,15 @@ bool DesktopApp::OnInit()
 
     m_project_interactor->user_account_interactor().init(app_services.app_config().is_prusa_account_enabled());
 
-    m_preset_updater_ui = std::make_unique<PresetUpdaterUI>(
-        m_project_interactor->preset_updater_interactor(),
-        preset_interactor,
-        m_navigator,
-        bundle_paths
+    PresetUpdaterModel& preset_updater_model = app_services.preset_updater_model();
+    preset_updater_model.set_show_dialog_callback(
+        [this]() { m_navigator.set_modal_dialog(ModalDialog::PresetUpdater); }
     );
+    preset_updater_model.set_presets_installed_callback(
+        [&preset_interactor, bundle_paths]()
+        { preset_interactor.load_preset_bundle(bundle_paths); }
+    );
+    preset_updater_model.start();
 
     m_prusalink_storage_listener =
         std::make_unique<PrintHost::PrusaLinkStorageListener>(*m_project_interactor.get());
@@ -494,6 +497,12 @@ bool DesktopApp::OnInit()
 
 DesktopApp::~DesktopApp()
 {
+    // Before m_project_interactor, which owns the interactor the model listens to and calls into.
+    AppServices& app_services = AppServices::instance();
+    if (app_services.has_preset_updater_model()) {
+        app_services.preset_updater_model().shutdown();
+    }
+
     Biz::Platform::close();
     flush_logs();
 }
