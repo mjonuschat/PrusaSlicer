@@ -673,6 +673,49 @@ TEST_CASE("Apply rejects invalid extruders", "[PrintApply]") {
     REQUIRE(std::holds_alternative<Changed>(status));
 }
 
+SCENARIO("Print: Object containing a degenerate planar volume", "[PrintApply]")
+{
+    using Slic3r::Biz::Algorithms::TriangleMesh::construct;
+    using Slic3r::Biz::Algorithms::TriangleMesh::make_cube;
+
+    GIVEN("20mm cube object with an additional zero-thickness planar part")
+    {
+        Domain::Model model;
+        Domain::ModelObject* object = model.add_object();
+        object->name                = "object.stl";
+        add_volume(object, make_cube(20., 20., 20.));
+
+        indexed_triangle_set planar_its;
+        planar_its.vertices = {
+            Vec3f(5.f, 5.f, 20.f),
+            Vec3f(15.f, 5.f, 20.f),
+            Vec3f(15.f, 15.f, 20.f),
+            Vec3f(5.f, 15.f, 20.f)
+        };
+        planar_its.indices = {Domain::Index3{0, 1, 2}, Domain::Index3{0, 2, 3}};
+        add_volume(object, construct(planar_its));
+        object->add_instance();
+
+        const std::shared_ptr<const TriangleMesh>& convex_hull{
+            object->volumes.back()->get_convex_hull_shared_ptr()
+        };
+        REQUIRE(convex_hull != nullptr);
+        REQUIRE(convex_hull->its.indices.empty());
+
+        WHEN("the print is synchronized with the model")
+        {
+            Print print;
+            TestConfig config;
+            Test::init_print(std::vector<TriangleMesh>{}, print, model, config);
+            THEN("a print object with regions for both volumes exists")
+            {
+                REQUIRE(print.objects().size() == 1);
+                REQUIRE(print.objects().front()->shared_regions() != nullptr);
+            }
+        }
+    }
+}
+
 using SLAStep = std::variant<SLAPrintStep, SLAPrintObjectStep>;
 
 // Check that all other steps are done (hence the exclusive in the name).

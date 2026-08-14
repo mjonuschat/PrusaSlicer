@@ -801,6 +801,10 @@ void ProjectInteractor::load_models_to_project(std::vector<boost::filesystem::pa
         m_dialog_provider
     );
 
+    if (new_instances.empty()) {
+        return;
+    }
+
     set_project_dir(selected_project_id(), paths.front());
 
     arrange_interactor().arrange_added_instances(

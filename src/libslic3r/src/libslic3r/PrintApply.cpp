@@ -379,8 +379,10 @@ void update_volume_bboxes(
                     if (it != volumes_old.end() && it->volume_id == model_volume->id())
                         layer_range.volumes.emplace_back(*it);
                 } else {
-                    const auto ch = model_volume->get_convex_hull_shared_ptr();
-                    const Domain::TriangleMesh* mesh = (ch != nullptr) ? ch.get() : &model_volume->mesh();
+                    const auto ch                    = model_volume->get_convex_hull_shared_ptr();
+                    const Domain::TriangleMesh* mesh = (ch != nullptr && !ch->its.indices.empty()) ?
+                        ch.get() :
+                        &model_volume->mesh();
                     layer_range.volumes.push_back({ model_volume->id(),
                         transformed_its_bbox2d(mesh->its, trafo_for_bbox(object_trafo, model_volume->get_matrix()), offset) });
                 }

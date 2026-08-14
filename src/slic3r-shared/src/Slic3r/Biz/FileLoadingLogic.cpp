@@ -72,7 +72,7 @@ static bool has_zero_volume(const TriangleMeshStats& stats)
 {
     return stats.volume < zero_volume //
         && stats.volume
-        > 0.f; // temporary check for the non-legacy project files, where volume is incorrect
+        >= 0.f; // temporary check for the non-legacy project files, where volume is incorrect
 }
 
 static void convert_from_imperial_units(TriangleMesh& mesh)
@@ -898,6 +898,8 @@ static std::vector<ReturnData> import_files(
             if (!data.error().user_cancelled) {
                 errors += data.error().message + "\n";
             }
+        } else if (data.value().model.has_value() && data.value().model->objects.empty()) {
+            continue;
         } else {
             if (extra_model && data.value().mesh) {
                 ModelObject* new_object = extra_model->add_object();
