@@ -87,29 +87,35 @@ void PrintToolItem::update_value()
             return;
         }
 
-        const bool all_percentage{std::ranges::all_of(
-            values,
-            [](const Domain::ConfigValue& value)
-            { return value.get<Domain::FloatOrPercentage>().is_percentage(); })};
+        // lukasmatena thinks that the following block is wrong.
+        // If the values are percentages, we cannot resolve them here, as the comment
+        // above states. The get_min/max/average static functions above return misleading
+        // values here, because each tool can have different base value the percentage relates to.
+        // Commenting this out means that UI shows nan due to the last-resort fallback.
+        //
+        // const bool all_percentage{std::ranges::all_of(
+        //     values,
+        //     [](const Domain::ConfigValue& value)
+        //     { return value.get<Domain::FloatOrPercentage>().is_percentage(); })};
 
-        if (all_percentage) {
-            std::vector<double> percentage_values;
-            for (const Domain::ConfigValue& value : values) {
-                percentage_values.push_back(value.get<Domain::FloatOrPercentage>().get_abs_value(100));
-            }
-            double resulting_value{};
-            if (print_item->def().compatibility_rule == Domain::CompatibilityRule::Average) {
-                resulting_value = get_average(percentage_values);
-            } else if (print_item->def().compatibility_rule == Domain::CompatibilityRule::Min) {
-                resulting_value = get_min(percentage_values);
-            } else if (print_item->def().compatibility_rule == Domain::CompatibilityRule::Max) {
-                resulting_value = get_max(percentage_values);
-            } else {
-                PANIC("Invalid compatibility rule");
-            }
-            value = {Domain::ConfigValue{Domain::FloatOrPercentage{Domain::Percentage{resulting_value}}}, true};
-            return;
-        }
+        // if (all_percentage) {
+        //     std::vector<double> percentage_values;
+        //     for (const Domain::ConfigValue& value : values) {
+        //         percentage_values.push_back(value.get<Domain::FloatOrPercentage>().get_abs_value(100));
+        //     }
+        //     double resulting_value{};
+        //     if (print_item->def().compatibility_rule == Domain::CompatibilityRule::Average) {
+        //         resulting_value = get_average(percentage_values);
+        //     } else if (print_item->def().compatibility_rule == Domain::CompatibilityRule::Min) {
+        //         resulting_value = get_min(percentage_values);
+        //     } else if (print_item->def().compatibility_rule == Domain::CompatibilityRule::Max) {
+        //         resulting_value = get_max(percentage_values);
+        //     } else {
+        //         PANIC("Invalid compatibility rule");
+        //     }
+        //     value = {Domain::ConfigValue{Domain::FloatOrPercentage{Domain::Percentage{resulting_value}}}, true};
+        //     return;
+        // }
 
         const bool all_floats{std::ranges::all_of(
             values,

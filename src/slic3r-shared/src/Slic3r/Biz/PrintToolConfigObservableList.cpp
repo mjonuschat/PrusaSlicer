@@ -95,14 +95,15 @@ void PrintToolConfigObservableList::set_sources(
                 tool_overrides,
                 original_print_config_box->items.find(print_item.name()),
                 original_tool_overrides,
-                Domain::apply_compatibility_rule(
-                    &print_item.value(),
-                    tool_overrides,
-                    m_extruder_candidates
-                ),
+                std::pair<Domain::ConfigValue, bool>{print_item.value(), false},
                 m_print_tool_shared_context,
                 m_favorites.contains(print_item.name())
             );
+            // HOTFIX: apply_compatibility_rule() must not be called directly on
+            // unresolved FloatOrPercentage overrides (it asserts). update_value()
+            // already guards against this, so recompute the value through it
+            // instead of duplicating that guard here.
+            m_items.back().update_value();
         }
 
         invoke_listeners<IListObserver<PrintToolItem>>([](IListObserver<PrintToolItem>* l)
@@ -360,11 +361,8 @@ void PrintToolConfigObservableList::update_items()
             }
         }
         tool_print_item.tool_overrides = tool_overrides;
-        tool_print_item.value          = Domain::apply_compatibility_rule(
-            &tool_print_item.print_item->value(),
-            tool_overrides,
-            m_extruder_candidates
-        );
+        // HOTFIX: see comment in set_sources() above.
+        tool_print_item.update_value();
 
         std::vector<const Domain::ConfigItem*> original_tool_overrides;
         if (tool_print_item.original_print_item->def().overrides_in.contains(
