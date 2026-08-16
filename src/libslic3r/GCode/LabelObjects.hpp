@@ -19,7 +19,7 @@ namespace GCode {
 class LabelObjects
 {
 public:
-    void init(const SpanOfConstPtrs<PrintObject>& objects, LabelObjectsStyle label_object_style, GCodeFlavor gcode_flavor);
+    void init(const Print& print, LabelObjectsStyle label_object_style, GCodeFlavor gcode_flavor);
     std::string all_objects_header() const;
     std::string all_objects_header_singleline_json() const;
 
@@ -43,6 +43,17 @@ private:
         int unique_id;
     };
 
+    // Geometry-only entries for regions that must never be printed inside an EXCLUDE_OBJECT_START/END
+    // (or M486 S<id>) block, so a host's "Cancel Object" can never remove them: e.g. the skirt/brim
+    // and wipe tower. Only populated for the Klipper firmware flavor, the only one of the supported
+    // protocols where defining an object's geometry is decoupled from marking it excludable.
+    struct StaticLabelData
+    {
+        std::string name;
+        std::string center;
+        std::string polygon;
+    };
+
     enum class IncludeName {
         No,
         Yes
@@ -57,6 +68,7 @@ private:
     LabelObjectsStyle m_label_objects_style;
     GCodeFlavor       m_flavor;
     std::vector<LabelData> m_label_data;
+    std::vector<StaticLabelData> m_static_label_data;
 };
 } // namespace GCode
 } // namespace Slic3r

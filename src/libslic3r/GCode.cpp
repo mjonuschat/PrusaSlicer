@@ -1210,7 +1210,7 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
     this->print_machine_envelope(file, print);
 
     // Label all objects so printer knows about them since the start.
-    m_label_objects.init(print.objects(), print.config().gcode_label_objects, print.config().gcode_flavor);
+    m_label_objects.init(print, print.config().gcode_label_objects, print.config().gcode_flavor);
     file.write(m_label_objects.all_objects_header());
 
     // Update output variables after the extruders were initialized.
