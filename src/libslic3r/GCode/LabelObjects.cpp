@@ -6,6 +6,7 @@
 #include <cassert>
 
 #include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/Geometry/ConvexHull.hpp"
 #include "libslic3r/GCode/GCodeWriter.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/Print.hpp"
@@ -48,10 +49,35 @@ Polygon instance_outline(const PrintInstance* pi)
         return pi->model_instance->get_object()->convex_hull_2d(pi->model_instance->get_matrix());
 }
 
+std::string sanitize_klipper_name(std::string name)
+{
+    // Disallow Klipper special chars, common illegal filename chars, etc.
+    const std::string banned = "\b\t\n\v\f\r \"#%&\'*-./:;<>\\";
+    std::replace_if(name.begin(), name.end(), [&banned](char c) { return banned.find(c) != std::string::npos; }, '_');
+    return name;
+}
+
+std::pair<std::string, std::string> format_center_and_polygon(Polygon outline)
+{
+    outline.douglas_peucker(50000.f);
+    Point center = outline.centroid();
+    char buffer[64];
+    std::snprintf(buffer, sizeof(buffer) - 1, "%.3f,%.3f", unscale<float>(center[0]), unscale<float>(center[1]));
+    std::string center_str(buffer);
+    std::string polygon_str = std::string("[");
+    for (const Point& point : outline) {
+        std::snprintf(buffer, sizeof(buffer) - 1, "[%.3f,%.3f],", unscale<float>(point[0]), unscale<float>(point[1]));
+        polygon_str += buffer;
+    }
+    polygon_str.pop_back();
+    polygon_str += "]";
+    return {center_str, polygon_str};
+}
+
 }; // anonymous namespace
 
 
-void LabelObjects::init(const SpanOfConstPtrs<PrintObject>& objects, LabelObjectsStyle label_object_style, GCodeFlavor gcode_flavor)
+void LabelObjects::init(const Print& print, LabelObjectsStyle label_object_style, GCodeFlavor gcode_flavor)
 {
     m_label_objects_style = label_object_style;
     m_flavor = gcode_flavor;
@@ -63,7 +89,7 @@ void LabelObjects::init(const SpanOfConstPtrs<PrintObject>& objects, LabelObject
 
     // Iterate over all PrintObjects and their PrintInstances, collect PrintInstances which
     // belong to the same ModelObject.
-    for (const PrintObject* po : objects)
+    for (const PrintObject* po : print.objects())
         for (const PrintInstance& pi : po->instances())
             model_object_to_print_instances[pi.model_instance->get_object()].emplace_back(&pi);
 
@@ -112,31 +138,36 @@ void LabelObjects::init(const SpanOfConstPtrs<PrintObject>& objects, LabelObject
 
                 if (object_has_more_instances)
                     name += " (Instance " + std::to_string(instance_id + 1) + ")";
-                if (m_flavor == gcfKlipper) {
-                    // Disallow Klipper special chars, common illegal filename chars, etc.
-                    const std::string banned = "\b\t\n\v\f\r \"#%&\'*-./:;<>\\";
-                    std::replace_if(name.begin(), name.end(), [&banned](char c) { return banned.find(c) != std::string::npos; }, '_');
-                }
+                if (m_flavor == gcfKlipper)
+                    name = sanitize_klipper_name(name);
             }
 
             // Now calculate the polygon and center for Cancel Object (this is not always used).
             Polygon outline = instance_outline(pi);
             assert(! outline.empty());
-            outline.douglas_peucker(50000.f);
-            Point center = outline.centroid();
-            char buffer[64];
-            std::snprintf(buffer, sizeof(buffer) - 1, "%.3f,%.3f", unscale<float>(center[0]), unscale<float>(center[1]));
-            std::string center_str(buffer);
-            std::string polygon_str = std::string("[");
-            for (const Point& point : outline) {
-                std::snprintf(buffer, sizeof(buffer) - 1, "[%.3f,%.3f],", unscale<float>(point[0]), unscale<float>(point[1]));
-                polygon_str += buffer;
-            }
-            polygon_str.pop_back();
-            polygon_str += "]";
+            const auto [center_str, polygon_str] = format_center_and_polygon(outline);
 
             m_label_data.emplace_back(LabelData{pi, name, center_str, polygon_str, unique_id});
             ++unique_id;
+        }
+    }
+
+    // Provide geometry-only entries for regions that must always print regardless of what a host
+    // decides to cancel: the skirt/brim and the wipe tower. These never go through start_object()/
+    // stop_object(), so a host's "Cancel Object" for them is a firmware no-op. Only Klipper's
+    // EXCLUDE_OBJECT_DEFINE decouples declaring an object's geometry from marking it excludable;
+    // Marlin/RRF M486 and the Octoprint comment style have no equivalent, so this is Klipper-only.
+    if (m_label_objects_style == LabelObjectsStyle::Firmware && m_flavor == gcfKlipper) {
+        if (! print.skirt_convex_hull().empty()) {
+            const auto [center_str, polygon_str] = format_center_and_polygon(Geometry::convex_hull(print.skirt_convex_hull()));
+            m_static_label_data.push_back({sanitize_klipper_name("Skirt/Brim"), center_str, polygon_str});
+        }
+        if (print.has_wipe_tower()) {
+            Points wipe_tower_pts = print.first_layer_wipe_tower_corners();
+            if (! wipe_tower_pts.empty()) {
+                const auto [center_str, polygon_str] = format_center_and_polygon(Geometry::convex_hull(wipe_tower_pts));
+                m_static_label_data.push_back({sanitize_klipper_name("Wipe Tower"), center_str, polygon_str});
+            }
         }
     }
 }
@@ -199,6 +230,8 @@ std::string LabelObjects::all_objects_header() const
             out += stop_object(*label.pi);
         }
     }
+    for (const StaticLabelData& label : m_static_label_data)
+        out += "EXCLUDE_OBJECT_DEFINE NAME='" + label.name + "' CENTER=" + label.center + " POLYGON=" + label.polygon + "\n";
     out += "\n";
     return out;
 }
@@ -207,12 +240,20 @@ std::string LabelObjects::all_objects_header_singleline_json() const
 {
     std::string out;
     out = "{\"objects\":[";
-    for (size_t i=0; i<m_label_data.size(); ++i) {
-        const LabelData& label = m_label_data[i];
+    bool first = true;
+    for (const LabelData& label : m_label_data) {
+        if (! first)
+            out += ",";
         out += std::string("{\"name\":\"") + label.name + "\",";
         out += "\"polygon\":" + label.polygon + "}";
-        if (i != m_label_data.size() - 1)
+        first = false;
+    }
+    for (const StaticLabelData& label : m_static_label_data) {
+        if (! first)
             out += ",";
+        out += std::string("{\"name\":\"") + label.name + "\",";
+        out += "\"polygon\":" + label.polygon + "}";
+        first = false;
     }
     out += "]}";
     return out;
