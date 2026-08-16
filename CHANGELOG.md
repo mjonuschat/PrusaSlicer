@@ -9,6 +9,11 @@ lost during the rebase and squash based workflow.
 
 ### Added
 
+- Skirt/brim and the wipe tower are now declared to Klipper hosts
+  (Mainsail/Fluidd) via `EXCLUDE_OBJECT_DEFINE`, so their outlines show up
+  in the object list, but their G-code is never wrapped as excludable, so
+  "Cancel Object" can never remove them and break the print.
+
 ### Changed
 
 ### Fixed
