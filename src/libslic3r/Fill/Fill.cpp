@@ -999,6 +999,8 @@ void Layer::make_fills(FillAdaptive::Octree* adaptive_fill_octree, FillAdaptive:
 		        	flow_mm3_per_mm = new_flow.mm3_per_mm();
 		        	flow_width      = new_flow.width();
 		        }
+		        flow_mm3_per_mm *= f->flow_correction();
+		        flow_width      *= f->flow_correction();
                 // Save into layer.
                 ExtrusionEntityCollection *eec        = new ExtrusionEntityCollection();
                 auto                       fill_begin = uint32_t(layerm.fills().size());

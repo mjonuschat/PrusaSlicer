@@ -110,7 +110,7 @@ void FillPlanePath::_fill_surface_single(
 
     Polyline polyline;
     {
-        auto distance_between_lines = scaled<double>(this->spacing) / params.density;
+        auto distance_between_lines = scaled<double>(this->spacing) / params.density * this->spacing_correction();
         auto min_x = coord_t(ceil(coordf_t(bounding_box.min.x()) / distance_between_lines));
         auto min_y = coord_t(ceil(coordf_t(bounding_box.min.y()) / distance_between_lines));
         auto max_x = coord_t(ceil(coordf_t(bounding_box.max.x()) / distance_between_lines));

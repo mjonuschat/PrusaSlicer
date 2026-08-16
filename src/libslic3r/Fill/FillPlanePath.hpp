@@ -46,6 +46,8 @@ protected:
 
     float _layer_angle(size_t idx) const override { return 0.f; }
     virtual bool centered() const = 0;
+    // Multiplier applied to the nominal line spacing before generating the pattern.
+    virtual double spacing_correction() const { return 1.0; }
 
     friend class InfillPolylineClipper;
     class InfillPolylineOutput {
@@ -113,6 +115,10 @@ public:
 protected:
     bool centered() const override { return true; }
     void generate(coord_t min_x, coord_t min_y, coord_t max_x, coord_t max_y, const double resolution, InfillPolylineOutput &output) override;
+    // Compensates the Gosper curve's higher extrusion length per area vs. a naive grid.
+    double spacing_correction() const override { return 1.08; }
+    // Thins the bead to reduce blobbing where passes pack closer than a naive grid would.
+    double flow_correction() const override { return 0.85; }
 };
 
 } // namespace Slic3r
