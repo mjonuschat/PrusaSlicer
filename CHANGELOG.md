@@ -13,6 +13,9 @@ lost during the rebase and squash based workflow.
 
 ### Fixed
 
+- Flowsnake infill now uses wider line spacing and a thinner bead, so the
+  pattern reads as a visible lattice instead of a dense, squished blob.
+
 ### Ported
 
 ### Notes
