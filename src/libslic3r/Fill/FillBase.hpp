@@ -133,6 +133,11 @@ public:
     // Use bridge flow for the fill?
     virtual bool use_bridge_flow() const { return false; }
 
+    // Multiplier applied to the extrusion width/flow of this pattern's sparse infill,
+    // where the flow is otherwise taken as-is from the region's default (see using_internal_flow
+    // in Layer::make_fills).
+    virtual double flow_correction() const { return 1.0; }
+
     // Do not sort the fill lines to optimize the print head path?
     virtual bool no_sort() const { return false; }
 
