@@ -35,6 +35,12 @@ public:
     void do_clear(bool notify_owner);
 
     /**
+     * @brief Permanently stops the session. Unlike cancel_ongoing_session_action, every further
+     * enqueue, queue processing and action result becomes a no-op.
+     */
+    void stop();
+
+    /**
      * @brief One by one processes whole action queue.
      */
     void process_action_queue();
@@ -85,6 +91,15 @@ public:
         m_global_cancel = true;
     }
 
+    /**
+     * @brief Tells the session whether the owner holds a username, so that a logout can report
+     * whether it ended a session the user could see.
+     */
+    void set_has_username(bool has_username)
+    {
+        m_has_username = has_username;
+    }
+
 private:
     mutable std::mutex m_session_mutex;
     // guarded by m_session_mutex
@@ -111,6 +126,9 @@ private:
     // End of section guarded by m_credentials_mutex
 
     std::atomic_bool m_global_cancel{false};
+
+    std::atomic_bool m_shutting_down{false};
+    std::atomic_bool m_has_username{false};
 
     /**
      * @brief Bumped on every logout (do_clear). Token-producing requests capture the

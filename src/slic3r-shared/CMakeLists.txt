@@ -1557,6 +1557,8 @@ if(SLIC3R_BUILD_TESTS)
 
             test/Slic3r/Biz/BundleCacheTests.cpp
 
+        test/Slic3r/Biz/UserAccount/UserAccountSessionTests.cpp
+
         test/Slic3r/App/CustomGCodeMigrationTests.cpp
     )
     target_include_directories(slic3r-shared-tests PRIVATE test src)

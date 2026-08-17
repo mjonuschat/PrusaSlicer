@@ -1,7 +1,9 @@
 #include "Slic3r/Biz/UserAccount/UserAccountSession.hpp"
 
+#include "Slic3r/Biz/AppInstance/AppInstanceUtils.hpp" // get_current_pid()
 #include "Slic3r/Biz/Network/ServiceConfig.hpp"
 #include "Slic3r/Biz/Network/Jwt.hpp"
+#include "Slic3r/Biz/UserAccount/UserAccountTokenStore.hpp"
 #include "Slic3r/Log.hpp"
 
 #include "fmt/format.h"
@@ -61,11 +63,25 @@ void UserAccountSession::do_clear(bool notify_owner)
         std::lock_guard<std::mutex> lock(m_session_mutex);
         m_processing_enabled = false;
     }
-    dispatch_logged_out(notify_owner);
+    dispatch_logged_out(notify_owner, m_has_username.exchange(false));
+}
+
+void UserAccountSession::stop()
+{
+    m_shutting_down = true;
+    m_global_cancel = true;
+    cancel_queue();
+    {
+        std::lock_guard<std::mutex> lock(m_session_mutex);
+        m_processing_enabled = false;
+    }
 }
 
 void UserAccountSession::process_action_queue()
 {
+    if (m_shutting_down) {
+        return;
+    }
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
         if (!m_processing_enabled) {
@@ -73,11 +89,15 @@ void UserAccountSession::process_action_queue()
         }
         // SPDLOG_INFO("action queue: {} {}", m_priority_action_queue.size(), m_action_queue.size());
     }
+    m_global_cancel = false;
     process_action_queue_inner();
 }
 
 void UserAccountSession::process_action_queue_inner()
 {
+    if (m_shutting_down) {
+        return;
+    }
     bool call_priority = false;
     bool call_standard = false;
     ActionQueueData selected_data;
@@ -99,7 +119,6 @@ void UserAccountSession::process_action_queue_inner()
         }
     }
     if (call_priority || call_standard) {
-        m_global_cancel = false;
         bool use_token = m_actions[selected_data.action_id]->get_requires_auth_token();
         m_actions[selected_data.action_id]->perform(
             this,
@@ -113,6 +132,9 @@ void UserAccountSession::process_action_queue_inner()
 
 void UserAccountSession::on_log_in_code_response(const std::string& code, const std::string& code_verifier)
 {
+    if (m_shutting_down) {
+        return;
+    }
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
         // Data we have
@@ -134,6 +156,9 @@ void UserAccountSession::on_log_in_code_response(const std::string& code, const 
 
 void UserAccountSession::enqueue_action(ActionQueueData&& action)
 {
+    if (m_shutting_down) {
+        return;
+    }
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
         enqueue_action_inner(std::move(action));
@@ -143,6 +168,9 @@ void UserAccountSession::enqueue_action(ActionQueueData&& action)
 void UserAccountSession::enqueue_test_with_refresh()
 {
     // SPDLOG_INFO(__FUNCTION__);
+    if (m_shutting_down) {
+        return;
+    }
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
         // on test fail - try refresh
@@ -156,12 +184,18 @@ void UserAccountSession::enqueue_test_with_refresh()
 void UserAccountSession::enqueue_refresh(const std::string& body)
 {
     // SPDLOG_INFO(__FUNCTION__);
+    if (m_shutting_down) {
+        return;
+    }
     // TODO before or after push_back?
     dispatch_enqueued_refresh();
     std::string post_fields;
     {
         std::lock_guard<std::mutex> lock(m_credentials_mutex);
-        assert(!m_refresh_token.empty());
+        if (m_refresh_token.empty()) {
+            SPDLOG_INFO("No refresh token to refresh with, skipping refresh.");
+            return;
+        }
         post_fields =
             "grant_type=refresh_token"
             "&client_id="
@@ -184,18 +218,25 @@ void UserAccountSession::enqueue_refresh(const std::string& body)
 void UserAccountSession::enqueue_refresh_race(const std::string& refresh_token_from_store)
 {
     // SPDLOG_INFO(__FUNCTION__);
+    if (m_shutting_down) {
+        return;
+    }
     // TODO before or after push_back?
     dispatch_enqueued_refresh();
     std::string post_fields;
     {
         std::lock_guard<std::mutex> lock(m_credentials_mutex);
-        assert(!m_refresh_token.empty());
+        const std::string& refresh_token = refresh_token_from_store.empty() ? m_refresh_token : refresh_token_from_store;
+        if (refresh_token.empty()) {
+            SPDLOG_INFO("No refresh token to refresh with, skipping refresh.");
+            return;
+        }
         post_fields =
             "grant_type=refresh_token"
             "&client_id="
             + Network::ServiceConfig::instance().account_client_id()
             + "&refresh_token="
-            + (refresh_token_from_store.empty() ? m_refresh_token : refresh_token_from_store);
+            + refresh_token;
     }
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
@@ -229,6 +270,10 @@ void UserAccountSession::enqueue_action_inner(ActionQueueData&& action)
 
 void UserAccountSession::refresh_fail_callback(const std::string& body, uint64_t epoch)
 {
+    if (m_shutting_down) {
+        SPDLOG_INFO("Token refresh failure during shutdown - ignoring.");
+        return;
+    }
     if (epoch != m_session_epoch.load()) {
         SPDLOG_INFO("Stale token refresh failure after logout - ignoring.");
         return;
@@ -241,6 +286,10 @@ void UserAccountSession::refresh_fail_callback(const std::string& body, uint64_t
 
 void UserAccountSession::refresh_fail_soft_callback(const std::string& body, uint64_t epoch)
 {
+    if (m_shutting_down) {
+        SPDLOG_INFO("Soft token refresh failure during shutdown - ignoring.");
+        return;
+    }
     if (epoch != m_session_epoch.load()) {
         SPDLOG_INFO("Stale soft token refresh failure after logout - ignoring.");
         return;
@@ -264,6 +313,10 @@ void UserAccountSession::cancel_queue()
 
 void UserAccountSession::code_exchange_fail_callback(const std::string& body, uint64_t epoch)
 {
+    if (m_shutting_down) {
+        SPDLOG_INFO("Code exchange failure during shutdown - ignoring.");
+        return;
+    }
     if (epoch != m_session_epoch.load()) {
         SPDLOG_INFO("Stale code exchange failure after logout - ignoring.");
         return;
@@ -276,6 +329,10 @@ void UserAccountSession::code_exchange_fail_callback(const std::string& body, ui
 
 void UserAccountSession::token_success_callback(const std::string& body, uint64_t epoch)
 {
+    if (m_shutting_down) {
+        SPDLOG_INFO("Token response during shutdown - discarding.");
+        return;
+    }
     // A logout (do_clear) happened while this request was in flight - discard the result so
     // it cannot write tokens or log the instance back in.
     if (epoch != m_session_epoch.load()) {
@@ -338,13 +395,22 @@ void UserAccountSession::token_success_callback(const std::string& body, uint64_
         SPDLOG_INFO("{} access_token: [too short to mask safely]", __func__);
     }
 
+    long long next_token_timeout = 0;
     {
         std::lock_guard<std::mutex> lock(m_credentials_mutex);
         m_access_token       = access_token;
         m_refresh_token      = refresh_token;
         m_shared_session_key = shared_session_key;
         m_next_token_timeout = std::time(nullptr) + expires_in;
+        next_token_timeout   = m_next_token_timeout;
     }
+    TokenStore::save_tokens(
+        {access_token,
+         refresh_token,
+         shared_session_key,
+         std::to_string(next_token_timeout),
+         std::to_string(AppInstance::get_current_pid())}
+    );
     enqueue_action({UserAccountActionID::UserIdAfterTokenSuccess, nullptr, nullptr, {}, {}});
     dispatch_new_refresh_time(expires_in);
 }

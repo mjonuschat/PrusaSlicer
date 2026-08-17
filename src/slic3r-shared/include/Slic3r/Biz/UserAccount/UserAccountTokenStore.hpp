@@ -10,6 +10,7 @@ struct StoreData {
     std::string shared_session_key;
     std::string next_timeout;
     std::string master_pid;
+    bool malformed{false};
 };
 
 /**
@@ -20,7 +21,7 @@ bool save_tokens(const StoreData& secrets);
 
 /**
  * @brief Loads secret from store.
- * @return true if secret was loaded successfully.
+ * @return true if the store could be read. A broken record still returns true, see StoreData::malformed.
  */
 bool load_tokens(StoreData& result);
 

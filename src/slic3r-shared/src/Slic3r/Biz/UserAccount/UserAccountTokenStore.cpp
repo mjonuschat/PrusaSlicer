@@ -7,11 +7,18 @@
 
 #include <boost/algorithm/string.hpp>
 
+#include <mutex>
+
 namespace Slic3r::Biz::UserAccount::TokenStore {
+
+namespace {
+std::mutex g_store_mutex;
+} // namespace
 
 bool save_tokens(const StoreData& secrets)
 {
 #ifdef SLIC3R_HAS_WEBKIT
+    std::lock_guard<std::mutex> lock(g_store_mutex);
     std::string at = secrets.access_token;
     if (at.length() >= 20) {
         at = at.substr(0,5) + "..." + at.substr(at.size()-5);
@@ -48,6 +55,7 @@ void reset()
 bool load_tokens(StoreData& result)
 {
 #ifdef SLIC3R_HAS_WEBKIT
+    std::lock_guard<std::mutex> lock(g_store_mutex);
     std::string key0, tokens;
     if (!Platform::PlatformServices::instance().secret_store().load_secret("PrusaAccount", key0, tokens))
     {
@@ -65,6 +73,7 @@ bool load_tokens(StoreData& result)
     //assert(token_list.empty() || token_list.size() == 5);
     if (token_list.size() < 5) {
         SPDLOG_ERROR("Size of read secrets is only: {} (expected 5). Data: {}", token_list.size(), tokens);
+        result.malformed = true;
     }
     result.access_token =       token_list.size() > 0 ? token_list[0] : std::string();
     result.refresh_token =      token_list.size() > 1 ? token_list[1] : std::string();

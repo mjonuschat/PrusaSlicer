@@ -58,9 +58,16 @@ void UserAccountActionPost::perform(
     }
 
     http->on_progress(
-            [shared_data](Network::IHttp::Progress progress, bool& cancel)
+            [shared_data, &global_cancel](Network::IHttp::Progress progress, bool& cancel)
             {
-                if (cancel && shared_data->fail_callback) {
+                const bool cancel_notification = cancel;
+                if (global_cancel) {
+                    cancel = true;
+                }
+                if (!cancel_notification) {
+                    return;
+                }
+                if (shared_data->fail_callback) {
                     shared_data->fail_callback({});
                 }
             }
@@ -148,16 +155,21 @@ void UserAccountActionGetWithEvent::perform(
             }
     )
         .on_progress(
-            [shared_data, action_name = &m_action_name, &callbacks, fail_type = m_fail_type](Network::IHttp::Progress progress, bool& cancel)
+            [shared_data, action_name = &m_action_name, &callbacks, fail_type = m_fail_type, &global_cancel](Network::IHttp::Progress progress, bool& cancel)
             {
-                if (cancel) {
-                    if (shared_data->fail_callback) {
-                        shared_data->fail_callback({});
-                    }
-                    std::string message = fmt::format("{} action canceled", *action_name);
-                    if (fail_type != ActionFailType::None) {
-                        callbacks->on_action_fail(fail_type, std::move(message));
-                    }
+                const bool cancel_notification = cancel;
+                if (global_cancel) {
+                    cancel = true;
+                }
+                if (!cancel_notification) {
+                    return;
+                }
+                if (shared_data->fail_callback) {
+                    shared_data->fail_callback({});
+                }
+                std::string message = fmt::format("{} action canceled", *action_name);
+                if (fail_type != ActionFailType::None) {
+                    callbacks->on_action_fail(fail_type, std::move(message));
                 }
             }
         )

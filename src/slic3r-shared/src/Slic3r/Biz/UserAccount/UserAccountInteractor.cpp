@@ -64,10 +64,7 @@ UserAccountInteractor::~UserAccountInteractor()
 
 void UserAccountInteractor::do_log_out()
 {
-    if (!m_communication->is_logged_in()) {
-        return;
-    }
-    m_communication->do_log_out(true);
+    m_communication->do_log_out(is_logged_in());
 }
 
 std::string
@@ -215,11 +212,14 @@ void UserAccountInteractor::on_race_lost(const std::string& msg)
     m_communication->on_race_lost(msg);
 }
 
-void UserAccountInteractor::on_logged_out(bool notify_owner)
+void UserAccountInteractor::on_logged_out(bool notify_owner, bool was_logged_in)
 {
     notify_action_retry_finished();
     if (update_menu_callback) {
         update_menu_callback(true);
+    }
+    if (!was_logged_in) {
+        return;
     }
     invoke_listeners<IUserAccountListener>(
         [](auto* listener) { listener->on_user_account_logged_out(); }
