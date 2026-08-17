@@ -26,8 +26,15 @@ public:
         const std::string& tooltip = {}
     );
 
+    void set_show_label(bool show_label);
+
+    void style_node() override;
+    float width_with_label() const;
+
 private:
     SwitchPosition m_switch_position{SwitchPosition::Left};
+    std::string m_label;
+    float m_width_with_label = 0.f;
 };
 
-} // namespace Slic3r::App::Yoga
+} // namespace Slic3r::App

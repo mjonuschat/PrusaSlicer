@@ -15,7 +15,15 @@ class ToolBarButton;
 class ToolBar : public Yoga::Window
 {
 public:
+    struct Callbacks
+    {
+        std::function<void(bool enough_space)> has_enough_space_changed{nullptr};
+        std::function<float()> expand_margin{nullptr};
+    };
+
     explicit ToolBar(const std::string& name);
+
+    ToolBar::Callbacks& toolbar_callbacks();
 
     std::unique_ptr<ToolBarButton> remove(ToolBarButton* button);
 
@@ -39,6 +47,7 @@ public:
     void style_node() override;
 
     bool hovered() const;
+    bool has_enough_space() const;
 
 private:
     // Hide these methods
@@ -47,6 +56,8 @@ private:
     Yoga::ObjectPtr remove(Object* child) override;
 
 private:
+    ToolBar::Callbacks m_toolbar_callbacks;
+
     std::vector<ToolBarButton*> m_buttons;
     ToolBarButton* m_button_more = nullptr;
     float m_button_width         = 0;
@@ -54,6 +65,7 @@ private:
     float m_available_size       = YGUndefined;
     bool m_collapsible           = false;
     bool m_hovered               = false;
+    bool m_has_enough_space      = true;
 };
 
-} // namespace Slic3r::App::Yoga
+} // namespace Slic3r::App

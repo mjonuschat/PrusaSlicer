@@ -25,6 +25,11 @@ ToolBar::ToolBar(const std::string& name) : Window(name)
     m_button_more->set_visible(false);
 }
 
+ToolBar::Callbacks& ToolBar::toolbar_callbacks()
+{
+    return m_toolbar_callbacks;
+}
+
 std::unique_ptr<ToolBarButton> ToolBar::remove(ToolBarButton* button)
 {
     if (contains(button)) {
@@ -123,6 +128,11 @@ bool ToolBar::hovered() const
     return m_hovered;
 }
 
+bool ToolBar::has_enough_space() const
+{
+    return m_has_enough_space;
+}
+
 bool ToolBar::collapsible() const
 {
     return m_collapsible;
@@ -130,7 +140,10 @@ bool ToolBar::collapsible() const
 
 void ToolBar::set_collapsible(bool collapsible)
 {
-    m_collapsible = collapsible;
+    if (m_collapsible != collapsible) {
+        m_collapsible = collapsible;
+        set_style_dirty();
+    }
 }
 
 float ToolBar::available_size() const
@@ -147,6 +160,7 @@ void ToolBar::style_node()
 {
     // I absolutely understand this is hidous, I already spent > 0 hours debugging this,
     // I will someday clean this up, but today is not the day
+    bool has_enough_space = true;
     if (m_collapsible
         && parent_item()
         && m_button_width > 0
@@ -229,6 +243,23 @@ void ToolBar::style_node()
                     Item::insert(subtoolbar->remove(included_button), object_count() - 1);
                 }
             }
+        }
+
+        has_enough_space = collapsed_buttons.empty();
+        if (has_enough_space && !m_has_enough_space && m_toolbar_callbacks.expand_margin
+            && available_size < m_toolbar_callbacks.expand_margin())
+        {
+            // The extra room may only exist because a sibling shrank in reaction to us
+            // losing space (e.g. hid a label); don't report regained space unless
+            // there's enough slack to also cover what re-showing it would cost.
+            has_enough_space = false;
+        }
+    }
+
+    if (m_has_enough_space != has_enough_space) {
+        m_has_enough_space = has_enough_space;
+        if (m_toolbar_callbacks.has_enough_space_changed) {
+            m_toolbar_callbacks.has_enough_space_changed(has_enough_space);
         }
     }
 

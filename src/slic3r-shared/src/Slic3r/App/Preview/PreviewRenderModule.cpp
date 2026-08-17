@@ -906,84 +906,84 @@ void PreviewRenderModule::init_scene_layout()
     m_slider_gcode->register_commands(m_menu_manager, m_command_binding_manager);
 
     m_button_travels = m_layout->add_toolbar_item_checkable(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         Render::Icon::LegendTravel,
         to_string(OptionType::Travels),
         m_fdm_viewer.is_option_visible(OptionType::Travels)
     );
 
     m_button_wipes = m_layout->add_toolbar_item_checkable(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         Render::Icon::LegendWipe,
         to_string(OptionType::Wipes),
         m_fdm_viewer.is_option_visible(OptionType::Wipes)
     );
 
     m_button_retractions = m_layout->add_toolbar_item_checkable(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         Render::Icon::LegendRetract,
         to_string(OptionType::Retractions),
         m_fdm_viewer.is_option_visible(OptionType::Retractions)
     );
 
     m_button_unretractions = m_layout->add_toolbar_item_checkable(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         Render::Icon::LegendDeretract,
         to_string(OptionType::Unretractions),
         m_fdm_viewer.is_option_visible(OptionType::Unretractions)
     );
 
     m_button_seams = m_layout->add_toolbar_item_checkable(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         Render::Icon::LegendSeams,
         to_string(OptionType::Seams),
         m_fdm_viewer.is_option_visible(OptionType::Seams)
     );
 
     m_button_tool_changes = m_layout->add_toolbar_item_checkable(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         Render::Icon::LegendToolChanges,
         to_string(OptionType::ToolChanges),
         m_fdm_viewer.is_option_visible(OptionType::ToolChanges)
     );
 
     m_button_color_changes = m_layout->add_toolbar_item_checkable(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         Render::Icon::LegendColorChanges,
         to_string(OptionType::ColorChanges),
         m_fdm_viewer.is_option_visible(OptionType::ColorChanges)
     );
 
     m_button_pause_prints = m_layout->add_toolbar_item_checkable(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         Render::Icon::LegendPausePrints,
         to_string(OptionType::PausePrints),
         m_fdm_viewer.is_option_visible(OptionType::PausePrints)
     );
 
     m_button_custom_gcodes = m_layout->add_toolbar_item_checkable(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         Render::Icon::LegendCustomGCodes,
         to_string(OptionType::CustomGCodes),
         m_fdm_viewer.is_option_visible(OptionType::CustomGCodes)
     );
 
     m_button_center_of_gravity = m_layout->add_toolbar_item_checkable(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         Render::Icon::LegendCOG,
         to_string(OptionType::CenterOfGravity),
         m_fdm_viewer.is_option_visible(OptionType::CenterOfGravity)
     );
 
     m_button_tool_marker = m_layout->add_toolbar_item_checkable(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         Render::Icon::LegendToolMarker,
         to_string(OptionType::ToolMarker),
         m_fdm_viewer.is_option_visible(OptionType::ToolMarker)
     );
 
     m_button_shells = m_layout->add_toolbar_item_checkable(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         Render::Icon::LegendShells,
         "Shells",
         m_scene_presenter->are_shells_visible()
@@ -992,7 +992,7 @@ void PreviewRenderModule::init_scene_layout()
     // init toolbars
 
     m_button_plater_switch = m_layout->add_toolbar_item_switch(
-        ToolbarID::Right,
+        ToolbarID::Mode,
         Render::Icon::ObjectIcon,
         _u8L("Prepare"),
         _u8L("Prepare Mode"),
@@ -1000,7 +1000,7 @@ void PreviewRenderModule::init_scene_layout()
     );
 
     ToolBarButton* preview_button = m_layout->add_toolbar_item_switch(
-        ToolbarID::Right,
+        ToolbarID::Mode,
         Render::Icon::Preview,
         _u8L("Preview"),
         _u8L("Preview Mode"),
@@ -1009,7 +1009,7 @@ void PreviewRenderModule::init_scene_layout()
     preview_button->set_checked(true);
 
     m_button_gcode_inspect = m_layout->add_toolbar_item_checkable(
-        ToolbarID::Right,
+        ToolbarID::Mode,
         Render::Icon::LayersInspect,
         _u8L("G-code inspect")
     );
@@ -1027,7 +1027,7 @@ void PreviewRenderModule::update_toolbar_visibility()
     const bool fdm_has_gcode =
         m_fdm_viewer.has_data() && m_fdm_viewer.mode() != FdmViewerWrapperMode::EditorPreGCode;
 
-    m_layout->middle_toolbar()->set_visible(fdm_has_gcode);
+    m_layout->tool_right_toolbar()->set_visible(fdm_has_gcode);
     m_button_travels->set_visible(fdm_has_gcode && fdm_has_option(OptionType::Travels));
     m_button_retractions->set_visible(fdm_has_gcode && fdm_has_option(OptionType::Retractions));
     m_button_unretractions->set_visible(fdm_has_gcode && fdm_has_option(OptionType::Unretractions));

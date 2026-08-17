@@ -34,9 +34,9 @@ class SplitLayout;
 
 enum class ToolbarID
 {
-    Left = 0,
-    Middle,
-    Right
+    ToolLeft = 0,
+    ToolRight,
+    Mode
 };
 
 class AbstractRenderLayout : public IAppConfigChangedListener
@@ -83,9 +83,9 @@ public:
         ToolBarSwitchButton::SwitchPosition switch_position
     );
 
-    ToolBar* left_toolbar() const;
-    ToolBar* middle_toolbar() const;
-    ToolBar* right_toolbar() const;
+    ToolBar* tool_left_toolbar() const;
+    ToolBar* tool_right_toolbar() const;
+    ToolBar* mode_toolbar() const;
 
     SidebarStackLayout* sidebar_stack_layout() const;
 
@@ -127,9 +127,10 @@ protected:
     // we are moving CubeView between Horizontal and Vertical layouts, wrapper is needed
     Yoga::Item* m_cube_view_wrapper = nullptr;
 
-    ToolBar* m_left_toolbar   = nullptr;
-    ToolBar* m_middle_toolbar = nullptr;
-    ToolBar* m_right_toolbar  = nullptr;
+    ToolBar* m_tool_left_toolbar  = nullptr;
+    ToolBar* m_tool_right_toolbar = nullptr;
+    ToolBar* m_mode_toolbar       = nullptr;
+    std::vector<ToolBarSwitchButton*> m_switch_buttons;
 
     bool m_sidebars_visible = true;
     float m_object_list_srcroll_y_delta{-1};

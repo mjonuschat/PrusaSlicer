@@ -165,6 +165,7 @@ ToolBarSwitchButton* AbstractRenderLayout::add_toolbar_item_switch(
 
     ToolBarSwitchButton* switch_button =
         toolbar->emplace_back<ToolBarSwitchButton>(switch_position, icon, label, tooltip);
+    m_switch_buttons.push_back(switch_button);
 
     return switch_button;
 }
@@ -172,29 +173,29 @@ ToolBarSwitchButton* AbstractRenderLayout::add_toolbar_item_switch(
 ToolBar* AbstractRenderLayout::find_toolbar(ToolbarID id) const
 {
     switch (id) {
-    case ToolbarID::Left:
-        return m_left_toolbar;
-    case ToolbarID::Middle:
-        return m_middle_toolbar;
-    case ToolbarID::Right:
-        return m_right_toolbar;
+    case ToolbarID::ToolLeft:
+        return m_tool_left_toolbar;
+    case ToolbarID::ToolRight:
+        return m_tool_right_toolbar;
+    case ToolbarID::Mode:
+        return m_mode_toolbar;
     }
     return nullptr;
 }
 
-ToolBar* AbstractRenderLayout::right_toolbar() const
+ToolBar* AbstractRenderLayout::mode_toolbar() const
 {
-    return m_right_toolbar;
+    return m_mode_toolbar;
 }
 
-ToolBar* AbstractRenderLayout::middle_toolbar() const
+ToolBar* AbstractRenderLayout::tool_right_toolbar() const
 {
-    return m_middle_toolbar;
+    return m_tool_right_toolbar;
 }
 
-ToolBar* AbstractRenderLayout::left_toolbar() const
+ToolBar* AbstractRenderLayout::tool_left_toolbar() const
 {
-    return m_left_toolbar;
+    return m_tool_left_toolbar;
 }
 
 void AbstractRenderLayout::set_sidebars_visible(bool visible)
@@ -354,30 +355,48 @@ void AbstractRenderLayout::init_toolbar_row()
 
     m_layout_middle_toolbar_row = m_layout_middle_column->emplace_back<Item>();
     m_layout_middle_toolbar_row->set_orientation(Orientation::Horizontal);
-    m_layout_middle_toolbar_row->set_gap(5);
-    m_layout_middle_toolbar_row->set_justify_content(YGJustify::YGJustifyCenter);
     m_layout_middle_toolbar_row->set_z(1); // Increaze Z so toolbars can be on top of double sliders
 
-    m_left_toolbar = m_layout_middle_toolbar_row->emplace_back<ToolBar>("TopToolbar");
-    m_left_toolbar->set_button_width(button_size);
-    m_left_toolbar->set_button_height(button_size);
-    m_left_toolbar->set_orientation(Orientation::Horizontal);
-    m_left_toolbar->set_flex_shrink(0);
-    m_left_toolbar->set_visible(false);
+    m_mode_toolbar = m_layout_middle_toolbar_row->emplace_back<ToolBar>("BottomToolbar");
+    m_mode_toolbar->set_button_width(button_size);
+    m_mode_toolbar->set_button_height(button_size);
+    m_mode_toolbar->set_orientation(Orientation::Horizontal);
+    m_mode_toolbar->set_flex_shrink(0);
+    m_mode_toolbar->set_visible(false);
 
-    m_middle_toolbar = m_layout_middle_toolbar_row->emplace_back<ToolBar>("MiddleToolbar");
-    m_middle_toolbar->set_button_width(button_size);
-    m_middle_toolbar->set_button_height(button_size);
-    m_middle_toolbar->set_orientation(Orientation::Horizontal);
-    m_middle_toolbar->set_collapsible(true);
-    m_middle_toolbar->set_visible(false);
+    Item* tool_container = m_layout_middle_toolbar_row->emplace_back<Item>();
+    tool_container->set_gap(5_fpx);
+    tool_container->set_flex_grow(1);
+    tool_container->set_justify_content(YGJustifyCenter);
 
-    m_right_toolbar = m_layout_middle_toolbar_row->emplace_back<ToolBar>("BottomToolbar");
-    m_right_toolbar->set_button_width(button_size);
-    m_right_toolbar->set_button_height(button_size);
-    m_right_toolbar->set_orientation(Orientation::Horizontal);
-    m_right_toolbar->set_flex_shrink(0);
-    m_right_toolbar->set_visible(false);
+    m_tool_left_toolbar = tool_container->emplace_back<ToolBar>("TopToolbar");
+    m_tool_left_toolbar->set_button_width(button_size);
+    m_tool_left_toolbar->set_button_height(button_size);
+    m_tool_left_toolbar->set_orientation(Orientation::Horizontal);
+    m_tool_left_toolbar->set_flex_shrink(0);
+    m_tool_left_toolbar->set_visible(false);
+
+    m_tool_right_toolbar = tool_container->emplace_back<ToolBar>("MiddleToolbar");
+    m_tool_right_toolbar->set_button_width(button_size);
+    m_tool_right_toolbar->set_button_height(button_size);
+    m_tool_right_toolbar->set_orientation(Orientation::Horizontal);
+    m_tool_right_toolbar->set_collapsible(true);
+    m_tool_right_toolbar->set_visible(false);
+    m_tool_right_toolbar->toolbar_callbacks().expand_margin = [this]()
+    {
+        float margin = 0.f;
+        for (ToolBarSwitchButton* switch_button : std::as_const(m_switch_buttons)) {
+            margin += switch_button->width_with_label() - switch_button->width();
+        }
+        return margin;
+    };
+    m_tool_right_toolbar->toolbar_callbacks().has_enough_space_changed =
+        [this](bool has_enough_space)
+    {
+        for (ToolBarSwitchButton* switch_button : std::as_const(m_switch_buttons)) {
+            switch_button->set_show_label(has_enough_space);
+        }
+    };
 }
 
 AbstractRenderLayout::AbstractRenderLayout(

@@ -663,118 +663,118 @@ void PlaterRenderModule::init_scene_layout()
     m_svg_or_text_menu =
         m_top_bar->emplace_back<Yoga::Menu>("svg_or_text_context_menu", Yoga::Position::Bottom);
 
-    m_toolbar_add = m_layout->add_toolbar_item(ToolbarID::Left, Render::Icon::AddObject, _u8L("Add..."));
+    m_toolbar_add = m_layout->add_toolbar_item(ToolbarID::ToolLeft, Render::Icon::AddObject, _u8L("Add..."));
 
     m_toolbar_delete = m_layout->add_toolbar_item(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         Render::Icon::DeleteBtnIcon,
         _u8L("Delete selection")
     );
 
     m_toolbar_add_instance = m_layout->add_toolbar_item(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         Render::Icon::RectangleAdd,
         _u8L("Add instance")
     );
 
     m_toolbar_move = m_layout->add_toolbar_item(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         tool_icon(Scene::ToolType::Translation),
         tool_name(Scene::ToolType::Translation)
     );
 
     m_toolbar_rotate = m_layout->add_toolbar_item(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         tool_icon(Scene::ToolType::Rotation),
         tool_name(Scene::ToolType::Rotation)
     );
 
     m_toolbar_scale = m_layout->add_toolbar_item(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         tool_icon(Scene::ToolType::Scale),
         tool_name(Scene::ToolType::Scale)
     );
 
     m_toolbar_place_on_face = m_layout->add_toolbar_item(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         tool_icon(Scene::ToolType::PlaceOnFace),
         tool_name(Scene::ToolType::PlaceOnFace)
     );
 
     m_toolbar_arrange = m_layout->add_toolbar_item(
-        ToolbarID::Left,
+        ToolbarID::ToolLeft,
         tool_icon(Scene::ToolType::ArrangeGizmo),
         tool_name(Scene::ToolType::ArrangeGizmo)
     );
 
     m_toolbar_simplify = m_layout->add_toolbar_item(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         tool_icon(Scene::ToolType::Simplify),
         tool_name(Scene::ToolType::Simplify)
     );
 
     m_toolbar_paint_on_supports = m_layout->add_toolbar_item(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         tool_icon(Scene::ToolType::PaintOnSupportsGizmo),
         tool_name(Scene::ToolType::PaintOnSupportsGizmo)
     );
 
     m_toolbar_paint_on_seams = m_layout->add_toolbar_item(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         tool_icon(Scene::ToolType::PaintOnSeamsGizmo),
         tool_name(Scene::ToolType::PaintOnSeamsGizmo)
     );
 
     m_toolbar_paint_on_fuzzy_skin = m_layout->add_toolbar_item(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         tool_icon(Scene::ToolType::PaintOnFuzzySkinGizmo),
         tool_name(Scene::ToolType::PaintOnFuzzySkinGizmo)
     );
 
     m_toolbar_multi_material_painting = m_layout->add_toolbar_item(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         tool_icon(Scene::ToolType::MultiMaterialPaintingGizmo),
         tool_name(Scene::ToolType::MultiMaterialPaintingGizmo)
     );
 
     m_toolbar_text = m_layout->add_toolbar_item(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         tool_icon(Scene::ToolType::TextGizmo),
         tool_name(Scene::ToolType::TextGizmo)
     );
 
     m_toolbar_svg = m_layout->add_toolbar_item(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         tool_icon(Scene::ToolType::Svg),
         tool_name(Scene::ToolType::Svg)
     );
 
     m_toolbar_cut = m_layout->add_toolbar_item(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         tool_icon(Scene::ToolType::CutGizmo),
         tool_name(Scene::ToolType::CutGizmo)
     );
 
     m_toolbar_measure = m_layout->add_toolbar_item(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         tool_icon(Scene::ToolType::MeasureGizmo),
         tool_name(Scene::ToolType::MeasureGizmo)
     );
 
     m_toolbar_variable_layer_height = m_layout->add_toolbar_item(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         tool_icon(Scene::ToolType::VariableLayerHeightGizmo),
         tool_name(Scene::ToolType::VariableLayerHeightGizmo)
     );
 
     m_toolbar_height_range = m_layout->add_toolbar_item(
-        ToolbarID::Middle,
+        ToolbarID::ToolRight,
         tool_icon(Scene::ToolType::HeightRangeGizmo),
         tool_name(Scene::ToolType::HeightRangeGizmo)
     );
 
     ToolBarButton* plater_button = m_layout->add_toolbar_item_switch(
-        ToolbarID::Right,
+        ToolbarID::Mode,
         Render::Icon::ObjectIcon,
         _u8L("Prepare"),
         _u8L("Prepare Mode"),
@@ -783,7 +783,7 @@ void PlaterRenderModule::init_scene_layout()
     plater_button->set_checked(true);
 
     m_toolbar_preview_switch = m_layout->add_toolbar_item_switch(
-        ToolbarID::Right,
+        ToolbarID::Mode,
         Render::Icon::Preview,
         _u8L("Preview"),
         _u8L("Preview Mode"),
@@ -813,8 +813,9 @@ void PlaterRenderModule::init_dialog_navigation()
     );
 
     m_dialog_navigation.insert_dialog(&m_sidebar_print->print_settings_dialog());
+    m_dialog_navigation.insert_dialog(m_preferences_dialog.get());
+    m_dialog_navigation.insert_dialog(m_number_entry_dialog.get());
     m_dialog_navigation.insert_dialog(m_invalid_data_dialog.get());
-    m_dialog_navigation.insert_dialog(m_preset_updater_dialog.get());
 
     m_dialog_navigation.insert_dialog(&m_sidebar_action_buttons->physical_printer_settings_dialog());
     m_dialog_navigation.insert_dialog(
@@ -832,7 +833,6 @@ void PlaterRenderModule::init_dialog_navigation()
         };
         dialog->set_title(tool_name(tool_type));
         dialog->set_shortcut(tool_shortcut(tool_type));
-        dialog->set_icon(tool_icon(tool_type));
 
         m_layout->sidebar_stack_layout()->insert_gizmo(tool_type, std::move(dialog));
     };
@@ -875,7 +875,7 @@ void PlaterRenderModule::update_object_selection()
         m_project_interactor.scene_interactor().object_selection();
 
     const bool empty_selection = selection.empty();
-    m_layout->middle_toolbar()->set_visible(!empty_selection);
+    m_layout->tool_right_toolbar()->set_visible(!empty_selection);
 
 
     update_toolbar_visibility();
