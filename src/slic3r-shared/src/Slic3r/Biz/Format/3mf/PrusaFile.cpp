@@ -598,7 +598,7 @@ void load(const json &source_json, ModelVolume::Source &source, Domain::Triangle
     from_json(source_json, OBJECT_INDEX, source.object_idx,  collected_issues, RT::project_source_object_idx_issue);
     from_json(source_json, VOLUME_INDEX, source.volume_idx,  collected_issues, RT::project_source_volume_idx_issue);
     if(!from_json(source_json, IS_FROM_INCH,   source.is_converted_from_inches, collected_issues, RT::project_source_is_from_inch_issue))
-        from_json(source_json, IS_FROM_METERS, source.is_converted_from_inches, collected_issues, RT::project_source_is_from_meters_issue);
+        from_json(source_json, IS_FROM_METERS, source.is_converted_from_meters, collected_issues, RT::project_source_is_from_meters_issue);
 
     if (auto repair_json_it = source_json.find(REPAIR); repair_json_it != source_json.end()) {
         const json &repair_json = *repair_json_it;

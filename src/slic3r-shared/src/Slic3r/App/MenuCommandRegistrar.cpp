@@ -28,10 +28,14 @@
 #include "Slic3r/Biz/Format/3mf.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
 #include "Slic3r/Biz/FileLoadingLogic.hpp"
+#include "Slic3r/Biz/MeshExportLogic.hpp"
+#include "Slic3r/Biz/VolumeReloadLogic.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
 #include "Slic3r/App/Plater/PlaterRenderModule.hpp"
 #include "Slic3r/App/Plater/TextGizmo.hpp"
+
+#include <optional>
 
 namespace Slic3r::App {
 
@@ -41,6 +45,23 @@ using namespace Slic3r::Biz;
 using CommandName = Platform::CommandName;
 
 namespace {
+
+/**
+ * File types offered when importing geometry into the scene.
+ */
+constexpr Wildcards::TypeFlag import_file_types = Wildcards::TypeFlag::Project3mf
+    | Wildcards::TypeFlag::Stl
+    | Wildcards::TypeFlag::Obj
+    | Wildcards::TypeFlag::Svg
+    | Wildcards::TypeFlag::Step;
+
+/**
+ * File types offered when replacing or reloading a volume mesh.
+ */
+constexpr Wildcards::TypeFlag model_file_types = Wildcards::TypeFlag::Project3mf
+    | Wildcards::TypeFlag::Stl
+    | Wildcards::TypeFlag::Obj
+    | Wildcards::TypeFlag::Step;
 
 class CommandBuilder
 {
@@ -518,20 +539,29 @@ void MenuCommandRegistrar::register_object_menu_commands()
         .append_item(
             MenuItemName::ExportObject,
             CommandName::ExportAsStl,
-            []() {},
-            UIItemCommandExtraOpts{.todo = true}
+            [this]() { this->export_selection_as_stl_obj(); },
+            UIItemCommandExtraOpts{
+                .enabled = [this]()
+                { return m_project_interactor.scene_interactor().can_export_selection_as_mesh(); }
+            }
         )
         .append_item(
             MenuItemName::ReplaceObject,
             CommandName::ReplaceWithStl,
-            []() {},
-            UIItemCommandExtraOpts{.todo = true}
+            [this]() { replace_selected_volume_with_stl(); },
+            UIItemCommandExtraOpts{
+                .enabled = [this]()
+                { return m_project_interactor.scene_interactor().can_replace_selected_volume(); }
+            }
         )
         .append_item(
             MenuItemName::ReloadObject,
             CommandName::ReloadFromDisk,
-            []() {},
-            UIItemCommandExtraOpts{.todo = true}
+            [this]() { reload_selection_from_disk(); },
+            UIItemCommandExtraOpts{
+                .enabled = [this]()
+                { return m_project_interactor.scene_interactor().can_reload_selection_from_disk(); }
+            }
         )
         .append_separator()
         .push_path_level(MenuItemName::SplitObject)
@@ -1093,6 +1123,14 @@ void MenuCommandRegistrar::register_multi_object_menu_commands()
         .append_item_from_command(MenuItemName::PrintableMultiObjects, CommandName::SetAsPrintable);
 }
 
+boost::filesystem::path MenuCommandRegistrar::default_dialog_folder() const
+{
+    return m_project_interactor.project_dir(
+        m_project_interactor.selected_project_id(),
+        AppServices::instance().app_config().get<std::string>("last_used_directory")
+    );
+}
+
 void MenuCommandRegistrar::load_project()
 {
     IDialogManager::FileCallback callback =
@@ -1107,10 +1145,7 @@ void MenuCommandRegistrar::load_project()
     dlg_manager.show_file_dialog(
         FileDialogType::Open,
         _u8L("Open Project"),
-        m_project_interactor.project_dir(
-            m_project_interactor.selected_project_id(),
-            AppServices::instance().app_config().get<std::string>("last_used_directory")
-        ),
+        this->default_dialog_folder(),
         "",
         Wildcards::generate_wildcards(Wildcards::TypeFlag::Project3mf),
         callback
@@ -1145,10 +1180,7 @@ void MenuCommandRegistrar::save_project_as()
         dlg_manager.show_file_dialog(
             FileDialogType::Save,
             _u8L("Save Project"),
-            m_project_interactor.project_dir(
-                m_project_interactor.selected_project_id(),
-                AppServices::instance().app_config().get<std::string>("last_used_directory")
-            ),
+            this->default_dialog_folder(),
             project_name,
             Wildcards::generate_wildcards(Wildcards::TypeFlag::Project3mf),
             callback
@@ -1181,17 +1213,10 @@ void MenuCommandRegistrar::load_object(Wildcards::TypeFlag specific_type)
     dlg_manager.show_file_dialog(
         FileDialogType::OpenMultiple,
         _u8L("Import File"),
-        m_project_interactor.project_dir(
-            m_project_interactor.selected_project_id(),
-            AppServices::instance().app_config().get<std::string>("last_used_directory")
-        ),
+        this->default_dialog_folder(),
         "",
         specific_type == Wildcards::TypeFlag::None ? Wildcards::generate_wildcards(
-                                                         Wildcards::TypeFlag::Project3mf
-                                                             | Wildcards::TypeFlag::Stl
-                                                             | Wildcards::TypeFlag::Obj
-                                                             | Wildcards::TypeFlag::Svg
-                                                             | Wildcards::TypeFlag::Step,
+                                                         import_file_types,
                                                          Wildcards::TypeFlag::AllImportFiles
                                                      ) :
                                                      Wildcards::generate_wildcards(specific_type),
@@ -1288,17 +1313,10 @@ MenuCommandRegistrar::load_volume(Domain::ModelVolumeType type, Wildcards::TypeF
     dlg_manager.show_file_dialog(
         FileDialogType::OpenMultiple,
         _u8L("Import File"),
-        m_project_interactor.project_dir(
-            m_project_interactor.selected_project_id(),
-            AppServices::instance().app_config().get<std::string>("last_used_directory")
-        ),
+        this->default_dialog_folder(),
         "",
         specific_type == Wildcards::TypeFlag::None ? Wildcards::generate_wildcards(
-                                                         Wildcards::TypeFlag::Project3mf
-                                                             | Wildcards::TypeFlag::Stl
-                                                             | Wildcards::TypeFlag::Obj
-                                                             | Wildcards::TypeFlag::Svg
-                                                             | Wildcards::TypeFlag::Step,
+                                                         import_file_types,
                                                          Wildcards::TypeFlag::AllImportFiles
                                                      ) :
                                                      Wildcards::generate_wildcards(specific_type),
@@ -1307,6 +1325,123 @@ MenuCommandRegistrar::load_volume(Domain::ModelVolumeType type, Wildcards::TypeF
 }
 
 void MenuCommandRegistrar::load_shape_from_gallery(Domain::ModelVolumeType type) {}
+
+void MenuCommandRegistrar::export_selection_as_stl_obj()
+{
+    IDialogManager::FileCallback callback =
+        [this](const bool success, const std::vector<boost::filesystem::path>& file_paths)
+    {
+        if (!success || file_paths.empty()) {
+            return;
+        }
+
+        MeshExportLogic::export_selection(
+            file_paths.front(),
+            m_project_interactor.scene_interactor(),
+            &AppServices::instance().dialog_manager()
+        );
+    };
+
+    AppServices::instance().dialog_manager().show_file_dialog(
+        FileDialogType::Save,
+        _u8L("Export as STL/OBJ"),
+        this->default_dialog_folder(),
+        MeshExportLogic::proposed_export_file_name(m_project_interactor.scene_interactor()),
+        Wildcards::generate_wildcards(
+            Wildcards::TypeFlag::Stl | Wildcards::TypeFlag::Obj,
+            Wildcards::TypeFlag::Stl
+        ),
+        callback
+    );
+}
+
+void MenuCommandRegistrar::replace_selected_volume_with_stl()
+{
+    IDialogManager::FileCallback callback =
+        [this](const bool success, const std::vector<boost::filesystem::path>& file_paths)
+    {
+        if (!success || file_paths.empty()) {
+            return;
+        }
+
+        const tl::expected<void, std::string> replace_result =
+            VolumeReloadLogic::replace_selected_volume(
+                file_paths.front(),
+                m_project_interactor.scene_interactor(),
+                &AppServices::instance().dialog_manager()
+            );
+
+        if (!replace_result) {
+            AppServices::instance().dialog_manager().show_warning_dialog(
+                replace_result.error(),
+                _u8L("Error during replace")
+            );
+
+            return;
+        }
+
+        m_project_interactor.undo_provider().take_snapshot(UndoSnapshotType::ReplaceWithStl);
+    };
+
+    AppServices::instance().dialog_manager().show_file_dialog(
+        FileDialogType::Open,
+        _u8L("Select the new file:"),
+        this->default_dialog_folder(),
+        VolumeReloadLogic::proposed_replace_file_name(m_project_interactor.scene_interactor()),
+        Wildcards::generate_wildcards(model_file_types, Wildcards::TypeFlag::AllImportFiles),
+        callback
+    );
+}
+
+void MenuCommandRegistrar::reload_selection_from_disk()
+{
+    IDialogManager& dialog_manager = AppServices::instance().dialog_manager();
+
+    VolumeReloadLogic::MissingFileResolver missing_file_resolver =
+        [this, &dialog_manager](
+            const boost::filesystem::path& missing_file
+        ) -> std::optional<boost::filesystem::path>
+    {
+        std::optional<boost::filesystem::path> selected_path;
+        dialog_manager.show_file_dialog(
+            FileDialogType::Open,
+            _u8L("Please select the file to reload")
+                + " ("
+                + missing_file.filename().string()
+                + "):",
+            default_dialog_folder(),
+            missing_file.filename().string(),
+            Wildcards::generate_wildcards(model_file_types, Wildcards::TypeFlag::AllImportFiles),
+            [&selected_path](bool success, const std::vector<boost::filesystem::path>& file_paths)
+            {
+                if (success && !file_paths.empty()) {
+                    selected_path = file_paths.front();
+                }
+            }
+        );
+        return selected_path;
+    };
+
+    const VolumeReloadLogic::ReloadFromDiskResult reload_result =
+        VolumeReloadLogic::reload_selection(
+            missing_file_resolver,
+            m_project_interactor.scene_interactor(),
+            &dialog_manager
+        );
+
+    if (!reload_result.failed_volume_names.empty()) {
+        std::string message = _u8L("Unable to reload:") + "\n";
+        for (const std::string& failed_volume_name : reload_result.failed_volume_names) {
+            message += failed_volume_name + "\n";
+        }
+
+        dialog_manager.show_warning_dialog(message, _u8L("Error during reload"));
+    }
+
+    if (reload_result.changed_volume_count > 0) {
+        m_project_interactor.undo_provider().take_snapshot(Biz::UndoSnapshotType::ReloadFromDisk);
+    }
+}
 
 // Maps UI language to supported website locale codes.
 static std::string current_language_code_safe()

@@ -43,6 +43,7 @@ static constexpr const double zero_volume             = 0.0000001;
 struct ReturnData
 {
     std::string file_name;
+    boost::filesystem::path file_path;
     std::optional<Domain::TriangleMesh> mesh;
     std::optional<Domain::Model> model;
 };
@@ -697,7 +698,7 @@ static tl::expected<ReturnData, FileLoadError> read_data_from_file(
     StepLoadingMultiple* step_loading_multiple
 )
 {
-    ReturnData ret = {input_file_path.filename().string()};
+    ReturnData ret       = {input_file_path.filename().string(), input_file_path};
     std::string path_str = input_file_path.string();
     const bool is_stl = boost::algorithm::iends_with(path_str, ".stl");
     const bool is_3mf = boost::algorithm::iends_with(path_str, ".3mf");
@@ -757,7 +758,7 @@ static tl::expected<ReturnData, FileLoadError> read_data_from_file(
             show_dialog = false;
         }
 
-        if (show_dialog) {
+        if (show_dialog && dialog_provider != nullptr) {
             auto dialog_result = dialog_provider->show_load_step_dialog(
                 input_file_path.filename().string(),
                 linear_precision,
@@ -944,6 +945,7 @@ static std::vector<ReturnData> import_files(
             for (const ModelObject* object : extra_model->objects) {
                 ReturnData data;
                 data.file_name = object->name;
+                data.file_path = object->input_file;
                 data.mesh      = object->volumes.front()->mesh();
                 ret.emplace_back(data);
             }
@@ -1062,6 +1064,17 @@ Domain::Project load_file_as_project(
     return convert_to_project(std::move(loaded_3mf), dialog_provider);
 }
 
+namespace {
+std::optional<ModelVolume::Source> volume_source_from_path(const boost::filesystem::path& file_path)
+{
+    if (file_path.empty()) {
+        return std::nullopt;
+    }
+
+    return ModelVolume::Source{.input_file = file_path.string(), .object_idx = 0, .volume_idx = 0};
+}
+} // namespace
+
 ElementRefs import_files_and_add_to_scene(
     const std::vector<boost::filesystem::path>& file_paths,
     int tool_count,
@@ -1078,11 +1091,12 @@ ElementRefs import_files_and_add_to_scene(
         ElementRefs new_instances;
         using namespace Biz::Algorithms;
         if (file_data.mesh) {
-            auto mesh = file_data.mesh;
-            new_instances =
-                scene_interactor.new_object_from_mesh(std::move(mesh.value()), file_data.file_name);
-
-            bbox = mesh->bounding_box();
+            bbox          = file_data.mesh->bounding_box();
+            new_instances = scene_interactor.new_object_from_mesh(
+                std::move(file_data.mesh.value()),
+                file_data.file_name,
+                volume_source_from_path(file_data.file_path)
+            );
         } else if (file_data.model) {
             Domain::Model& model = file_data.model.value();
             if (model.objects.size() == 1 && model.objects.front()->instances.empty()) {
@@ -1127,13 +1141,14 @@ void import_volumes_into_selected_object(
     auto data = Biz::FileLoadingLogic::import_files(file_paths, dialog_provider);
 
     for (Biz::FileLoadingLogic::ReturnData& file_data : data) {
-        Domain::BoundingBox3d bbox;
         if (file_data.mesh) {
-            auto mesh = file_data.mesh;
-            scene_interactor
-                .add_volume_from_mesh(std::move(mesh.value()), volume_type, file_data.file_name);
-
-            bbox = mesh->bounding_box();
+            scene_interactor.add_volume_from_mesh(
+                std::move(file_data.mesh.value()),
+                volume_type,
+                file_data.file_name,
+                SquareMatrix4d::Identity(),
+                volume_source_from_path(file_data.file_path)
+            );
         } else if (file_data.model) {
             Domain::Model& model = file_data.model.value();
             if (model.objects.size() == 1 &&
@@ -1181,7 +1196,10 @@ read_model_from_file(const std::string& input_file, IMessageDialogProvider* dial
         ModelObject* new_object = model.add_object();
         new_object->name        = input_file_path.filename().string();
         new_object->input_file  = input_file_path.string();
-        Algorithms::ModelObject::add_volume(new_object, processed_file.value().mesh.value());
+        ModelVolume* new_volume =
+            Algorithms::ModelObject::add_volume(new_object, processed_file.value().mesh.value());
+        new_volume->name   = input_file_path.filename().string();
+        new_volume->source = volume_source_from_path(input_file_path).value();
         model.add_default_instances();
     } else {
         return tl::make_unexpected(_u8L("There is no data for either the mesh or the model."));

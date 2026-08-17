@@ -171,13 +171,6 @@ inline void remove_nulls(std::vector<T*> &vec)
     	vec.end());
 }
 
-template <typename T>
-inline void sort_remove_duplicates(std::vector<T> &vec)
-{
-	std::sort(vec.begin(), vec.end());
-	vec.erase(std::unique(vec.begin(), vec.end()), vec.end());
-}
-
 // Variant of std::lower_bound() with compare predicate, but without the key.
 // This variant is very useful in case that the T type is large or it does not even have a public constructor.
 template<class ForwardIt, class LowerThanKeyPredicate>

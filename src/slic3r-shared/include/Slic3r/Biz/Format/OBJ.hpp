@@ -18,6 +18,7 @@ namespace Slic3r::Domain {
 namespace Slic3r::Biz {
 
 tl::expected<Domain::TriangleMesh, std::string> load_obj(const std::string& path);
-bool store_obj(const std::string& path, Domain::Model *model);
+bool store_obj(const std::string& path, const Domain::TriangleMesh& mesh);
+bool store_obj(const std::string& path, Domain::Model* model);
 
 }; // namespace Slic3r::Biz

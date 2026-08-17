@@ -7,6 +7,8 @@ add_library(slic3r-biz-cgal-algorithms STATIC
     src/Slic3r/Biz/CGAL/Algorithms/VoronoiUtilsCgal.cpp
     include/Slic3r/Biz/CGAL/Algorithms/MeshBoolean.hpp
     src/Slic3r/Biz/CGAL/Algorithms/MeshBoolean.cpp
+    include/Slic3r/Biz/CGAL/Algorithms/MergeObjectVolumes.hpp
+    src/Slic3r/Biz/CGAL/Algorithms/MergeObjectVolumes.cpp
     src/Slic3r/Biz/CGAL/Algorithms/TryCatchSignal.hpp
     src/Slic3r/Biz/CGAL/Algorithms/TryCatchSignal.cpp
     src/Slic3r/Biz/CGAL/Algorithms/TryCatchSignalSEH.hpp

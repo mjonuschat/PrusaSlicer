@@ -10,6 +10,8 @@
 #include <Slic3r/Log.hpp>
 #include <boost/predef/other/endian.h>
 
+using Slic3r::Domain::TriangleMesh;
+
 namespace Slic3r::Biz {
 
 using TriangleMesh = Domain::TriangleMesh;
@@ -148,14 +150,14 @@ tl::expected<Domain::TriangleMesh, std::string> load_stl(const std::string& path
     return mesh;
 }
 
-bool store_stl(const std::string& path, const Domain::TriangleMesh& mesh, bool binary, const std::string& label)
+bool
+store_stl(const std::string& path, const TriangleMesh& mesh, bool binary, const std::string& label)
 {
-    if (binary)
-        its_write_stl_binary(path, label, mesh.its.indices, mesh.its.vertices);
-    else
-        its_write_stl_ascii(path, label, mesh.its.indices, mesh.its.vertices);
-    // FIXME returning false even if write failed.
-    return true;
+    if (binary) {
+        return its_write_stl_binary(path, label, mesh.its.indices, mesh.its.vertices);
+    }
+
+    return its_write_stl_ascii(path, label, mesh.its.indices, mesh.its.vertices);
 }
 
 } // namespace Slic3r::Biz

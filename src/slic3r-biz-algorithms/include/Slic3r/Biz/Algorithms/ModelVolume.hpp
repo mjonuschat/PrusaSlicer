@@ -51,4 +51,12 @@ Domain::BoundingBox3d transformed_bounding_box(const Domain::ModelVolume& model_
  */
 bool has_support_enforcers(const Domain::ModelVolume& model_volume);
 
+/**
+ * @brief Whether the volume has a usable source file and can be reloaded from disk.
+ *
+ * @param model_volume The volume to test.
+ * @return True if the volume can be reloaded from disk, false otherwise.
+ */
+bool is_reloadable_from_disk(const Domain::ModelVolume& model_volume);
+
 } // namespace Slic3r::Biz::Algorithms::ModelVolume

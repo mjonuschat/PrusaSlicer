@@ -264,6 +264,10 @@ static std::string to_string(Biz::UndoSnapshotType type)
         return _u8L("Add layer height override");
     case Type::ExecutePlugin:
         return _u8L("Execute plugin");
+    case Type::ReplaceWithStl:
+        return _u8L("Replace with STL");
+    case Type::ReloadFromDisk:
+        return _u8L("Reload from disk");
     }
     PANIC("Unknown option");
     return {};

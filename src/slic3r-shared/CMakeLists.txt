@@ -1070,6 +1070,10 @@ set(SLIC3R_SHARED_FILES
 
         include/Slic3r/Biz/FileLoadingLogic.hpp
         src/Slic3r/Biz/FileLoadingLogic.cpp
+        include/Slic3r/Biz/MeshExportLogic.hpp
+        src/Slic3r/Biz/MeshExportLogic.cpp
+        include/Slic3r/Biz/VolumeReloadLogic.hpp
+        src/Slic3r/Biz/VolumeReloadLogic.cpp
         include/Slic3r/Biz/Format/STL.hpp
         src/Slic3r/Biz/Format/STL.cpp
         include/Slic3r/Biz/Format/SVG.hpp

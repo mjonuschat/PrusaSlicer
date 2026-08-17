@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <optional>
 #include <unordered_map>
 
 #include "Slic3r/Biz/ISlicingInputChangedListener.hpp"
@@ -226,7 +227,8 @@ public:
         Domain::TriangleMesh&& mesh,
         Domain::ModelVolumeType volume_type,
         const std::string& name = std::string(),
-        const Transform& xform  = Domain::SquareMatrix4d::Identity()
+        const Transform& xform  = Domain::SquareMatrix4d::Identity(),
+        const std::optional<Domain::ModelVolume::Source>& volume_source = std::nullopt
     );
     void add_volume_into_selected_object(const Domain::ModelVolume& volume);
     using VolumeFactory = std::function<Domain::ModelVolume*(Domain::ModelObject&)>;
@@ -240,8 +242,11 @@ public:
     );
 
     using UpdateObjectFn = std::function<void(Domain::ModelObject&)>;
-    Domain::ElementRefs
-    new_object_from_mesh(Domain::TriangleMesh&& mesh, const std::string& name = std::string());
+    Domain::ElementRefs new_object_from_mesh(
+        Domain::TriangleMesh&& mesh,
+        const std::string& name                                         = std::string(),
+        const std::optional<Domain::ModelVolume::Source>& volume_source = std::nullopt
+    );
     Domain::ElementRefs new_object_from_mesh(
         Domain::TriangleMesh&& mesh,
         Domain::SelectionId project_id,
@@ -257,9 +262,22 @@ public:
         const std::vector<Domain::ElementRef>& source_elements
     );
 
-    using RefMesh = std::pair<Domain::ElementRef, Domain::TriangleMesh>;
+    using RefMesh   = std::pair<Domain::ElementRef, Domain::TriangleMesh>;
     using RefMeshes = std::vector<RefMesh>;
+
+    struct VolumeMeshReplacement
+    {
+        Domain::ElementRef element;
+        Domain::TriangleMesh mesh;
+        std::optional<Domain::ModelVolume::Source> new_source;
+        std::optional<Domain::Transform3d> new_transformation;
+        std::optional<std::string> new_name;
+    };
+
+    using VolumeMeshReplacements = std::vector<VolumeMeshReplacement>;
+
     void change_volume_meshes(RefMeshes&& meshes);
+    Domain::ElementRefs change_volume_meshes(VolumeMeshReplacements&& replacements);
 
     /**
      * @brief Modify facets annotations for given volumes.
@@ -308,6 +326,25 @@ public:
     void merge_selection_into_object();
     bool can_invalidate_cut_info() const;
     void invalidate_cut_info();
+
+    /**
+     * @brief Whether the current selection can be exported as a single mesh file.
+     *
+     * The selection must contain exactly one object and no wipe tower. In Volume mode
+     * exactly one volume of any type must be selected. In Instance mode either one fully
+     * selected instance or all instances of the object must be selected.
+     */
+    bool can_export_selection_as_mesh() const;
+
+    /**
+     * @brief Whether the mesh of the selected volume can be replaced from a file.
+     */
+    bool can_replace_selected_volume() const;
+
+    /**
+     * @brief Whether the current selection has anything to reload from disk.
+     */
+    bool can_reload_selection_from_disk() const;
 
     /**
      * Delete elements (volumes or instances) from the current scene selection.
@@ -383,6 +420,7 @@ public:
         const Domain::ConfigItem& item
     ) override;
 
+    const Domain::Project& selected_project() const;
     const Domain::Project::ConfigContainerList& selected_project_config_containers() const;
     const Domain::ModelInstanceList& unplaced_model_instances(const Domain::SelectionId project_id) const;
     const Domain::ModelInstanceList& selected_project_unplaced_model_instances() const;
@@ -406,6 +444,12 @@ public:
     Domain::ElementRefs selected_instance_all_volumes() const;
 
     Domain::ElementRefs selected_volumes_with_shear() const;
+
+    /**
+     * @brief Volumes of the current selection, each of them once.
+     */
+    Domain::ElementRefs selected_volumes() const;
+
     std::set<SelectionReferenceFrame> object_selection_reference_frame_options() const;
     SelectionReferenceFrame object_selection_reference_frame() const;
     bool reload_object_selection_reference_frame(SelectionReferenceFrame preferred_frame);

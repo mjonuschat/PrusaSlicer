@@ -1,10 +1,12 @@
 #include "Slic3r/Biz/Algorithms/ModelVolume.hpp"
-#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "Slic3r/Biz/Algorithms/FacetsAnnotation.hpp"
+#include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"
 #include "Slic3r/Domain/TriangleMesh.hpp"
+
+#include <boost/filesystem/path.hpp>
 
 using namespace Slic3r::Biz::Algorithms;
 
@@ -217,5 +219,14 @@ bool has_support_enforcers(const Domain::ModelVolume& model_volume)
         );
 }
 
+bool is_reloadable_from_disk(const Domain::ModelVolume& model_volume)
+{
+    const Domain::ModelVolume::Source& source = model_volume.source;
+    if (source.is_from_builtin_objects || source.input_file.empty()) {
+        return false;
+    }
+
+    return !boost::filesystem::path(source.input_file).extension().string().empty();
+}
 
 } // namespace Slic3r::Biz::Algorithms::ModelVolume
