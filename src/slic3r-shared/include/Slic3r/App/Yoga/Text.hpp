@@ -68,7 +68,7 @@ private:
     ImColor m_text_color;
     Render::ImguiFontType m_font_type = Render::ImguiFontType::Regular;
     std::optional<EvaluatedUnit> m_font_size;
-    ImVec2 m_text_pos;
+    ImVec2 m_taken_size;
 };
 
 } // namespace Slic3r::App::Yoga

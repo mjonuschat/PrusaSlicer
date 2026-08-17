@@ -73,7 +73,8 @@ void Text::render(const Vec2f& pos, const Vec2f& size)
 {
     render_item_begin(pos, size);
 
-    ImGui::SetCursorScreenPos(to_im(pos) + m_text_pos);
+    const ImVec2 text_pos = align_rectangle(to_im(size), m_taken_size, m_align).GetTL();
+    ImGui::SetCursorScreenPos(to_im(pos) + text_pos);
 
     ImGui::PushFont(m_imgui_render->font(m_font_type), used_font_size());
     ImGui::PushStyleColor(
@@ -200,8 +201,7 @@ Vec2f Text::get_item_size()
         min_size = Vec2f{0, used_font_size()};
     }
 
-    const ImVec2 space{width(), height()};
-    m_text_pos = align_rectangle(space, taken_size, m_align).GetTL();
+    m_taken_size = taken_size;
     set_style_dirty();
 
     ImGui::PopFont();

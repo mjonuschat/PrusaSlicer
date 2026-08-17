@@ -671,97 +671,97 @@ void PlaterRenderModule::init_scene_layout()
 
     m_toolbar_move = m_layout->add_toolbar_item(
         ToolbarID::Middle,
-        Render::Icon::Move,
+        tool_icon(Scene::ToolType::Translation),
         tool_name(Scene::ToolType::Translation)
     );
 
     m_toolbar_rotate = m_layout->add_toolbar_item(
         ToolbarID::Middle,
-        Render::Icon::Rotate,
+        tool_icon(Scene::ToolType::Rotation),
         tool_name(Scene::ToolType::Rotation)
     );
 
     m_toolbar_scale = m_layout->add_toolbar_item(
         ToolbarID::Middle,
-        Render::Icon::Scale,
+        tool_icon(Scene::ToolType::Scale),
         tool_name(Scene::ToolType::Scale)
     );
 
     m_toolbar_place_on_face = m_layout->add_toolbar_item(
         ToolbarID::Middle,
-        Render::Icon::PlaceOnFace,
+        tool_icon(Scene::ToolType::PlaceOnFace),
         tool_name(Scene::ToolType::PlaceOnFace)
     );
 
     m_toolbar_arrange = m_layout->add_toolbar_item(
         ToolbarID::Left,
-        Render::Icon::Layout,
+        tool_icon(Scene::ToolType::ArrangeGizmo),
         tool_name(Scene::ToolType::ArrangeGizmo)
     );
 
     m_toolbar_simplify = m_layout->add_toolbar_item(
         ToolbarID::Middle,
-        Render::Icon::Simplify,
+        tool_icon(Scene::ToolType::Simplify),
         tool_name(Scene::ToolType::Simplify)
     );
 
     m_toolbar_paint_on_supports = m_layout->add_toolbar_item(
         ToolbarID::Middle,
-        Render::Icon::PaintSupports,
+        tool_icon(Scene::ToolType::PaintOnSupportsGizmo),
         tool_name(Scene::ToolType::PaintOnSupportsGizmo)
     );
 
     m_toolbar_paint_on_seams = m_layout->add_toolbar_item(
         ToolbarID::Middle,
-        Render::Icon::PaintSeams,
+        tool_icon(Scene::ToolType::PaintOnSeamsGizmo),
         tool_name(Scene::ToolType::PaintOnSeamsGizmo)
     );
 
     m_toolbar_paint_on_fuzzy_skin = m_layout->add_toolbar_item(
         ToolbarID::Middle,
-        Render::Icon::PaintFuzzySkin,
+        tool_icon(Scene::ToolType::PaintOnFuzzySkinGizmo),
         tool_name(Scene::ToolType::PaintOnFuzzySkinGizmo)
     );
 
     m_toolbar_multi_material_painting = m_layout->add_toolbar_item(
         ToolbarID::Middle,
-        Render::Icon::PaintMultiMaterial,
+        tool_icon(Scene::ToolType::MultiMaterialPaintingGizmo),
         tool_name(Scene::ToolType::MultiMaterialPaintingGizmo)
     );
 
     m_toolbar_text = m_layout->add_toolbar_item(
         ToolbarID::Middle,
-        Render::Icon::Text,
+        tool_icon(Scene::ToolType::TextGizmo),
         tool_name(Scene::ToolType::TextGizmo)
     );
 
     m_toolbar_svg = m_layout->add_toolbar_item(
         ToolbarID::Middle,
-        Render::Icon::Svg,
+        tool_icon(Scene::ToolType::Svg),
         tool_name(Scene::ToolType::Svg)
     );
 
     m_toolbar_cut = m_layout->add_toolbar_item(
         ToolbarID::Middle,
-        Render::Icon::Cut,
+        tool_icon(Scene::ToolType::CutGizmo),
         tool_name(Scene::ToolType::CutGizmo)
     );
 
     m_toolbar_measure = m_layout->add_toolbar_item(
         ToolbarID::Middle,
-        Render::Icon::Ruler,
+        tool_icon(Scene::ToolType::MeasureGizmo),
         tool_name(Scene::ToolType::MeasureGizmo)
     );
 
     m_toolbar_variable_layer_height = m_layout->add_toolbar_item(
         ToolbarID::Middle,
-        Render::Icon::VariableLayerHeight,
+        tool_icon(Scene::ToolType::VariableLayerHeightGizmo),
         tool_name(Scene::ToolType::VariableLayerHeightGizmo)
     );
 
     m_toolbar_height_range = m_layout->add_toolbar_item(
         ToolbarID::Middle,
-        Render::Icon::HeightRange,
+        tool_icon(Scene::ToolType::HeightRangeGizmo),
         tool_name(Scene::ToolType::HeightRangeGizmo)
     );
 
@@ -823,6 +823,7 @@ void PlaterRenderModule::init_dialog_navigation()
         };
         dialog->set_title(tool_name(tool_type));
         dialog->set_shortcut(tool_shortcut(tool_type));
+        dialog->set_icon(tool_icon(tool_type));
 
         m_layout->sidebar_stack_layout()->insert_gizmo(tool_type, std::move(dialog));
     };
