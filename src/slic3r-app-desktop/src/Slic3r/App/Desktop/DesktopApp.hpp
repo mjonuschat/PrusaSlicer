@@ -66,7 +66,7 @@ private:
      */
     void finish_init();
 
-    void on_forced_state(bool has_forced);
+    void on_preset_updater_forced_state(bool has_forced);
 
     std::unique_ptr<wxGLContext> m_gl_context; // do NOT change order of this attribute
     std::unique_ptr<Biz::ProjectInteractor> m_project_interactor;

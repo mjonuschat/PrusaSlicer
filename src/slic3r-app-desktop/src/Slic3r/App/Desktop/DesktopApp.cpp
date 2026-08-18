@@ -369,7 +369,7 @@ bool DesktopApp::OnInit()
     PresetUpdater::PresetUpdaterController& preset_updater_controller =
         app_services.preset_updater_controller();
     preset_updater_controller.set_forced_state_callback(
-        [this](bool has_forced) { on_forced_state(has_forced); }
+        [this](bool has_forced) { on_preset_updater_forced_state(has_forced); }
     );
     preset_updater_controller.set_show_dialog_callback(
         [this]()
@@ -424,7 +424,7 @@ bool DesktopApp::OnInit()
     return true;
 }
 
-void DesktopApp::on_forced_state(bool has_forced)
+void DesktopApp::on_preset_updater_forced_state(bool has_forced)
 {
     if (!has_forced) {
         finish_init();
@@ -519,6 +519,7 @@ void DesktopApp::finish_init()
     // set_next_render_module, because the plater has to be initialized before it is handed a
     // screen size. The swap itself is done at the end of the frame rendered below, which is why
     // the module is kept alive: the canvas still points at it until then.
+    // Rendered here and not just requested: render_module_switched below reads the current one.
     canvas.set_next_render_module(m_plater_module.get());
     canvas.render();
     canvas.request_render();

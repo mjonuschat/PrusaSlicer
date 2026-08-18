@@ -37,7 +37,7 @@ void append_words(Item* row, std::string_view text)
         if (word_range.begin() == word_range.end()) {
             continue;
         }
-        std::string word(&*word_range.begin(), std::ranges::distance(word_range));
+        std::string word(word_range.begin(), word_range.end());
         word += " ";
         row->emplace_back<Text>(word);
     }
