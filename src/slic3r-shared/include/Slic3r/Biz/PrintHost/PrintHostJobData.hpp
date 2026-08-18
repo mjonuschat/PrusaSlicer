@@ -2,10 +2,12 @@
 
 #include "Slic3r/Assert.hpp"
 #include "Slic3r/Log.hpp"
+#include "Slic3r/Domain/ConfigPhysical.hpp"
 #include <string>
 #include <boost/filesystem.hpp>
 #include <memory>
 #include <variant>
+#include <vector>
 
 namespace Slic3r::Biz::libpgcode {
 class LineView;
@@ -29,6 +31,8 @@ enum class PrintHostAfterUploadAction
     StartSimulation,
     QueuePrint
 };
+
+std::vector<PrintHostAfterUploadAction> get_post_upload_actions(Domain::PrintHostType type);
 
 enum class PrintHostExportFormat
 {

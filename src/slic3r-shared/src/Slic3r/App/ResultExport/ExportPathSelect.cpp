@@ -51,6 +51,26 @@ std::string shorten_error(const std::string& errorMsg) {
     return errorMsg;
 }
 
+std::string post_upload_action_label(Biz::PrintHost::PrintHostAfterUploadAction action)
+{
+    using Biz::PrintHost::PrintHostAfterUploadAction;
+    switch (action) {
+    case PrintHostAfterUploadAction::StartPrint:
+        // TRN Button on the print host upload dialog.
+        return Biz::_u8L("Upload and Print");
+    case PrintHostAfterUploadAction::StartSimulation:
+        // TRN Button on the print host upload dialog.
+        return Biz::_u8L("Upload and Simulate");
+    case PrintHostAfterUploadAction::QueuePrint:
+        // TRN Button on the print host upload dialog.
+        return Biz::_u8L("Upload to Queue");
+    case PrintHostAfterUploadAction::None:
+        break;
+    }
+    ASSERT(false, "No button label for PrintHostAfterUploadAction::None");
+    return {};
+}
+
 std::string gen_wildcards(const std::string& extension, Technology tech, bool bgcode_allowed)
 {
     if (tech == Technology::Fdm) {
@@ -245,7 +265,8 @@ void show_export_modal_dialog(
 
 void show_upload_modal_dialog(
     const Biz::ProjectInteractor& project_interactor,
-    const std::function<void(const std::string&)>& callback
+    const std::vector<Biz::PrintHost::PrintHostAfterUploadAction>& post_actions,
+    const std::function<void(const std::string&, Biz::PrintHost::PrintHostAfterUploadAction)>& callback
 )
 {
     ExportNameData name_data = get_export_name_data(project_interactor);
@@ -259,31 +280,53 @@ void show_upload_modal_dialog(
     std::string filename = name_data.filename;
 
     Biz::Platform::PlatformServices::instance().main_thread_dispatcher().dispatch_on_main_thread(
-        [pi_raw = &project_interactor, filename, callback, bgcode_allowed]()
+        [pi_raw = &project_interactor, filename, post_actions, callback, bgcode_allowed]()
         {
-            auto wrapped_callback = [callback, bgcode_allowed, pi_raw](const std::string& input_filename) {
+            auto wrapped_callback = [post_actions, callback, bgcode_allowed, pi_raw](
+                const std::string& input_filename,
+                Biz::PrintHost::PrintHostAfterUploadAction action
+            ) {
                 if (input_filename.empty()) {
-                    callback(input_filename);
+                    callback(input_filename, action);
                     return;
                 }
 
                 validate_bgcode_extension(
                     boost::filesystem::path(input_filename),
                     bgcode_allowed,
-                    [callback](const boost::filesystem::path& safe_path) {
-                        callback(safe_path.string());
+                    [callback, action](const boost::filesystem::path& safe_path) {
+                        callback(safe_path.string(), action);
                     },
-                    [pi_raw, callback]() {
-                        show_upload_modal_dialog(*pi_raw, callback);
+                    [pi_raw, post_actions, callback]() {
+                        show_upload_modal_dialog(*pi_raw, post_actions, callback);
                     }
                 );
             };
+
+            std::vector<IDialogManager::ButtonWithCallback> buttons;
+            buttons.reserve(post_actions.size() + 1);
+            const auto add_button = [&buttons, wrapped_callback](
+                const std::string& label,
+                Biz::PrintHost::PrintHostAfterUploadAction action
+            ) {
+                buttons.push_back(
+                    {label,
+                     [wrapped_callback, action](const std::string& input_filename)
+                     { wrapped_callback(input_filename, action); }}
+                );
+            };
+
+            // TRN Button on the print host upload dialog.
+            add_button(Biz::_u8L("Upload"), Biz::PrintHost::PrintHostAfterUploadAction::None);
+            for (const Biz::PrintHost::PrintHostAfterUploadAction action : post_actions) {
+                add_button(post_upload_action_label(action), action);
+            }
 
             AppServices::instance().dialog_manager().show_input_dialog_with_buttons(
                 Biz::_u8L("Send G-Code to printer host"),
                 Biz::_u8L("Upload to printer host with the following filename:"),
                 filename,
-                {{Biz::_u8L("Upload"), wrapped_callback}}
+                buttons
             );
         }
     );

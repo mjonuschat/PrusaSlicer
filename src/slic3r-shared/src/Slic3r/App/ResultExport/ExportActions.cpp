@@ -5,8 +5,13 @@
 #include "Slic3r/App/IDialogManager.hpp"
 
 #include <Slic3r/Biz/Platform/PlatformServices.hpp>
+#include "Slic3r/Biz/PhysicalPrinter/PhysicalPrinterInteractor.hpp"
+#include "Slic3r/Biz/PrintHost/PrintHostJobData.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/UserAccount/ConnectUtils.hpp"
+
+#include <memory>
+#include <variant>
 
 namespace Slic3r::App::ExportActions {
 
@@ -117,10 +122,37 @@ std::function<void()> upload_gcode_to_print_host(Biz::ProjectInteractor& project
     auto upload_fn{
         [pi_raw = &project_interactor]()
         {
+            const auto& phys_printer =
+                pi_raw->physical_printer_interactor().selected_physical_printer_data();
+            const auto* payload =
+                std::get_if<Biz::PhysicalPrinter::PrinterUpload>(&phys_printer.payload);
+            if (payload == nullptr) {
+                SPDLOG_INFO(
+                    "Upload to Print Host aborted - the selected destination is no longer a print host."
+                );
+                return;
+            }
+
+            auto print_host_config =
+                std::make_shared<const Biz::PhysicalPrinter::PhysicalPrinterConfig>(phys_printer);
+
             ExportPathSelect::show_upload_modal_dialog(
                 *pi_raw,
-                [pi_raw](const std::string& file_path)
-                { pi_raw->do_result_upload(pi_raw->selected_bed_slicing_id(), file_path); }
+                Biz::PrintHost::get_post_upload_actions(payload->type),
+                [pi_raw, print_host_config](
+                    const std::string& file_path,
+                    Biz::PrintHost::PrintHostAfterUploadAction post_action
+                ) {
+                    if (file_path.empty()) {
+                        return;
+                    }
+                    pi_raw->do_result_upload(
+                        pi_raw->selected_bed_slicing_id(),
+                        file_path,
+                        post_action,
+                        *print_host_config
+                    );
+                }
             );
         }
     };

@@ -753,16 +753,22 @@ void ProjectInteractor::do_result_export(const Domain::SlicingId id, const boost
     do_result_export_inner(id, std::move(config), std::move(data));
 }
 
-void ProjectInteractor::do_result_upload(const Domain::SlicingId id, const std::string& filename)
+void ProjectInteractor::do_result_upload(
+    const Domain::SlicingId id,
+    const std::string& filename,
+    PrintHost::PrintHostAfterUploadAction post_action,
+    const PhysicalPrinter::PhysicalPrinterConfig& print_host_config
+)
 {
     set_output_extension(id.project_id, boost::filesystem::path(filename).extension().string());
-    PhysicalPrinter::PhysicalPrinterConfig config {m_physical_printer_interactor.selected_physical_printer_data()};
+    PhysicalPrinter::PhysicalPrinterConfig config {print_host_config};
     boost::filesystem::path dest_path(filename);
     PrintHost::PrintHostJobData data{
         std::monostate{},
         dest_path,
         PrintHost::get_export_format_from_extension(dest_path.extension().string())
     };
+    data.post_action = post_action;
     do_result_export_inner(id, std::move(config), std::move(data));
 }
 

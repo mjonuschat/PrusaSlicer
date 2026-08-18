@@ -231,19 +231,22 @@ void DialogManager::show_input_dialog_with_buttons(
     main_sizer->Add(label, 0, wxALL, 10);
 
     wxTextCtrl* text_ctrl = new wxTextCtrl(&dialog, wxID_ANY, from_u8(default_value));
+    text_ctrl->SetMinSize(wxSize(dialog.FromDIP(400), -1));
     main_sizer->Add(text_ctrl, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 10);
+
+    std::function<void(const std::string&)> chosen_callback;
+    std::string entered_value;
 
     wxBoxSizer* button_sizer = new wxBoxSizer(wxHORIZONTAL);
     for (const auto& btn_data : buttons) {
         wxButton* btn = new wxButton(&dialog, wxID_ANY, from_u8(btn_data.text));
-        
-        btn->Bind(wxEVT_BUTTON, [&dialog, text_ctrl, cb = btn_data.callback](wxCommandEvent&) {
-            if (cb) {
-                cb(into_u8(text_ctrl->GetValue()));
-            }
+
+        btn->Bind(wxEVT_BUTTON, [&dialog, text_ctrl, &chosen_callback, &entered_value, cb = btn_data.callback](wxCommandEvent&) {
+            chosen_callback = cb;
+            entered_value   = into_u8(text_ctrl->GetValue());
             dialog.EndModal(wxID_OK);
         });
-        
+
         button_sizer->Add(btn, 0, wxALL, 5);
     }
     wxButton* cancel_btn = new wxButton(&dialog, wxID_CANCEL);
@@ -252,7 +255,13 @@ void DialogManager::show_input_dialog_with_buttons(
 
     dialog.SetSizerAndFit(main_sizer);
     dialog.CenterOnParent();
+    text_ctrl->SetFocus();
     dialog.ShowModal();
+
+    // Invoked only after the dialog is gone - a callback may open another modal dialog.
+    if (chosen_callback) {
+        chosen_callback(entered_value);
+    }
 }
 
 std::string DialogManager::show_combo_dialog(

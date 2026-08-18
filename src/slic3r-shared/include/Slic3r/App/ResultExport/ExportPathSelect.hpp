@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Slic3r/Biz/ResultExport/ExportNameParser.hpp"
+#include "Slic3r/Biz/PrintHost/PrintHostJobData.hpp"
 
 #include <boost/filesystem/path.hpp>
 #include <vector>
@@ -31,7 +32,8 @@ show_export_modal_dialog(
 void
 show_upload_modal_dialog(
     const Biz::ProjectInteractor& project_interactor,
-    const std::function<void(const std::string&)>& callback
+    const std::vector<Biz::PrintHost::PrintHostAfterUploadAction>& post_actions,
+    const std::function<void(const std::string&, Biz::PrintHost::PrintHostAfterUploadAction)>& callback
 );
 
 Biz::ExportNameParser::ExportNameData get_export_name_data(const Biz::ProjectInteractor& project_interactor);

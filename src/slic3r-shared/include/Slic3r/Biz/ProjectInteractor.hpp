@@ -416,11 +416,17 @@ public:
     void do_result_export(const Domain::SlicingId id, const boost::filesystem::path& dest_path);
 
     /**
-     * @brief Creates PhysicalPrinter::PhysicalPrinterConfig and PrintHostData and passes it to ResultExportInteractor to start upload.
+     * @brief Creates PrintHostData and passes it with the given destination to ResultExportInteractor to start upload.
      * PrintHostData copies gcode data from m_fdm_result_cache.
-     * PhysicalPrinter::PhysicalPrinterConfig origin is yet to be decided.
+     * @param print_host_config Destination captured when the upload was requested, so that a later
+     * change of the selected physical printer cannot redirect the upload.
      */
-    void do_result_upload(const Domain::SlicingId id, const std::string& filename);
+    void do_result_upload(
+        const Domain::SlicingId id,
+        const std::string& filename,
+        PrintHost::PrintHostAfterUploadAction post_action,
+        const PhysicalPrinter::PhysicalPrinterConfig& print_host_config
+    );
 
     /**
      * @brief Same as do_result_upload, but does parse connect_msg first.
