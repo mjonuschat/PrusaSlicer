@@ -1814,7 +1814,9 @@ void MenuCommandRegistrar::register_main_menu_config_commands()
         );
 #endif
     m_menu_manager.register_menu_item(
-        {MenuItemName::MainMenu, MenuItemName::PresetReposManagement},
+        {MenuItemName::MainMenu,
+         MenuItemName::Configuration,
+         MenuItemName::PresetReposManagement},
         std::make_unique<UIItemCommand>(
             CommandName::PresetReposManagement,
             [this]() { m_navigator.set_modal_dialog(ModalDialog::PresetUpdater); }
