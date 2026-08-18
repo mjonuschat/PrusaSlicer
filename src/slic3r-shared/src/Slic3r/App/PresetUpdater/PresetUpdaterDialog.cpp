@@ -171,15 +171,12 @@ void PresetUpdaterDialog::build_content()
 
     m_online_list_view = sections->emplace_back<SourceListView>(SourceFactory{m_controller});
     m_online_list_view->set_orientation(Orientation::Vertical);
-    m_online_list_view->set_gap(4_fpx);
+    m_online_list_view->set_gap(8_fpx);
     m_online_list_view->set_flex_shrink(0);
     m_online_filter->set_filter_fn([this](const PresetUpdater::SourceRowState& source)
                                    { return source_visible(source); });
     m_online_filter->set_source_model(&m_controller.online_sources());
     m_online_list_view->set_source_list(m_online_filter.get());
-
-    Separator* sections_separator = sections->emplace_back<Separator>(Orientation::Horizontal);
-    sections_separator->set_flex_shrink(0);
 
     Item* local_header = sections->emplace_back<Item>();
     local_header->set_orientation(Orientation::Horizontal);
@@ -197,6 +194,7 @@ void PresetUpdaterDialog::build_content()
     m_add_zip_button = local_header->emplace_back<LayoutButton>(add_zip_label, Render::Icon::Plus);
 
     m_add_zip_button->set_width(PresetUpdaterRowLayout::action_slot_width);
+    PresetUpdaterRowLayout::apply_button_size(m_add_zip_button);
     m_add_zip_button->set_flex_shrink(0);
     m_add_zip_button->callbacks().action = [this]() { pick_zip_archive(); };
 
@@ -225,7 +223,7 @@ void PresetUpdaterDialog::build_content()
 
     m_local_list_view = sections->emplace_back<SourceListView>(SourceFactory{m_controller});
     m_local_list_view->set_orientation(Orientation::Vertical);
-    m_local_list_view->set_gap(4_fpx);
+    m_local_list_view->set_gap(8_fpx);
     m_local_list_view->set_flex_shrink(0);
     m_local_filter->set_filter_fn([this](const PresetUpdater::SourceRowState& source)
                                   { return source_visible(source); });
@@ -252,6 +250,7 @@ void PresetUpdaterDialog::build_footer(Item* parent)
 
     m_update_everything_button = footer->emplace_back<LayoutButton>(apply_everything_label());
     m_update_everything_button->set_min_width(PresetUpdaterRowLayout::action_slot_width);
+    PresetUpdaterRowLayout::apply_button_size(m_update_everything_button);
     m_update_everything_button->set_flex_shrink(0);
     m_update_everything_button->callbacks().action = [this]()
     {
@@ -266,12 +265,14 @@ void PresetUpdaterDialog::build_footer(Item* parent)
     // TRN Preset updater dialog button. Closes the dialog.
     m_footer_close_button = footer->emplace_back<LayoutButton>(Biz::_u8L("Close"));
     m_footer_close_button->set_min_width(PresetUpdaterRowLayout::action_slot_width);
+    PresetUpdaterRowLayout::apply_button_size(m_footer_close_button);
     m_footer_close_button->set_flex_shrink(0);
     m_footer_close_button->callbacks().action = [this]() { close_action(); };
 
     // TRN Preset updater dialog button. Quits the application.
     m_exit_app_button = footer->emplace_back<LayoutButton>(Biz::_u8L("Quit"));
     m_exit_app_button->set_min_width(PresetUpdaterRowLayout::action_slot_width);
+    PresetUpdaterRowLayout::apply_button_size(m_exit_app_button);
     m_exit_app_button->set_flex_shrink(0);
     m_exit_app_button->set_visible(false);
     m_exit_app_button->callbacks().action = [this]() { m_navigator.close_application(); };

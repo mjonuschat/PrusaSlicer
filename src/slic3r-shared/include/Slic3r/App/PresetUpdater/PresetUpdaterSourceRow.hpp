@@ -2,7 +2,7 @@
 
 #include "Slic3r/App/PresetUpdater/PresetUpdaterController.hpp"
 #include "Slic3r/App/PresetUpdater/PresetUpdaterVendorRow.hpp"
-#include "Slic3r/App/Yoga/Item.hpp"
+#include "Slic3r/App/Yoga/Rectangle.hpp"
 #include "Slic3r/App/Yoga/ListView.hpp"
 
 #include "Slic3r/Biz/DataObserver.hpp"
@@ -27,7 +27,7 @@ class ToggleButton;
  */
 class PresetUpdaterSourceRow :
     public Biz::DataObserver<PresetUpdater::SourceRowState>,
-    public Yoga::Item
+    public Yoga::Rectangle
 {
 public:
     using VendorFactory = Yoga::ViewFactory<
@@ -45,7 +45,6 @@ public:
 
 protected:
     void on_data_update() override;
-    void on_index_update() override;
 
 private:
 
@@ -93,7 +92,7 @@ private:
     Yoga::Text* m_summary_text{nullptr};
     Yoga::Icon* m_summary_icon{nullptr};
 
-    Yoga::Separator* m_separator{nullptr};
+    Yoga::Separator* m_vendor_separator{nullptr};
 
     Yoga::Item* m_vendor_container{nullptr};
     VendorListView* m_vendor_list_view{nullptr};

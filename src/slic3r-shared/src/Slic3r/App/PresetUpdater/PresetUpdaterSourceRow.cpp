@@ -109,10 +109,10 @@ PresetUpdaterSourceRow::PresetUpdaterSourceRow(
     set_orientation(Orientation::Vertical);
     set_gap(2_fpx);
     set_flex_shrink(0);
-
-    m_separator = emplace_back<Separator>(Orientation::Horizontal);
-    m_separator->set_margin(Margins{0_fpx, 4_fpx, 0_fpx, 4_fpx});
-    m_separator->set_visible(m_index > 0);
+    set_fill(IM_COL32_BLACK_TRANS);
+    set_border_color(m_theme->color_imgui(Platform::Color::WindowBgAlternate));
+    set_border_width(1);
+    set_padding(Paddings{8_fpx, 4_fpx});
 
     build_header();
 
@@ -120,6 +120,9 @@ PresetUpdaterSourceRow::PresetUpdaterSourceRow(
     m_vendor_container->set_orientation(Orientation::Vertical);
     m_vendor_container->set_flex_shrink(0);
     m_vendor_container->set_visible(false);
+
+    m_vendor_separator = m_vendor_container->emplace_back<Separator>(Orientation::Horizontal);
+    m_vendor_separator->set_margin(Margins{0_fpx, 4_fpx, 0_fpx, 4_fpx});
 
     m_vendor_list_view = m_vendor_container->emplace_back<VendorListView>(VendorFactory{controller});
     m_vendor_list_view->set_orientation(Orientation::Vertical);
@@ -226,6 +229,7 @@ void PresetUpdaterSourceRow::build_header()
 
     // TRN Preset updater source row button. Applies every pending change of this source.
     m_update_all_button = m_action_slot->emplace_back<LayoutButton>(Biz::_u8L("Apply all"));
+    apply_button_size(m_update_all_button);
     m_update_all_button->set_flex_grow(1);
     m_update_all_button->callbacks().action = [this]()
     { m_controller.update_source(state()->uuid); };
@@ -253,11 +257,6 @@ void PresetUpdaterSourceRow::build_status_cell(Item* header)
     m_summary_icon->set_height(icon_size);
     m_summary_icon->set_flex_shrink(0);
     m_summary_text = add_elided_text(summary, std::string());
-}
-
-void PresetUpdaterSourceRow::on_index_update()
-{
-    m_separator->set_visible(m_index > 0);
 }
 
 void PresetUpdaterSourceRow::set_expanded(bool expanded)

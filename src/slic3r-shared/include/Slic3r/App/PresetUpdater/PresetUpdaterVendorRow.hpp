@@ -26,8 +26,13 @@ constexpr Yoga::Unit action_slot_width{110, Yoga::Unit::Type::FigmaPixel};
 constexpr Yoga::Unit status_width{150, Yoga::Unit::Type::FigmaPixel};
 constexpr Yoga::Unit name_width{140, Yoga::Unit::Type::FigmaPixel};
 constexpr Yoga::Unit change_width{160, Yoga::Unit::Type::FigmaPixel};
-constexpr Yoga::Unit source_row_height{36, Yoga::Unit::Type::FigmaPixel};
+constexpr Yoga::Unit source_row_height{40, Yoga::Unit::Type::FigmaPixel};
 constexpr Yoga::Unit vendor_row_height{44, Yoga::Unit::Type::FigmaPixel};
+constexpr Yoga::Unit button_height{30, Yoga::Unit::Type::FigmaPixel};
+constexpr Yoga::Unit button_padding{7, Yoga::Unit::Type::FigmaPixel};
+
+/// Gives a text button the size the settings dialogs use for their footer buttons.
+void apply_button_size(Yoga::LayoutButton* button);
 
 } // namespace PresetUpdaterRowLayout
 

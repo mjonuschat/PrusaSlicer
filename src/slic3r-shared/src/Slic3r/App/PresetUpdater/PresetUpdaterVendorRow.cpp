@@ -85,6 +85,16 @@ Text* add_elided_text(Item* parent, const std::string& text)
 
 } // namespace
 
+namespace PresetUpdaterRowLayout {
+
+void apply_button_size(LayoutButton* button)
+{
+    button->set_content_padding(button_padding);
+    button->set_height(button_height);
+}
+
+} // namespace PresetUpdaterRowLayout
+
 PresetUpdaterVendorRow::PresetUpdaterVendorRow(
     size_t index,
     const PresetUpdater::VendorRowState& data,
@@ -154,6 +164,7 @@ PresetUpdaterVendorRow::PresetUpdaterVendorRow(
 
     // TRN Preset updater vendor row button. Opens the release notes.
     m_changelog_button = emplace_back<LayoutButton>(Biz::_u8L("Changelog"));
+    apply_button_size(m_changelog_button);
     m_changelog_button->set_visible(false);
 
     build_action_slot();
@@ -168,6 +179,7 @@ void PresetUpdaterVendorRow::build_action_slot()
     m_action->set_flex_shrink(0);
 
     m_action_button = m_action->emplace_back<LayoutButton>(std::string());
+    apply_button_size(m_action_button);
     m_action_button->set_flex_grow(1);
     m_action_button->callbacks().action = [this]()
     {
@@ -205,6 +217,7 @@ void PresetUpdaterVendorRow::build_action_slot()
     m_failed_text = add_elided_text(failed, std::string());
     // TRN Preset updater vendor row button. Runs a failed install again.
     m_retry_button = failed->emplace_back<LayoutButton>(Biz::_u8L("Retry"));
+    apply_button_size(m_retry_button);
     m_retry_button->set_flex_shrink(0);
     m_retry_button->callbacks().action = [this]()
     {
