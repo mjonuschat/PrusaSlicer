@@ -47,6 +47,7 @@ public:
 
 protected:
     void close_action() override;
+    void update_ui_state(const Domain::ConfigItem* changed_item = nullptr);
 
     using DirtyCategorizer = DirtyCategoryList<Biz::ConfigItemContext>;
 

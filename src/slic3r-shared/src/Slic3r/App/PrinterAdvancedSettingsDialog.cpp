@@ -43,10 +43,12 @@ PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog(
         )
     );
 
-    m_dirty_categorizer->set_filter_fn([](const Biz::ConfigItemContext& data)
-        { return data.is_dirty(); });
-    m_dirty_categorizer->set_group_by_fn([](const Biz::ConfigItemContext& data,
-        std::unordered_set<Domain::ConfigItemDef::Category>& seen_keys) -> bool
+    m_dirty_categorizer->set_filter_fn(
+        [](const Biz::ConfigItemContext& data) { return data.is_dirty(); }
+    );
+    m_dirty_categorizer->set_group_by_fn(
+        [](const Biz::ConfigItemContext& data,
+           std::unordered_set<Domain::ConfigItemDef::Category>& seen_keys) -> bool
         {
             DEBUG_ASSERT(
                 data.config_item->def().category != Domain::ConfigItemDef::Category::Unknown,
@@ -55,12 +57,12 @@ PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog(
 
             if (seen_keys.contains(data.config_item->def().category)) {
                 return true;
-            }
-            else {
+            } else {
                 seen_keys.insert(data.config_item->def().category);
                 return false;
             }
-        });
+        }
+    );
     m_dirty_categorizer->set_category_getter_fn(
         [](const Biz::ConfigItemContext& data) -> Domain::ConfigItemDef::Category
         { return data.config_item->def().category; }
@@ -110,10 +112,8 @@ PrinterAdvancedSettingsDialog::PrinterAdvancedSettingsDialog(
     };
     add_footer_button(_u8L("Save preset"))->callbacks().action = [&]
     {
-        m_project_interactor->preset_interactor().save_user_preset(
-            Domain::Preset::PresetKind::FdmPrinter,
-            0
-        );
+        m_project_interactor->preset_interactor()
+            .save_user_preset(Domain::Preset::PresetKind::FdmPrinter, 0);
     };
 }
 
@@ -128,9 +128,7 @@ void PrinterAdvancedSettingsDialog::on_list_selection_changed(Domain::SelectionI
 
     m_label_preset_name->set_text(preset_item.ui_hw_config_name());
 
-    m_revert_button->set_visible(
-        m_project_interactor->preset_interactor().printer_cbi().config_box_list().lock()->is_dirty()
-    );
+    update_ui_state();
 }
 
 void PrinterAdvancedSettingsDialog::on_preset_value_changed(
@@ -151,6 +149,11 @@ void PrinterAdvancedSettingsDialog::on_preset_value_changed(
         }
     }
 
+    update_ui_state(&item);
+}
+
+void PrinterAdvancedSettingsDialog::update_ui_state(const Domain::ConfigItem* changed_item)
+{
     m_revert_button->set_visible(
         m_project_interactor->preset_interactor().printer_cbi().config_box_list().lock()->is_dirty()
     );
@@ -158,13 +161,21 @@ void PrinterAdvancedSettingsDialog::on_preset_value_changed(
     auto& category_page_transformer = m_config_tabs.front()->category_page_transformer;
     Domain::PrinterTechnology pt =
         m_project_interactor->selected_config_container().print_technology();
-    for (size_t index = 0; index < category_page_transformer->size(); index++) {
-        const auto& data = category_page_transformer->at(index);
-        if (data.name
-            == Biz::_u8(Domain::ConfigItemDef::translate_category(item.def().category, pt)))
-        {
-            category_page_transformer->on_updated(index);
+    if (changed_item) {
+        for (size_t index = 0; index < category_page_transformer->size(); index++) {
+            const auto& data = category_page_transformer->at(index);
+            if (data.name
+                == Biz::_u8(
+                    Domain::ConfigItemDef::translate_category(changed_item->def().category, pt)
+                ))
+            {
+                category_page_transformer->on_updated(index);
+                return;
+            }
         }
+    } else {
+        ASSERT(category_page_transformer->size() > 1);
+        category_page_transformer->on_updated({0, category_page_transformer->size() - 1});
     }
 }
 
