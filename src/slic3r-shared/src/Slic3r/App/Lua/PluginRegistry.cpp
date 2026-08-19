@@ -2,11 +2,15 @@
 
 #include "Slic3r/Directories.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
-#include "spdlog/spdlog.h"
+#include "Slic3r/Log.hpp"
+
+#include <ranges>
+#include <set>
 
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/directory.hpp>
+#include <fmt/ranges.h>
 
 namespace Slic3r::App::Lua {
 
@@ -24,6 +28,14 @@ void PluginRegistry::clear()
 
 void PluginRegistry::scan(const std::string& path)
 {
+    struct PluginPath
+    {
+        std::string bundle_id;
+        Plugin* plugin;
+    };
+
+    std::map<std::string, std::vector<PluginPath>> plugin_menu_items;
+
     fs::path p(path);
     if (!fs::exists(p)) {
         return;
@@ -67,7 +79,46 @@ void PluginRegistry::scan(const std::string& path)
                     plugin_path,
                     it->second.path()
                 );
+            } else {
+                auto menu_item = fmt::to_string(fmt::join(it->second.meta().menu, "/"));
+                plugin_menu_items[menu_item].emplace_back(bundle.meta().id, &it->second);
             }
+        }
+
+        m_bundles.emplace_back(std::move(bundle));
+    }
+
+    for (auto& [menu_item, conflicting_plugins] : plugin_menu_items) {
+        if (conflicting_plugins.size() <= 1) {
+            continue;
+        }
+
+        SPDLOG_WARN(
+            "Found conflicting menu item: {} registered in plugins: {}",
+            menu_item,
+            fmt::join(
+                conflicting_plugins
+                    | std::views::
+                        transform([](const auto& p) { return p.plugin->path(); }),
+                ", "
+            )
+        );
+
+        std::set<std::string> bundle_ids;
+        std::ranges::copy(
+            conflicting_plugins
+                | std::views::transform([](const auto& p) { return p.bundle_id; }),
+            std::inserter(bundle_ids, bundle_ids.begin())
+        );
+
+        const bool use_bundle_id_suffix = bundle_ids.size() == conflicting_plugins.size();
+
+        for (size_t i = 0; i < conflicting_plugins.size(); i++) {
+            auto& plugin_path = conflicting_plugins.at(i);
+            auto suffix       = use_bundle_id_suffix ?
+                      fmt::format(" ({})", plugin_path.bundle_id) :
+                      fmt::format(" ({})", i + 1);
+            plugin_path.plugin->meta().menu.back() += suffix;
         }
     }
 }
@@ -104,5 +155,6 @@ PluginInstallResult PluginRegistry::install(PluginBundle& bundle)
 
     return {};
 }
+
 
 } // namespace Slic3r::App::Lua

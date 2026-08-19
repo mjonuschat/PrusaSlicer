@@ -47,6 +47,7 @@ class Plugin
 {
 public:
     const PluginMeta& meta() const { return m_meta; }
+    PluginMeta& meta() { return m_meta; }
     const std::string& path() const { return m_path; }
 
     void execute(Biz::Lua::LuaEngine& lua, const PluginParamValueMap& params) const;
