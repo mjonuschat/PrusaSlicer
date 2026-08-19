@@ -661,6 +661,25 @@ void WXRenderCanvas::init_wx_imgui()
             wxTheClipboard->Close();
         }
     };
+    platform_io.Platform_GetClipboardTextFn = [](ImGuiContext*) -> const char*
+    {
+        static std::string s_clipboard_text;
+        s_clipboard_text.clear();
+        wxClipboardLocker locker(wxTheClipboard);
+        if (!locker) {
+             return s_clipboard_text.c_str();
+        }
+
+        if (wxTheClipboard->IsSupported(wxDF_TEXT) || wxTheClipboard->IsSupported(wxDF_UNICODETEXT))
+        {
+            wxTextDataObject data;
+            if (wxTheClipboard->GetData(data)) {
+                s_clipboard_text = data.GetText().utf8_string();
+            }
+        }
+
+        return s_clipboard_text.c_str();
+    };
 
     // Set our color styles before gizmos initialization
     // to use them during GizmoDialogs creation
