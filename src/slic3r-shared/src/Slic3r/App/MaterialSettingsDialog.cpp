@@ -165,6 +165,8 @@ void MaterialSettingsDialog::remove_tab(size_t index)
 void MaterialSettingsDialog::on_tab_selected(int current_index)
 {
     AbstractSettingsDialog::on_tab_selected(current_index);
+    if (m_remove_in_progress)
+        return;
 
     if (m_current_tab && current_index < static_cast<int>(m_material_cbi_list.size())) {
         m_current_preset_label->set_current_list(current_index);
