@@ -263,7 +263,7 @@ void PresetUpdaterProblemNotification::refresh_problems()
         };
     }
 
-    center.upsert_notifcation(
+    center.upsert_notification(
         PopNotificationData{
             PopNotificationType::PresetUpdaterProblem,
             PopNotificationLevel::Warning,
@@ -285,7 +285,7 @@ void PresetUpdaterProblemNotification::refresh_error()
         return;
     }
 
-    center.upsert_notifcation(
+    center.upsert_notification(
         PopNotificationData{
             PopNotificationType::PresetUpdaterError,
             PopNotificationLevel::Error,

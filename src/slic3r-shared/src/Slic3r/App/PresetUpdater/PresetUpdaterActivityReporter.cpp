@@ -80,7 +80,7 @@ void PresetUpdaterActivityReporter::report_updates_available(size_t update_count
     const std::string format = Biz::_u8L("{} preset updates are ready to install.");
     const std::string body   = fmt::format(fmt::runtime(format), update_count);
 
-    AppServices::instance().pop_notification_center().upsert_notifcation(
+    AppServices::instance().pop_notification_center().upsert_notification(
         PopNotificationData{
             PopNotificationType::PresetUpdateAvailable,
             PopNotificationLevel::Regular,

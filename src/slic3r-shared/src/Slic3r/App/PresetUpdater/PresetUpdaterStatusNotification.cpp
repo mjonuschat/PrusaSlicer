@@ -227,7 +227,7 @@ void PresetUpdaterStatusNotification::refresh()
         };
     }
 
-    center.upsert_notifcation(
+    center.upsert_notification(
         PopNotificationData{
             PopNotificationType::PresetUpdaterStatus,
             PopNotificationLevel::Regular,

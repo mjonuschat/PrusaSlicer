@@ -102,7 +102,7 @@ void PresetUpdaterInstallNotification::refresh()
         body += fmt::format(fmt::runtime(more), m_installed.size() - k_summary_limit);
     }
 
-    center.upsert_notifcation(
+    center.upsert_notification(
         PopNotificationData{
             PopNotificationType::PresetUpdaterInstalled,
             PopNotificationLevel::Regular,
