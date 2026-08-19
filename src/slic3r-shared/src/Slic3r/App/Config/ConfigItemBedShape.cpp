@@ -195,6 +195,7 @@ void ConfigItemBedShape::on_data_update()
 
         BedShape::Type type = m_bed_shape.get_type();
         m_ui_layout->set_current_index(static_cast<int>(type));
+
         if (type == BedShape::Type::Rectangle) {
             Domain::Vec2d size = m_bed_shape.get_size();
             set_value(m_size_x, size.x());
@@ -203,8 +204,30 @@ void ConfigItemBedShape::on_data_update()
             Domain::Vec2d origin = m_bed_shape.get_origin();
             set_value(m_origin_x, origin.x());
             set_value(m_origin_y, origin.y());
-        } else if (type == BedShape::Type::Circle) {
+        } else {
+            // Reset size/origin controls to default values, if type is other then Rectangle
+            const BedShape::ParamAttributes& size_attribs =
+                BedShape::attributes(BedShape::Parameter::RectSize);
+            set_value(m_size_x, size_attribs.def_value);
+            set_value(m_size_y, size_attribs.def_value);
+            const BedShape::ParamAttributes& origin_atribs =
+                BedShape::attributes(BedShape::Parameter::RectOrigin);
+            set_value(m_origin_x, origin_atribs.def_value);
+            set_value(m_origin_y, origin_atribs.def_value);
+        }
+
+        if (type == BedShape::Type::Circle) {
             set_value(m_diameter, m_bed_shape.get_diameter());
+        } else {
+            // Reset diameter control to default value, if type is other then Circle
+            const BedShape::ParamAttributes& diam_attribs =
+                BedShape::attributes(BedShape::Parameter::Diameter);
+            set_value(m_diameter, diam_attribs.def_value);
+        }
+
+        if (type != BedShape::Type::Custom) {
+            // Reset last loaded custom contour , if type is other then Custom
+            m_last_loaded_custom_contour.clear();
         }
 
         update_preview();
