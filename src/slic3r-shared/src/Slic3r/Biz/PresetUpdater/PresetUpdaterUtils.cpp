@@ -327,6 +327,13 @@ void perform_removals(
     }
 }
 
+bool whole_repository_failed(
+    const PresetUpdaterProcessStatus* process_status, const std::string& repo_id
+)
+{
+    return process_status->has_vendor_warning(repo_id, {});
+}
+
 void collect_removal_of_unusable_vendor(
     const fs::path& installed_repo_dir,
     const std::string& repo_id,
@@ -931,7 +938,7 @@ PresetUpdaterReconfigurationList check_reconfigurations(
                     continue;
                 }
             } else {
-                if (!(*repo_it)->is_selected()) {
+                if (!whole_repository_failed(process_status, repo_id)) {
                     collect_removal_of_unusable_vendor(
                         archive_dir.path(), repo_id, index, results, process_status
                     );

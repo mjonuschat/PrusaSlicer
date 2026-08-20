@@ -115,6 +115,7 @@ struct SourceRowState
     boost::filesystem::path zip_path; ///< Non-empty for a local (offline) source.
 
     bool selected{false};
+    bool required{false}; ///< Held by a forced reconfiguration, so it is checked either way.
     bool selection_locked{false};
     bool install_locked{false};
 
@@ -207,10 +208,13 @@ public:
     /**
      * @param evaluated_repos the sources this check ran over. A required vendor of one of these
      * that the check did not report is taken as resolved; every other entry is kept.
+     * @param unjudged vendors the check could not reach a verdict on, kept whatever the rest
+     * of it says.
      */
     void reconcile(
         const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
-        const std::set<std::string>& evaluated_repos
+        const std::set<std::string>& evaluated_repos,
+        const std::vector<VendorKey>& unjudged
     );
 
     void mark_satisfied(const VendorKey& key);
@@ -329,6 +333,9 @@ public:
             const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations,
             const std::vector<Biz::PresetUpdater::PresetUpdaterWarning>& warnings
         );
+
+        /// The vendors this check warned about, which is not the same as finding them fine.
+        std::vector<VendorKey> unjudged_keys() const;
     };
 
     struct InstallRequest

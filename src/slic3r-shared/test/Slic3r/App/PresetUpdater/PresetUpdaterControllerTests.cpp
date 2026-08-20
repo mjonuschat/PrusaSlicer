@@ -439,7 +439,8 @@ TEST_CASE("PresetUpdaterController releases the application once the forced vend
 
     REQUIRE(fx.controller->online_sources().size() == 1);
     CHECK(fx.online_row().install_locked);
-    CHECK(fx.online_row().selection_locked);
+    CHECK_FALSE(fx.online_row().selection_locked);
+    CHECK(fx.online_row().required);
     REQUIRE(fx.online_row().vendors->size() == 1);
     CHECK(fx.online_row().vendors->at(0).state == VendorReconfigurationState::ForcedDowngrade);
     CHECK(fx.online_row().vendors->at(0).install_locked);
@@ -453,12 +454,13 @@ TEST_CASE("PresetUpdaterController releases the application once the forced vend
     CHECK(fx.online_row().vendors->at(0).install_state == InstallState::Done);
     CHECK_FALSE(fx.online_row().install_locked);
     CHECK_FALSE(fx.online_row().selection_locked);
+    CHECK_FALSE(fx.online_row().required);
 
     const fs::path installed_vendor_dir = fx.installed_path / k_repo_name / k_vendor_name;
     CHECK(read_file(installed_vendor_dir / "vendor.yaml").find("3.0.0") != std::string::npos);
 }
 
-TEST_CASE("PresetUpdaterController refuses commands while a forced reconfiguration holds it", "[preset_updater][controller]")
+TEST_CASE("PresetUpdaterController refuses source-list changes while forced", "[preset_updater][controller]")
 {
     ControllerFixture fx;
     fx.put_installed("301");
@@ -473,14 +475,45 @@ TEST_CASE("PresetUpdaterController refuses commands while a forced reconfigurati
     const std::string uuid = fx.online_row().uuid;
     fx.counter.changes     = 0;
 
-    fx.controller->set_source_selected(uuid, false);
     fx.controller->add_local_repository(fx.resources_profile_path / "local_repo.zip");
     fx.controller->remove_local_repository(uuid);
 
     CHECK(fx.controller->activity() == ControllerActivity::None);
     CHECK(fx.counter.changes == 0);
-    CHECK(fx.online_row().selected);
     CHECK(fx.controller->local_sources().size() == 0);
+}
+
+TEST_CASE("PresetUpdaterController offers a removal once the forced source is switched off", "[preset_updater][controller]")
+{
+    ControllerFixture fx;
+    fx.put_installed("301");
+    fx.put_server("300");
+
+    fx.controller->start();
+    REQUIRE(fx.settle());
+    fx.controller->on_dialog_opened();
+    REQUIRE(fx.settle());
+    REQUIRE(fx.controller->forced_mode());
+    REQUIRE(fx.online_row().vendors->size() == 1);
+    REQUIRE(fx.online_row().vendors->at(0).state == VendorReconfigurationState::ForcedDowngrade);
+
+    const std::string uuid = fx.online_row().uuid;
+    fx.controller->set_source_selected(uuid, false);
+    REQUIRE(fx.settle());
+
+    CHECK(fx.controller->forced_mode());
+    CHECK_FALSE(fx.online_row().selected);
+    CHECK(fx.online_row().required);
+    REQUIRE(fx.online_row().vendors->size() == 1);
+    CHECK(fx.online_row().vendors->at(0).state == VendorReconfigurationState::RemoveVendor);
+    CHECK(fx.controller->has_required_updates());
+
+    fx.controller->update_required();
+    REQUIRE(fx.settle());
+
+    CHECK_FALSE(fx.controller->forced_mode());
+    CHECK(fx.forced_answers == 2);
+    CHECK_FALSE(fs::exists(fx.installed_path / k_repo_name / k_vendor_name));
 }
 
 TEST_CASE("PresetUpdaterController writes a selection change through without a timer", "[preset_updater][controller]")

@@ -176,17 +176,23 @@ void ForcedReconfigurations::reset(const PresetUpdaterReconfigurationList& recon
 
 void ForcedReconfigurations::reconcile(
     const PresetUpdaterReconfigurationList& reconfigurations,
-    const std::set<std::string>& evaluated_repos
+    const std::set<std::string>& evaluated_repos,
+    const std::vector<VendorKey>& unjudged
 )
 {
     const std::vector<VendorKey> reported = forced_keys(reconfigurations);
     const auto is_reported                = [&reported](const VendorKey& key)
     { return std::find(reported.begin(), reported.end(), key) != reported.end(); };
+    const auto is_unjudged                = [&unjudged](const VendorKey& key)
+    { return std::find(unjudged.begin(), unjudged.end(), key) != unjudged.end(); };
 
     std::erase_if(
         m_required,
-        [&evaluated_repos, &is_reported](const VendorKey& key)
-        { return evaluated_repos.contains(key.repo_id) && !is_reported(key); }
+        [&evaluated_repos, &is_reported, &is_unjudged](const VendorKey& key)
+        {
+            return evaluated_repos.contains(key.repo_id) && !is_reported(key)
+                && !is_unjudged(key);
+        }
     );
 
     for (const VendorKey& key : reported) {
@@ -358,6 +364,17 @@ SourceStore::CheckOutcome SourceStore::CheckOutcome::from(
     }
 
     return outcome;
+}
+
+std::vector<VendorKey> SourceStore::CheckOutcome::unjudged_keys() const
+{
+    std::vector<VendorKey> keys;
+    for (const auto& [repo_id, vendor_ids] : skipped_by_repo) {
+        for (const std::string& vendor_id : vendor_ids) {
+            keys.push_back(VendorKey{repo_id, vendor_id});
+        }
+    }
+    return keys;
 }
 
 bool SourceStore::listed() const
@@ -609,6 +626,7 @@ void SourceStore::reset_from(
             if (keep_selection_edits) {
                 entry.selected = previous.selected;
             }
+            entry.required        = previous.required;
             entry.phase           = previous.phase;
             entry.vendors         = previous.vendors;
             entry.skipped_vendors = previous.skipped_vendors;
@@ -648,7 +666,8 @@ bool SourceStore::set_selected(const std::string& uuid, bool selected)
     }
 
     const std::string repo_id = slot->read().descriptor.id;
-    if (slot->read().selected != selected) {
+    const bool changed        = slot->read().selected != selected;
+    if (changed) {
         slot->write().selected = selected;
     }
 
@@ -665,6 +684,13 @@ bool SourceStore::set_selected(const std::string& uuid, bool selected)
     }
 
     apply_required_flags();
+
+    if (changed && active(slot->read())) {
+        SourceEntry& toggled = slot->write();
+        toggled.phase        = CheckPhase::Waiting;
+        toggled.vendors.clear();
+        toggled.skipped_vendors.clear();
+    }
 
     for (Slot& candidate : m_entries) {
         const SourceEntry& entry = candidate.read();
@@ -999,20 +1025,32 @@ bool SourceStore::active(const SourceEntry& entry)
 
 void SourceStore::apply_required_flags()
 {
-    std::set<std::string> claimed;
-    for (const Slot& slot : m_entries) {
-        if (slot.read().selected && m_required_repos.contains(slot.read().descriptor.id)) {
-            claimed.insert(slot.read().descriptor.id);
+    std::map<std::string, std::string> serving;
+    const auto claim = [this, &serving](auto&& accept)
+    {
+        for (const Slot& slot : m_entries) {
+            const SourceEntry& entry = slot.read();
+            if (!m_required_repos.contains(entry.descriptor.id)
+                || serving.contains(entry.descriptor.id))
+            {
+                continue;
+            }
+            if (accept(entry)) {
+                serving.emplace(entry.descriptor.id, entry.descriptor.uuid);
+            }
         }
-    }
+    };
+
+    claim([](const SourceEntry& entry) { return entry.selected; });
+    claim([](const SourceEntry& entry) { return entry.required; });
+    claim([](const SourceEntry&) { return true; });
 
     for (Slot& slot : m_entries) {
-        const std::string& repo_id = slot.read().descriptor.id;
-        bool required              = false;
-        if (m_required_repos.contains(repo_id)) {
-            required = slot.read().selected || claimed.insert(repo_id).second;
-        }
-        if (slot.read().required != required) {
+        const SourceEntry& entry = slot.read();
+        const auto served        = serving.find(entry.descriptor.id);
+        const bool required =
+            served != serving.end() && served->second == entry.descriptor.uuid;
+        if (entry.required != required) {
             slot.write().required = required;
         }
     }
@@ -1095,6 +1133,7 @@ SourceRowState SourceStore::project(
     row.zip_path    = entry.descriptor.zip_path;
 
     row.selected         = entry.selected;
+    row.required         = entry.required;
     row.selection_locked = selection_locked;
     row.install_locked   = install_locked;
 
@@ -1519,7 +1558,7 @@ void PresetUpdaterController::cancel_check()
 
 void PresetUpdaterController::set_source_selected(const std::string& uuid, bool selected)
 {
-    if (m_shut_down || forced_mode()) {
+    if (m_shut_down) {
         return;
     }
 
@@ -1674,19 +1713,6 @@ SourceStore::Locks PresetUpdaterController::current_locks() const
     SourceStore::Locks locks;
     locks.install_locked       = forced_mode();
     locks.locked_selection_ids = m_store.installing_ids();
-
-    // A forced reconfiguration holds every source, not only the ones carrying it: set_source_selected
-    // refuses while it lasts, and a tick that looks usable but does nothing is worse than a dead one.
-    if (locks.install_locked) {
-        for (const VendorKey& key : m_forced.required()) {
-            locks.locked_selection_ids.insert(key.repo_id);
-        }
-        for (const Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfo& info :
-             m_store.selection())
-        {
-            locks.locked_selection_ids.insert(info.descriptor.id);
-        }
-    }
     return locks;
 }
 
@@ -1821,9 +1847,10 @@ void PresetUpdaterController::on_preset_updater_reconfigurations_list(
 
     m_warnings = warnings;
 
-    const std::set<std::string> evaluated =
-        m_store.apply_check(SourceStore::CheckOutcome::from(reconfigurations, warnings));
-    m_forced.reconcile(reconfigurations, evaluated);
+    const SourceStore::CheckOutcome outcome =
+        SourceStore::CheckOutcome::from(reconfigurations, warnings);
+    const std::set<std::string> evaluated = m_store.apply_check(outcome);
+    m_forced.reconcile(reconfigurations, evaluated, outcome.unjudged_keys());
 
     if (forced_mode()) {
         show_dialog();

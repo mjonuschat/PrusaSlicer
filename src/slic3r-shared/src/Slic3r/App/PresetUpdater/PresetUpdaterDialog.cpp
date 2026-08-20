@@ -136,9 +136,9 @@ void PresetUpdaterDialog::build_content()
 
     // TRN Preset updater dialog. Body of the required updates banner.
     const std::string forced_body = Biz::_u8L(
-        "The printer presets installed on this computer cannot be used until they are updated. "
-        "Only the sources offering the required updates are listed below - apply them to continue, "
-        "or quit the application."
+        "The printer presets installed on this computer cannot be used until they are changed. "
+        "Only the sources they came from are listed below. Apply the changes to continue, switch a "
+        "source off to remove the presets it installed instead, or quit the application."
     );
     Text* forced_body_text = m_forced_banner->emplace_back<Text>(forced_body);
     forced_body_text->set_wrap_mode(Text::WrapMode::Wrap);
@@ -282,6 +282,9 @@ void PresetUpdaterDialog::build_footer(Item* parent)
 bool PresetUpdaterDialog::source_visible(const PresetUpdater::SourceRowState& source) const
 {
     if (!m_forced_mode) {
+        return true;
+    }
+    if (source.required) {
         return true;
     }
     if (source.update_state == PresetUpdater::SourceRowState::UpdateState::Waiting

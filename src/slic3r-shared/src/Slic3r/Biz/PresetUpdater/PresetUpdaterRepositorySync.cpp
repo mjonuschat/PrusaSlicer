@@ -645,6 +645,15 @@ void PresetUpdaterRepositorySync::sync(
         if (process_status->get_canceled()) {
             return;
         }
+        if (!repo->is_selected()) {
+            process_status->set_warning_target(repo->descriptor().id);
+            remove_directory(
+                fs::path(data_dir()) / "update_sync" / repo->descriptor().id,
+                process_status,
+                __FUNCTION__
+            );
+            process_status->clear_warning_target();
+        }
         stage_rencofigurations_from_resources(resources_dir / repo->descriptor().id, repo, process_status);
     }
 
