@@ -17,6 +17,9 @@
 #include "Slic3r/Biz/I18N/I18N.hpp"
 #include "Slic3r/Biz/Preset/HwConfigEvaluator.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
+
+#include "Slic3r/Version.hpp"
+
 #include <nlohmann/json.hpp>
 
 #include <fmt/format.h>
@@ -288,16 +291,18 @@ static ItemPtr create_changelog_screen(const Theme& theme, std::function<void()>
     };
     auto result{std::make_unique<Screen>(navigation_setup)};
 
-    result->content()->emplace_back<Title>(Biz::_u8L("PrusaSlicer 3.0.0-alpha 10"),
-                                           Biz::_u8L("EARLY PREVIEW"));
+    result->content()->emplace_back<Title>(SLIC3R_VERSION, Biz::_u8L("EARLY PREVIEW"));
 
     auto introduction{result->content()->emplace_back<Paragraph>(
         Biz::_u8L(
-            "PrusaSlicer 3.0.0 brings a new UI, multi-project support, different printer groups within"
-            " a single project, and a new per-tool profile structure — things the old architecture"
-            " simply couldn't handle. It's still rough in places, but this is the version we've been"
-            " building toward. Your testing makes it real and helps us move forward faster."),
-        18_fpx)};
+            "PrusaSlicer 3.0.0 is the biggest update in the project's history. It brings multi-project support,"
+            " different printers within one project, a new UI, a new profile system for multi-tool machines,"
+            " plus early plugin support and built-in calibration prints. Things the old architecture simply couldn't handle."
+            " It's still rough in places, but this is the version we've been building toward."
+            " Your testing makes it real and helps us move forward faster."
+        ),
+        18_fpx
+    )};
 
     introduction->set_justify_content(YGJustifyCenter);
     introduction->set_width(460_fpx);
@@ -317,16 +322,16 @@ static ItemPtr create_changelog_screen(const Theme& theme, std::function<void()>
         green,
         std::initializer_list<std::initializer_list<ColoredText>>{
             {
-                {Biz::_u8L("Your existing 3MF projects from PrusaSlicer 2.x load and work")},
+                {Biz::_u8L("Your existing PrusaSlicer 2.x 3MF projects load and work.")},
                 {
-                    Biz::_u8L("— configuration is automatically converted to the new format."),
+                    Biz::_u8L("Configuration is automatically converted to the new format."),
                     secondary_color,
                 },
             },
             {
-                {Biz::_u8L("Profiles are saved to a separate directory")},
+                {Biz::_u8L("Profiles are stored separately.")},
                 {
-                    Biz::_u8L("— runs safely alongside PrusaSlicer 2.x without conflicts."),
+                    Biz::_u8L("PrusaSlicer 3.0.0 runs safely alongside 2.x with no conflicts."),
                     secondary_color,
                 },
             },
@@ -338,24 +343,24 @@ static ItemPtr create_changelog_screen(const Theme& theme, std::function<void()>
         red,
         std::initializer_list<std::initializer_list<ColoredText>>{
             {
-                {Biz::_u8L("This is a genuine alpha")},
+                {Biz::_u8L("This is a genuine alpha.")},
                 {
-                    Biz::_u8L("— expect instability and unfinished edges."),
+                    Biz::_u8L("Expect instability and unfinished features."),
                     secondary_color,
                 },
             },
             {
-                {Biz::_u8L("Not all PrusaSlicer 2.x features have been ported yet")},
+                {Biz::_u8L("Not all PrusaSlicer 2.x features have been ported yet.")},
                 {
-                    Biz::_u8L("— some are already under development."),
+                    Biz::_u8L("Some are already under development."),
                     secondary_color,
                 },
             },
-            {{Biz::_u8L("Standalone G-code viewer is not available in this release")}},
+            {{Biz::_u8L("Standalone G-code viewer is not available in this release.")}},
             {
-                {Biz::_u8L("Third-party printer profiles are not included in this alpha")},
+                {Biz::_u8L("Third-party printer profiles are not included in this alpha.")},
                 {
-                    Biz::_u8L("— vendor support will be restored and expanded later on."),
+                    Biz::_u8L("They will be added later."),
                     secondary_color,
                 },
             },
@@ -383,12 +388,12 @@ ItemPtr create_offline_button_content()
     icon->set_width(25_fpx);
     icon->set_height(25_fpx);
 
-    auto title{result->emplace_back<Text>(Biz::_u8L("Offline (Privacy focused)"))};
+    auto title{result->emplace_back<Text>(Biz::_u8L("Offline (Restricted environments)"))};
     title->set_font_type(Render::ImguiFontType::Bold);
     title->set_font_size(18_fpx);
 
     result->emplace_back<Paragraph>(
-        Biz::_u8L("Privacy-first workflow. Complete manual control over data and updates."));
+        Biz::_u8L("Complete manual control over data and updates. Networking stays local."));
 
     auto gap{5_fpx};
 
@@ -396,8 +401,15 @@ ItemPtr create_offline_button_content()
     offline_row->set_flex_shrink(0);
     offline_row->set_gap(gap);
     offline_row->set_align_items(YGAlignCenter);
-    emplace_dot(offline_row, red);
-    offline_row->emplace_back<Text>(Biz::_u8L("100% Offline (No cloud features)"));
+    emplace_dot(offline_row, green);
+    offline_row->emplace_back<Text>(Biz::_u8L("100% Offline"));
+
+    auto no_cloud_row{result->emplace_back<Item>()};
+    no_cloud_row->set_flex_shrink(0);
+    no_cloud_row->set_gap(gap);
+    no_cloud_row->set_align_items(YGAlignCenter);
+    emplace_dot(no_cloud_row, red);
+    no_cloud_row->emplace_back<Text>(Biz::_u8L("No cloud features"));
 
     auto updates_row{result->emplace_back<Item>()};
     updates_row->set_flex_shrink(0);
@@ -431,7 +443,16 @@ ItemPtr create_online_button_content()
     title->set_font_size(18_fpx);
 
     result->emplace_back<Paragraph>(
-        Biz::_u8L("The full-featured standard. Cloud-ready with remote printer control."));
+        Biz::_u8L("All online features, automatic updates, and remote printer control."));
+
+    auto profile_updates_row{result->emplace_back<Item>()};
+    profile_updates_row->set_flex_shrink(0);
+    profile_updates_row->set_gap(5_fpx);
+    profile_updates_row->set_align_items(YGAlignCenter);
+    auto profile_updates_icon{profile_updates_row->emplace_back<Icon>(Render::Icon::Reload)};
+    profile_updates_icon->set_width(16_fpx);
+    profile_updates_icon->set_height(16_fpx);
+    profile_updates_row->emplace_back<Text>(Biz::_u8L("Automatic profile updates"));
 
     auto printables_row{result->emplace_back<Item>()};
     printables_row->set_flex_shrink(0);
@@ -460,7 +481,7 @@ RectangleButton* emplace_online_decision_button(Item* container, std::string nam
     result->set_object_name(name);
     result->set_checkable(true);
     result->set_width(330_fpx);
-    result->set_height(250_fpx);
+    result->set_min_height(250_fpx);
     result->set_content_padding(30_fpx);
     return result;
 }
@@ -872,6 +893,7 @@ public:
         auto label{printer_item->emplace_back<Item>()};
         label->set_orientation(Orientation::Vertical);
         label->set_justify_content(YGJustifyCenter);
+        label->set_flex_grow(1);
         auto title{label->emplace_back<Text>(printer.config.short_name)};
         title->set_font_type(Render::ImguiFontType::Bold);
         title->set_flex_shrink(0);
@@ -884,10 +906,11 @@ public:
         }
 
         auto sub_title{label->emplace_back<Text>(
-            // TRN first {} is sheet_name, second {} are nozzles
-            Biz::_u8L(fmt::format(fmt::runtime("{} sheet, {}"), sheet_name, nozzles)))};
+            fmt::format(fmt::runtime("{} sheet, {}"), sheet_name, nozzles)
+        )};
         sub_title->set_text_color(
             m_theme->color_imgui(Platform::Color::Text, Platform::ColorGroup::Disabled));
+        sub_title->set_wrap_mode(Yoga::Text::WrapMode::Wrap);
         sub_title->set_flex_shrink(0);
 
         auto right_section{printer_item->emplace_back<Item>()};
@@ -1097,6 +1120,7 @@ public:
         }
 
         const std::string username{m_project_interactor.user_account_interactor().username()};
+        // TRN {} is a username
         m_title->set_title(fmt::format(fmt::runtime(Biz::_u8L("Welcome, {}")), username));
 
         const std::string email{m_project_interactor.user_account_interactor().email()};
