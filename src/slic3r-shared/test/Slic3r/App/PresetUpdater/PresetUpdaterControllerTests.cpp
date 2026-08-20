@@ -393,6 +393,34 @@ TEST_CASE("PresetUpdaterController installs one vendor at a time", "[preset_upda
     CHECK(fs::exists(fx.installed_path / k_repo_name / k_vendor_name / "vendor.yaml"));
 }
 
+TEST_CASE("PresetUpdaterController counts down what one source has left", "[preset_updater][controller]")
+{
+    ControllerFixture fx;
+    fx.put_resources("100");
+    copy_dir_content_local(
+        fx.resources_profile_path / "second_vendor" / k_repo_name, fx.resources_repo_path
+    );
+    fx.put_server("100");
+
+    fx.controller->on_dialog_opened();
+    REQUIRE(fx.settle());
+    REQUIRE(fx.online_row().vendors->size() == 2);
+    REQUIRE(fx.online_row().counts.new_vendors == 2);
+
+    fx.controller->update_vendor(k_repo_name, k_vendor_name);
+    REQUIRE(fx.settle());
+
+    CHECK(fx.online_row().counts.new_vendors == 1);
+    CHECK(fx.online_row().counts.pending() == 1);
+
+    fx.controller->on_dialog_closed();
+    fx.controller->on_dialog_opened();
+    REQUIRE(fx.settle());
+
+    CHECK(fx.online_row().vendors->size() == 1);
+    CHECK(fx.online_row().counts.new_vendors == 1);
+}
+
 TEST_CASE("PresetUpdaterController starts over when the dialog is reopened", "[preset_updater][controller]")
 {
     ControllerFixture fx;

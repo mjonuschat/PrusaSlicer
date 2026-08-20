@@ -181,7 +181,6 @@ void PresetUpdaterProblemNotification::reset()
     m_problems.clear();
     m_error.reset();
     m_error_subject.clear();
-    refresh();
 }
 
 void PresetUpdaterProblemNotification::refresh()

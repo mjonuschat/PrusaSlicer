@@ -44,6 +44,7 @@ public:
 
     void refresh();
 
+    /// Drops what was collected. For teardown only, so it never touches the notification center.
     void reset();
 
 private:

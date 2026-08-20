@@ -165,7 +165,6 @@ void PresetUpdaterStatusNotification::reset()
     m_activities.clear();
     m_activity_target.clear();
     m_activity_attempt = 0;
-    refresh();
 }
 
 void PresetUpdaterStatusNotification::refresh()

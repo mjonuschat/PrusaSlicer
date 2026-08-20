@@ -21,6 +21,7 @@ public:
 
     void report_install_finished(const std::vector<InstalledVendor>& installed);
 
+    /// Drops what was collected. For teardown only, so it never touches the notification center.
     void reset();
 
 private:

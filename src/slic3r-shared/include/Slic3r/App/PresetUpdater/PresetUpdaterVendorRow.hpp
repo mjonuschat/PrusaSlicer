@@ -30,6 +30,8 @@ constexpr Yoga::Unit source_row_height{40, Yoga::Unit::Type::FigmaPixel};
 constexpr Yoga::Unit vendor_row_height{44, Yoga::Unit::Type::FigmaPixel};
 constexpr Yoga::Unit button_height{30, Yoga::Unit::Type::FigmaPixel};
 constexpr Yoga::Unit button_padding{7, Yoga::Unit::Type::FigmaPixel};
+constexpr Yoga::Unit source_frame_padding_horizontal{8, Yoga::Unit::Type::FigmaPixel};
+constexpr Yoga::Unit source_frame_padding_vertical{4, Yoga::Unit::Type::FigmaPixel};
 
 /// Gives a text button the size the settings dialogs use for their footer buttons.
 void apply_button_size(Yoga::LayoutButton* button);

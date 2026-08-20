@@ -82,6 +82,21 @@ std::string summary_text(const PresetUpdater::SourceRowState& row)
     return fmt::format(fmt::runtime(format), pending);
 }
 
+bool shows_summary(const PresetUpdater::SourceRowState& row)
+{
+    return row.update_state == PresetUpdater::SourceRowState::UpdateState::UpToDate
+        || row.update_state == PresetUpdater::SourceRowState::UpdateState::HasUpdates;
+}
+
+std::string status_text(const PresetUpdater::SourceRowState& row)
+{
+    if (row.update_state == PresetUpdater::SourceRowState::UpdateState::NotChecked) {
+        // TRN Preset updater source row. This source is switched off.
+        return Biz::_u8L("Not used");
+    }
+    return shows_summary(row) ? summary_text(row) : std::string();
+}
+
 std::optional<Render::Icon> status_icon(const PresetUpdater::SourceRowState& row)
 {
     if (!row.skipped_vendors.empty() || row.check_failed) {
@@ -112,7 +127,7 @@ PresetUpdaterSourceRow::PresetUpdaterSourceRow(
     set_fill(IM_COL32_BLACK_TRANS);
     set_border_color(m_theme->color_imgui(Platform::Color::WindowBgAlternate));
     set_border_width(1);
-    set_padding(Paddings{8_fpx, 4_fpx});
+    set_padding(Paddings{source_frame_padding_horizontal, source_frame_padding_vertical});
 
     build_header();
 
@@ -237,26 +252,18 @@ void PresetUpdaterSourceRow::build_header()
 
 void PresetUpdaterSourceRow::build_status_cell(Item* header)
 {
-    m_status = header->emplace_back<StackLayout>();
-    m_status->set_width(status_width);
-    m_status->set_flex_shrink(0);
+    Item* status = header->emplace_back<Item>();
+    status->set_orientation(Orientation::Horizontal);
+    status->set_align_items(YGAlignCenter);
+    status->set_gap(4_fpx);
+    status->set_width(status_width);
+    status->set_flex_shrink(0);
 
-    // TRN Preset updater source row. This source is switched off.
-    add_elided_text(m_status, Biz::_u8L("Not used"));
-
-    m_status->emplace_back<Item>();
-
-    Item* summary = m_status->emplace_back<Item>();
-    summary->set_orientation(Orientation::Horizontal);
-    summary->set_align_items(YGAlignCenter);
-    summary->set_gap(4_fpx);
-    summary->set_flex_grow(1);
-
-    m_summary_icon = summary->emplace_back<Icon>(Render::Icon::CheckMark);
+    m_summary_icon = status->emplace_back<Icon>(Render::Icon::CheckMark);
     m_summary_icon->set_width(icon_size);
     m_summary_icon->set_height(icon_size);
     m_summary_icon->set_flex_shrink(0);
-    m_summary_text = add_elided_text(summary, std::string());
+    m_summary_text = add_elided_text(status, std::string());
 }
 
 void PresetUpdaterSourceRow::set_expanded(bool expanded)
@@ -305,9 +312,10 @@ void PresetUpdaterSourceRow::on_data_update()
         set_expanded(false);
     }
 
-    m_summary_text->set_text(summary_text(*row));
+    m_summary_text->set_text(status_text(*row));
 
-    const std::optional<Render::Icon> icon = status_icon(*row);
+    const std::optional<Render::Icon> icon =
+        shows_summary(*row) ? status_icon(*row) : std::nullopt;
     m_summary_icon->set_visible(icon.has_value());
     if (icon.has_value()) {
         m_summary_icon->set_icon(*icon);
@@ -319,27 +327,21 @@ void PresetUpdaterSourceRow::on_data_update()
 
     switch (row->update_state) {
     case PresetUpdater::SourceRowState::UpdateState::NotChecked:
-        m_status->set_current_index(StatusNotUsed);
         m_action_slot->set_current_index(ActionNone);
         break;
     case PresetUpdater::SourceRowState::UpdateState::Waiting:
-        m_status->set_current_index(StatusBlank);
         m_action_slot->set_current_index(ActionWaiting);
         break;
     case PresetUpdater::SourceRowState::UpdateState::Checking:
-        m_status->set_current_index(StatusBlank);
         m_action_slot->set_current_index(ActionChecking);
         break;
     case PresetUpdater::SourceRowState::UpdateState::Installing:
-        m_status->set_current_index(StatusBlank);
         m_action_slot->set_current_index(ActionInstalling);
         break;
     case PresetUpdater::SourceRowState::UpdateState::UpToDate:
-        m_status->set_current_index(StatusSummary);
         m_action_slot->set_current_index(ActionNone);
         break;
     case PresetUpdater::SourceRowState::UpdateState::HasUpdates:
-        m_status->set_current_index(StatusSummary);
         m_action_slot->set_current_index(row->install_locked ? ActionNone : ActionApplyAll);
         break;
     }

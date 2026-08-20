@@ -4,6 +4,7 @@
 #include "Slic3r/App/IDialogManager.hpp"
 #include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/OpenBrowser.hpp"
+#include "Slic3r/App/Platform/IFileExplorerHandler.hpp"
 #include "Slic3r/App/Wildcards.hpp"
 #include "Slic3r/App/Yoga/LayoutButton.hpp"
 #include "Slic3r/App/Yoga/ScrollArea.hpp"
@@ -183,6 +184,9 @@ void PresetUpdaterDialog::build_content()
     local_header->set_orientation(Orientation::Horizontal);
     local_header->set_align_items(YGAlignCenter);
     local_header->set_gap(8_fpx);
+    local_header->set_padding(
+        Paddings{0_fpx, 0_fpx, PresetUpdaterRowLayout::source_frame_padding_horizontal, 0_fpx}
+    );
 
     // TRN Preset updater dialog. Heading above the sources added from a ZIP archive.
     local_header->emplace_back<Text>(Biz::_u8L("Local sources"), Render::ImguiFontType::Bold);
@@ -191,8 +195,8 @@ void PresetUpdaterDialog::build_content()
     local_header_spacer->set_flex_grow(1);
 
     // TRN Preset updater dialog button. Picks a ZIP archive to add as a source.
-    const std::string add_zip_label = Biz::_u8L("Add ZIP...");
-    m_add_zip_button = local_header->emplace_back<LayoutButton>(add_zip_label, Render::Icon::Plus);
+    const std::string add_zip_label = Biz::_u8L("Add ZIP");
+    m_add_zip_button                = local_header->emplace_back<LayoutButton>(add_zip_label);
 
     m_add_zip_button->set_width(PresetUpdaterRowLayout::action_slot_width);
     PresetUpdaterRowLayout::apply_button_size(m_add_zip_button);
@@ -245,6 +249,15 @@ void PresetUpdaterDialog::build_footer(Item* parent)
     footer->set_align_items(YGAlignCenter);
     footer->set_gap(8_fpx);
     footer->set_flex_shrink(0);
+
+    // TRN Preset updater dialog button. Opens the application configuration folder.
+    const std::string folder_label = Biz::_u8L("Configuration folder");
+    LayoutButton* folder_button    = footer->emplace_back<LayoutButton>(folder_label);
+    folder_button->set_min_width(PresetUpdaterRowLayout::action_slot_width);
+    PresetUpdaterRowLayout::apply_button_size(folder_button);
+    folder_button->set_flex_shrink(0);
+    folder_button->callbacks().action = []()
+    { AppServices::instance().file_explorer_handler().open_datadir_folder(); };
 
     Item* spacer = footer->emplace_back<Item>();
     spacer->set_flex_grow(1);

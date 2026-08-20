@@ -67,7 +67,6 @@ void PresetUpdaterInstallNotification::report_install_finished(
 void PresetUpdaterInstallNotification::reset()
 {
     m_installed.clear();
-    refresh();
 }
 
 void PresetUpdaterInstallNotification::refresh()

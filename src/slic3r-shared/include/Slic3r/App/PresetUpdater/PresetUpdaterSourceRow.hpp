@@ -48,13 +48,6 @@ protected:
 
 private:
 
-    enum StatusPage : size_t
-    {
-        StatusNotUsed = 0,
-        StatusBlank   = 1,
-        StatusSummary = 2
-    };
-
     /// @note Must match the order the pages are added to m_action_slot.
     enum ActionPage : size_t
     {
@@ -88,7 +81,6 @@ private:
     Yoga::StackLayout* m_action_slot{nullptr};
     Yoga::LayoutButton* m_update_all_button{nullptr};
 
-    Yoga::StackLayout* m_status{nullptr};
     Yoga::Text* m_summary_text{nullptr};
     Yoga::Icon* m_summary_icon{nullptr};
 

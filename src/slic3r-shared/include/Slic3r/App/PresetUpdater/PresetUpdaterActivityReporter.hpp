@@ -58,7 +58,7 @@ public:
 
     void set_show_dialog_callback(std::function<void()> callback);
 
-    /// Forgets everything in flight and takes the notifications down. For teardown only.
+    /// Forgets everything in flight. For teardown only, so it never touches the notifications.
     void reset();
 
 private:

@@ -77,8 +77,12 @@ void PresetUpdaterActivityReporter::report_updates_available(size_t update_count
     // TRN Preset updater notification header.
     const std::string header = Biz::_u8L("Configuration updates available");
     // TRN Preset updater notification. {} counts the updates found.
-    const std::string format = Biz::_u8L("{} preset updates are ready to install.");
-    const std::string body   = fmt::format(fmt::runtime(format), update_count);
+    const std::string format = Biz::_L_PLURAL_u8(
+        "{} preset update is ready to install.",
+        "{} preset updates are ready to install.",
+        static_cast<int>(update_count)
+    );
+    const std::string body = fmt::format(fmt::runtime(format), update_count);
 
     AppServices::instance().pop_notification_center().upsert_notification(
         PopNotificationData{
