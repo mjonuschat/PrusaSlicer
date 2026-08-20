@@ -389,6 +389,8 @@ void LogicalPrinterSettingsDialog::create_page_settings()
     back_button->set_content_padding(3_fpx);
     back_button->callbacks().action = [this]() { m_stack_layout->set_current_index(0); };
     m_text_printer_name             = title_row->emplace_back<Text>("Unknown");
+    m_text_printer_name->set_flex_grow(1);
+    m_text_printer_name->set_wrap_mode(Text::WrapMode::WrapElide);
 
     Separator* sep = m_page_settings->emplace_back<Separator>(Orientation::Horizontal);
     sep->set_margin(Margins{-20_fpx, 0});
