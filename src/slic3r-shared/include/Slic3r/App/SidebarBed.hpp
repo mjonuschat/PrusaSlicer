@@ -62,7 +62,7 @@ public:
     MaterialSelectionDialog& material_selection_dialog();
 
 private:
-    void refresh_material_combobox_label_color();
+    void refresh_printer_label_color();
 
 private:
     Biz::ListenerScope<

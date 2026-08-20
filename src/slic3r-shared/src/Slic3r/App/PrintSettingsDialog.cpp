@@ -365,8 +365,16 @@ void PrintSettingsDialog::on_preset_value_changed(
             == Biz::_u8(Domain::ConfigItemDef::translate_category(item.def().category, pt)))
         {
             m_tool_print_transformer->on_updated(index);
+            return;
         }
     }
+}
+
+void PrintSettingsDialog::on_preset_bundles_loaded()
+{
+    update_dirty_state();
+    ASSERT(m_tool_print_transformer->size() > 1);
+    m_tool_print_transformer->on_updated({0, m_tool_print_transformer->size()-1});
 }
 
 } // namespace Slic3r::App

@@ -237,6 +237,17 @@ void MaterialSettingsButton::set_material_name(const std::string& name, bool is_
     set_tooltip(name);
 }
 
+void MaterialSettingsButton::refresh_label_color()
+{
+    const bool is_modified_preset = m_project_interactor.preset_interactor()
+                                        .material_cbi_list()
+                                        .at(m_index)
+                                        .config_box_overridable_list()
+                                        .lock()
+                                        ->is_dirty();
+    set_material_name(m_material_preset_name, is_modified_preset);
+}
+
 void MaterialSettingsButton::checked_updated_internal()
 {
     RectangleButton::checked_updated_internal();
@@ -272,13 +283,12 @@ void MaterialSettingsButton::on_preset_value_changed(
             return;
         }
     }
-    const bool is_modified_preset = m_project_interactor.preset_interactor()
-                                        .material_cbi_list()
-                                        .at(m_index)
-                                        .config_box_overridable_list()
-                                        .lock()
-                                        ->is_dirty();
-    set_material_name(m_material_preset_name, is_modified_preset);
+    refresh_label_color();
+}
+
+void MaterialSettingsButton::on_preset_bundles_loaded()
+{
+    refresh_label_color();
 }
 
 } // namespace Slic3r::App::Yoga

@@ -6,7 +6,6 @@
 
 #include "Slic3r/App/Yoga/Text.hpp"
 #include "Slic3r/App/Yoga/PrinterSettingsButton.hpp"
-#include "Slic3r/App/Yoga/MaterialSettingsButton.hpp"
 #include "Slic3r/App/Navigator.hpp"
 #include "Slic3r/App/LogicalPrinterSettingsDialog.hpp"
 #include "Slic3r/App/PhysicalPrinterSettingsDialog.hpp"
@@ -206,7 +205,7 @@ void SidebarBed::on_selected_bed_instances_changed(
     m_bed_name->set_text(bed_instance->name());
 }
 
-void SidebarBed::refresh_material_combobox_label_color()
+void SidebarBed::refresh_printer_label_color()
 {
     bool is_modified_preset =
         m_project_interactor.preset_interactor().printer_cbi().config_box_list().lock()->is_dirty();
@@ -232,12 +231,12 @@ void SidebarBed::on_preset_value_changed(
         }
     }
 
-    refresh_material_combobox_label_color();
+    refresh_printer_label_color();
 }
 
 void SidebarBed::on_preset_bundles_loaded()
 {
-    refresh_material_combobox_label_color();
+    refresh_printer_label_color();
 }
 
 LogicalPrinterSettingsDialog& SidebarBed::logical_printer_settings_dialog()
