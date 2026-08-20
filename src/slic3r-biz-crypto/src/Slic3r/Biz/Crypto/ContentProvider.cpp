@@ -59,6 +59,11 @@ public:
         m_zip_path(std::move(zip_path))
     {}
 
+    ~ZipContentSource() override
+    {
+        Algorithms::close_zip_reader(&m_zip_archive->arch);
+    }
+
     static std::unique_ptr<ZipContentSource> create(const std::string& zip_path)
     {
         // we need to capture the MZ_Archive to unique_ptr so its address is fixed

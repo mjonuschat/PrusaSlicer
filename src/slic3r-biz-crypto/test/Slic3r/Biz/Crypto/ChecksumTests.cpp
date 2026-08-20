@@ -10,9 +10,9 @@ TEST_CASE("Checksum tests", "[crypto]")
 {
     auto base_dir = Slic3r::get_datadir();
     using Factory = std::function<IContentProviderPtr()>;
-    auto content_provider_factory = GENERATE_REF(
-        Factory {[&] { return create_directory_source((base_dir / "dir-source").string()); }},
-        Factory {[&] { return create_zip_source((base_dir / "zip-source.zip").string()); }}
+    auto content_provider_factory = GENERATE_COPY(
+        Factory {[base_dir] { return create_directory_source((base_dir / "dir-source").string()); }},
+        Factory {[base_dir] { return create_zip_source((base_dir / "zip-source.zip").string()); }}
     );
     auto content_provider = content_provider_factory();
     DirChecksum checksum  = DirChecksum::load_from_file(
