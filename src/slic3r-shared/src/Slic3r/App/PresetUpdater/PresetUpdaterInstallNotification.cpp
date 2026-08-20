@@ -87,7 +87,11 @@ void PresetUpdaterInstallNotification::refresh()
         if (!body.empty()) {
             body += "\n";
         }
-        if (vendor.state == VendorReconfigurationState::NewVendor) {
+        if (vendor.state == VendorReconfigurationState::RemoveVendor) {
+            // TRN Preset updater notification. {} is a vendor name, its presets were deleted.
+            const std::string removed = Biz::_u8L("{} removed");
+            body += fmt::format(fmt::runtime(removed), vendor.vendor_id);
+        } else if (vendor.state == VendorReconfigurationState::NewVendor) {
             body += fmt::format("{} {}", vendor.vendor_id, vendor.to.to_string());
         } else {
             body += fmt::format(

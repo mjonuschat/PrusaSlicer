@@ -202,8 +202,6 @@ private:
 class ForcedReconfigurations
 {
 public:
-    using SelectedPredicate = std::function<bool(const std::string& repo_id)>;
-
     void reset(const Biz::PresetUpdater::PresetUpdaterReconfigurationList& reconfigurations);
 
     /**
@@ -219,17 +217,19 @@ public:
 
     void clear();
 
-    bool empty() const;
-
     /**
-     * @brief Whether a forced reconfiguration is holding the application.
-     * @param sources_known false until a listing has landed, when nothing can be ruled out yet.
+     * @brief Whether a forced reconfiguration is holding the application. Presets this
+     * application cannot use are unusable whether their source is selected or not, so only a
+     * check or a finished install releases the hold.
      */
-    bool active(bool sources_known, const SelectedPredicate& selected) const;
+    bool active() const;
 
     bool requires_vendor(const VendorKey& key) const;
 
     const std::vector<VendorKey>& required() const;
+
+    /// The sources the required vendors came from, each named once.
+    std::set<std::string> required_repo_ids() const;
 
 private:
     std::vector<VendorKey> m_required;
@@ -348,6 +348,7 @@ public:
     {
         Unknown, ///< Nothing has been listed yet, so the source cannot be judged.
         Selected,
+        Required, ///< Not selected, but a forced reconfiguration needs it.
         Deselected
     };
 
@@ -363,10 +364,10 @@ public:
 
     bool has_selected_with_id(const std::string& id) const;
 
-    /// A selected source has no result yet, so a check is owed.
+    /// An active source has no result yet, so a check is owed.
     bool needs_check() const;
 
-    bool every_selected_checked() const;
+    bool every_active_checked() const;
 
     bool any_check_failed() const;
 
@@ -408,6 +409,12 @@ public:
 
     /// @return false when the source is unknown or an install holds its selection.
     bool set_selected(const std::string& uuid, bool selected);
+
+    /**
+     * @brief Names the sources a forced reconfiguration needs, which are checked and installed
+     * like selected ones. Being required is not being selected and is never written back.
+     */
+    void set_required_repos(const std::set<std::string>& repo_ids);
 
     /// Drops every check result. An install still running is kept.
     void forget_results();
@@ -467,6 +474,7 @@ private:
     {
         Biz::PresetUpdater::PresetUpdaterRepositoryDescriptor descriptor;
         bool selected{false};
+        bool required{false};
 
         CheckPhase phase{CheckPhase::NotChecked};
         std::vector<std::string> skipped_vendors;
@@ -531,8 +539,8 @@ private:
 
     Slot* find_slot(const std::string& uuid);
     const Slot* find_slot(const std::string& uuid) const;
-    Slot* find_selected_slot_by_repo(const std::string& repo_id);
-    const Slot* find_selected_slot_by_repo(const std::string& repo_id) const;
+    Slot* find_active_slot_by_repo(const std::string& repo_id);
+    const Slot* find_active_slot_by_repo(const std::string& repo_id) const;
 
     static VendorEntry* find_vendor_in(SourceEntry& entry, const std::string& vendor_id);
     static const VendorEntry* find_vendor_in(
@@ -543,6 +551,10 @@ private:
     const VendorEntry* find_vendor(const VendorKey& key) const;
 
     static void merge_vendors(SourceEntry& entry, const std::vector<VendorReport>& incoming);
+
+    static bool active(const SourceEntry& entry);
+
+    void apply_required_flags();
 
     static SourceCounts counts_of(const SourceEntry& entry);
     static bool installing(const SourceEntry& entry);
@@ -557,6 +569,7 @@ private:
     static bool publish_rows(SourceRowList& list, const std::vector<const SourceRowState*>& rows);
 
     std::vector<Slot> m_entries;
+    std::set<std::string> m_required_repos;
     bool m_listed{false};
 
     SourceRowList m_online_rows;

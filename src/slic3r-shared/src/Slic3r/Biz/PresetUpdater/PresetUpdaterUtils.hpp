@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <set>
 
 #include <boost/filesystem/path.hpp>
 #include <tl/expected.hpp>
@@ -43,8 +44,12 @@ std::map<std::string, std::string> read_version_manifest(
     PresetUpdaterProcessStatus* process_status
 );
 
+/**
+ * @param known_repo_ids ids of every repository in the manifest, selected or not. Installed
+ * presets whose source is not among them cannot be reconfigured and are skipped.
+ */
 PresetUpdaterReconfigurationList check_forced_reconfigurations(
-    const SharedRepositoryVector& repos,
+    const std::set<std::string>& known_repo_ids,
     PresetUpdaterProcessStatus* process_status
 );
 PresetUpdaterReconfigurationList check_reconfigurations(

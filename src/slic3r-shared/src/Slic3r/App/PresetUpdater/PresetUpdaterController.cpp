@@ -28,7 +28,8 @@ std::vector<const std::vector<VendorReconfiguration>*> all_buckets(
         &list.forced_updates(),
         &list.forced_downgrades(),
         &list.not_in_index(),
-        &list.new_vendors()
+        &list.new_vendors(),
+        &list.removals()
     };
 }
 
@@ -36,7 +37,7 @@ std::vector<VendorKey> forced_keys(const PresetUpdaterReconfigurationList& list)
 {
     std::vector<VendorKey> keys;
     for (const std::vector<VendorReconfiguration>* bucket :
-         {&list.forced_updates(), &list.forced_downgrades()})
+         {&list.forced_updates(), &list.forced_downgrades(), &list.removals()})
     {
         for (const VendorReconfiguration& reconfiguration : *bucket) {
             keys.push_back(VendorKey{reconfiguration.vendor_repo_id, reconfiguration.vendor_id});
@@ -53,6 +54,7 @@ void log_reconfigurations(const PresetUpdaterReconfigurationList& list)
         {"not in index", &list.not_in_index()},
         {"forced update", &list.forced_updates()},
         {"forced downgrade", &list.forced_downgrades()},
+        {"removal", &list.removals()},
     };
     for (const auto& [name, bucket] : buckets) {
         for (const VendorReconfiguration& reconfiguration : *bucket) {
@@ -204,24 +206,9 @@ void ForcedReconfigurations::clear()
     m_required.clear();
 }
 
-bool ForcedReconfigurations::empty() const
+bool ForcedReconfigurations::active() const
 {
-    return m_required.empty();
-}
-
-bool ForcedReconfigurations::active(bool sources_known, const SelectedPredicate& selected) const
-{
-    if (m_required.empty()) {
-        return false;
-    }
-    if (!sources_known) {
-        return true;
-    }
-    return std::any_of(
-        m_required.begin(),
-        m_required.end(),
-        [&selected](const VendorKey& key) { return selected(key.repo_id); }
-    );
+    return !m_required.empty();
 }
 
 bool ForcedReconfigurations::requires_vendor(const VendorKey& key) const
@@ -232,6 +219,15 @@ bool ForcedReconfigurations::requires_vendor(const VendorKey& key) const
 const std::vector<VendorKey>& ForcedReconfigurations::required() const
 {
     return m_required;
+}
+
+std::set<std::string> ForcedReconfigurations::required_repo_ids() const
+{
+    std::set<std::string> repo_ids;
+    for (const VendorKey& key : m_required) {
+        repo_ids.insert(key.repo_id);
+    }
+    return repo_ids;
 }
 
 // =============================================================================================
@@ -384,22 +380,22 @@ const SourceStore::Slot* SourceStore::find_slot(const std::string& uuid) const
     return const_cast<SourceStore*>(this)->find_slot(uuid);
 }
 
-SourceStore::Slot* SourceStore::find_selected_slot_by_repo(const std::string& repo_id)
+SourceStore::Slot* SourceStore::find_active_slot_by_repo(const std::string& repo_id)
 {
     const auto slot = std::find_if(
         m_entries.begin(),
         m_entries.end(),
         [&repo_id](const Slot& candidate)
         {
-            return candidate.read().selected && candidate.read().descriptor.id == repo_id;
+            return active(candidate.read()) && candidate.read().descriptor.id == repo_id;
         }
     );
     return slot == m_entries.end() ? nullptr : &*slot;
 }
 
-const SourceStore::Slot* SourceStore::find_selected_slot_by_repo(const std::string& repo_id) const
+const SourceStore::Slot* SourceStore::find_active_slot_by_repo(const std::string& repo_id) const
 {
-    return const_cast<SourceStore*>(this)->find_selected_slot_by_repo(repo_id);
+    return const_cast<SourceStore*>(this)->find_active_slot_by_repo(repo_id);
 }
 
 SourceStore::VendorEntry* SourceStore::find_vendor_in(
@@ -428,7 +424,7 @@ const SourceStore::VendorEntry* SourceStore::find_vendor_in(
 
 SourceStore::VendorEntry* SourceStore::find_vendor(const VendorKey& key)
 {
-    Slot* slot = find_selected_slot_by_repo(key.repo_id);
+    Slot* slot = find_active_slot_by_repo(key.repo_id);
     if (slot == nullptr || find_vendor_in(slot->read(), key.vendor_id) == nullptr) {
         return nullptr;
     }
@@ -437,7 +433,7 @@ SourceStore::VendorEntry* SourceStore::find_vendor(const VendorKey& key)
 
 const SourceStore::VendorEntry* SourceStore::find_vendor(const VendorKey& key) const
 {
-    const Slot* slot = find_selected_slot_by_repo(key.repo_id);
+    const Slot* slot = find_active_slot_by_repo(key.repo_id);
     return slot == nullptr ? nullptr : find_vendor_in(slot->read(), key.vendor_id);
 }
 
@@ -459,13 +455,13 @@ bool SourceStore::needs_check() const
         [](const Slot& slot)
         {
             const SourceEntry& entry = slot.read();
-            return entry.selected
+            return active(entry)
                 && (entry.phase == CheckPhase::NotChecked || entry.phase == CheckPhase::Waiting);
         }
     );
 }
 
-bool SourceStore::every_selected_checked() const
+bool SourceStore::every_active_checked() const
 {
     return std::none_of(
         m_entries.begin(),
@@ -473,7 +469,7 @@ bool SourceStore::every_selected_checked() const
         [](const Slot& slot)
         {
             const SourceEntry& entry = slot.read();
-            return entry.selected
+            return active(entry)
                 && (entry.phase == CheckPhase::NotChecked || entry.phase == CheckPhase::Waiting
                     || entry.phase == CheckPhase::Checking);
         }
@@ -486,7 +482,7 @@ bool SourceStore::any_check_failed() const
         m_entries.begin(),
         m_entries.end(),
         [](const Slot& slot)
-        { return slot.read().selected && slot.read().phase == CheckPhase::Failed; }
+        { return active(slot.read()) && slot.read().phase == CheckPhase::Failed; }
     );
 }
 
@@ -522,12 +518,16 @@ SourceStore::RepoLookup SourceStore::lookup_repo(const std::string& repo_id) con
         if (entry.descriptor.id != repo_id) {
             continue;
         }
-        // A selected source is the one the warning is about; a deselected namesake is not.
-        if (entry.selected || lookup.visibility == RepoVisibility::Unknown) {
+        // An active source is the one the warning is about; a deselected namesake is not.
+        if (active(entry) || lookup.visibility == RepoVisibility::Unknown) {
             lookup.name = entry.descriptor.name;
         }
         if (entry.selected) {
             lookup.visibility = RepoVisibility::Selected;
+            return lookup;
+        }
+        if (entry.required) {
+            lookup.visibility = RepoVisibility::Required;
             return lookup;
         }
         lookup.visibility = RepoVisibility::Deselected;
@@ -538,7 +538,7 @@ SourceStore::RepoLookup SourceStore::lookup_repo(const std::string& repo_id) con
 std::vector<VendorKey> SourceStore::actionable_of(const SourceEntry& entry, bool required_only)
 {
     std::vector<VendorKey> keys;
-    if (!entry.selected) {
+    if (!active(entry)) {
         return keys;
     }
     for (const VendorEntry& vendor : entry.vendors) {
@@ -546,7 +546,8 @@ std::vector<VendorKey> SourceStore::actionable_of(const SourceEntry& entry, bool
             continue;
         }
         if (required_only && vendor.state != VendorReconfigurationState::ForcedUpdate
-            && vendor.state != VendorReconfigurationState::ForcedDowngrade)
+            && vendor.state != VendorReconfigurationState::ForcedDowngrade
+            && vendor.state != VendorReconfigurationState::RemoveVendor)
         {
             continue;
         }
@@ -608,18 +609,9 @@ void SourceStore::reset_from(
             if (keep_selection_edits) {
                 entry.selected = previous.selected;
             }
-            if (entry.selected) {
-                entry.phase           = previous.phase;
-                entry.vendors         = previous.vendors;
-                entry.skipped_vendors = previous.skipped_vendors;
-            }
-        }
-
-        if (entry.selected && entry.phase == CheckPhase::NotChecked) {
-            entry.phase = CheckPhase::Waiting;
-        }
-        if (!entry.selected) {
-            entry.phase = CheckPhase::NotChecked;
+            entry.phase           = previous.phase;
+            entry.vendors         = previous.vendors;
+            entry.skipped_vendors = previous.skipped_vendors;
         }
 
         entries.emplace_back(std::move(entry));
@@ -627,6 +619,21 @@ void SourceStore::reset_from(
 
     m_entries = std::move(entries);
     m_listed  = true;
+
+    apply_required_flags();
+
+    for (Slot& slot : m_entries) {
+        SourceEntry& entry = slot.write();
+        if (!active(entry)) {
+            entry.phase = CheckPhase::NotChecked;
+            entry.vendors.clear();
+            entry.skipped_vendors.clear();
+            continue;
+        }
+        if (entry.phase == CheckPhase::NotChecked) {
+            entry.phase = CheckPhase::Waiting;
+        }
+    }
 }
 
 bool SourceStore::set_selected(const std::string& uuid, bool selected)
@@ -657,9 +664,11 @@ bool SourceStore::set_selected(const std::string& uuid, bool selected)
         }
     }
 
+    apply_required_flags();
+
     for (Slot& candidate : m_entries) {
         const SourceEntry& entry = candidate.read();
-        if (entry.selected) {
+        if (active(entry)) {
             if (entry.phase == CheckPhase::NotChecked) {
                 candidate.write().phase = CheckPhase::Waiting;
             }
@@ -679,6 +688,26 @@ bool SourceStore::set_selected(const std::string& uuid, bool selected)
     return true;
 }
 
+void SourceStore::set_required_repos(const std::set<std::string>& repo_ids)
+{
+    if (m_required_repos == repo_ids) {
+        return;
+    }
+    m_required_repos = repo_ids;
+    apply_required_flags();
+
+    for (Slot& slot : m_entries) {
+        const SourceEntry& entry = slot.read();
+        if (active(entry) || entry.phase == CheckPhase::NotChecked) {
+            continue;
+        }
+        SourceEntry& cleared = slot.write();
+        cleared.phase        = CheckPhase::NotChecked;
+        cleared.vendors.clear();
+        cleared.skipped_vendors.clear();
+    }
+}
+
 void SourceStore::forget_results()
 {
     for (Slot& slot : m_entries) {
@@ -695,7 +724,7 @@ void SourceStore::forget_results()
 
         entry.vendors = std::move(in_flight);
         entry.skipped_vendors.clear();
-        entry.phase = entry.selected ? CheckPhase::Waiting : CheckPhase::NotChecked;
+        entry.phase = active(entry) ? CheckPhase::Waiting : CheckPhase::NotChecked;
     }
 }
 
@@ -719,7 +748,7 @@ void SourceStore::begin_check()
     for (Slot& slot : m_entries) {
         const SourceEntry& entry = slot.read();
 
-        if (!entry.selected) {
+        if (!active(entry)) {
             if (entry.phase == CheckPhase::NotChecked && entry.vendors.empty()
                 && entry.skipped_vendors.empty())
             {
@@ -746,7 +775,7 @@ std::set<std::string> SourceStore::apply_check(const CheckOutcome& outcome)
     std::set<std::string> evaluated;
 
     for (Slot& slot : m_entries) {
-        if (!slot.read().selected) {
+        if (!active(slot.read())) {
             const SourceEntry& entry = slot.read();
             if (entry.phase == CheckPhase::NotChecked && entry.vendors.empty()
                 && entry.skipped_vendors.empty())
@@ -963,6 +992,32 @@ Biz::PresetUpdater::SharedPresetUpdaterRepositoryInfoVector SourceStore::selecti
     return selection;
 }
 
+bool SourceStore::active(const SourceEntry& entry)
+{
+    return entry.selected || entry.required;
+}
+
+void SourceStore::apply_required_flags()
+{
+    std::set<std::string> claimed;
+    for (const Slot& slot : m_entries) {
+        if (slot.read().selected && m_required_repos.contains(slot.read().descriptor.id)) {
+            claimed.insert(slot.read().descriptor.id);
+        }
+    }
+
+    for (Slot& slot : m_entries) {
+        const std::string& repo_id = slot.read().descriptor.id;
+        bool required              = false;
+        if (m_required_repos.contains(repo_id)) {
+            required = slot.read().selected || claimed.insert(repo_id).second;
+        }
+        if (slot.read().required != required) {
+            slot.write().required = required;
+        }
+    }
+}
+
 SourceCounts SourceStore::counts_of(const SourceEntry& entry)
 {
     SourceCounts counts;
@@ -979,6 +1034,7 @@ SourceCounts SourceStore::counts_of(const SourceEntry& entry)
             break;
         case VendorReconfigurationState::ForcedUpdate:
         case VendorReconfigurationState::ForcedDowngrade:
+        case VendorReconfigurationState::RemoveVendor:
             ++counts.required;
             break;
         case VendorReconfigurationState::NotInIndex:
@@ -1004,7 +1060,7 @@ bool SourceStore::installing(const SourceEntry& entry)
 
 SourceRowState::UpdateState SourceStore::display_state_of(const SourceEntry& entry)
 {
-    if (!entry.selected) {
+    if (!active(entry)) {
         return SourceRowState::UpdateState::NotChecked;
     }
     if (installing(entry)) {
@@ -1045,7 +1101,7 @@ SourceRowState SourceStore::project(
     row.update_state   = display_state_of(entry);
     row.counts         = counts_of(entry);
     row.skipped_vendors = entry.skipped_vendors;
-    row.check_failed   = entry.selected && entry.phase == CheckPhase::Failed;
+    row.check_failed   = active(entry) && entry.phase == CheckPhase::Failed;
     row.vendors        = entry.vendor_rows;
 
     return row;
@@ -1356,15 +1412,17 @@ void PresetUpdaterController::start_check(
     cancel_check();
     m_operation_failed = false;
 
+    const std::set<std::string> required = m_forced.required_repo_ids();
+    m_store.set_required_repos(required);
     m_store.begin_check();
 
     const bool online  = online_allowed();
     const JobId job_id = submit(
         JobKind::Check,
-        [this, online, source_list]()
+        [this, online, source_list, &required]()
         {
             return m_interactor.build_update_sync_and_reconfiguration_check(
-                online, Biz::PresetUpdater::VerboseStyle::NoProgress, false, source_list
+                online, Biz::PresetUpdater::VerboseStyle::NoProgress, false, source_list, required
             );
         }
     );
@@ -1591,15 +1649,12 @@ bool PresetUpdaterController::has_required_updates() const
 
 bool PresetUpdaterController::forced_mode() const
 {
-    return m_forced.active(
-        m_store.listed(),
-        [this](const std::string& repo_id) { return m_store.has_selected_with_id(repo_id); }
-    );
+    return m_forced.active();
 }
 
 bool PresetUpdaterController::fully_checked() const
 {
-    return m_store.every_selected_checked();
+    return m_store.every_active_checked();
 }
 
 Biz::IObservableList<SourceRowState>& PresetUpdaterController::online_sources()
@@ -1668,6 +1723,8 @@ void PresetUpdaterController::flush()
     if (m_shut_down) {
         return;
     }
+
+    m_store.set_required_repos(m_forced.required_repo_ids());
 
     const bool rows_changed = m_store.publish(current_locks());
     report_problems();
@@ -1739,7 +1796,7 @@ void PresetUpdaterController::on_preset_updater_forced_reconfigurations_list(
     m_warnings = warnings;
     m_forced.reset(reconfigurations);
 
-    if (!m_forced.empty()) {
+    if (m_forced.active()) {
         // Opening the dialog starts the listing and the check these vendors need.
         show_dialog();
     }

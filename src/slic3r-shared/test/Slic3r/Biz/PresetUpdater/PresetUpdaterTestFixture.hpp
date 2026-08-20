@@ -92,6 +92,59 @@ inline std::string file_sha256(const fs::path& path)
     return hex.str();
 }
 
+/// The manifest is rewritten by the first job that reads it, so match its value, not its spelling.
+inline void deselect_every_source(const fs::path& manifest_path)
+{
+    const std::string key{"\"selected\""};
+    std::string manifest = read_file(manifest_path);
+    size_t deselected    = 0;
+
+    for (size_t position = manifest.find(key); position != std::string::npos;
+         position        = manifest.find(key, position))
+    {
+        const size_t colon = manifest.find(':', position + key.size());
+        if (colon == std::string::npos) {
+            break;
+        }
+
+        position = manifest.find_first_not_of(" \t\r\n", colon + 1);
+        if (position == std::string::npos) {
+            break;
+        }
+        if (manifest.compare(position, 4, "true") == 0) {
+            manifest.replace(position, 4, "false");
+            ++deselected;
+        }
+    }
+
+    ASSERT(deselected > 0);
+
+    boost::nowide::ofstream file(manifest_path, std::ios::out | std::ios::binary | std::ios::trunc);
+    file << manifest;
+}
+
+/// Adds a source the offline check will accept the id of. Nothing is served for it, which is all
+/// a check that only reads the data dir needs.
+inline void add_source_to_manifest(const fs::path& manifest_path, const std::string& id)
+{
+    nlohmann::json manifest = nlohmann::json::parse(read_file(manifest_path));
+    manifest.push_back(
+        nlohmann::json{
+            {"description", "Test purpose only."},
+            {"id", id},
+            {"index_url", k_server_addr + id + "/vendor_indices.zip"},
+            {"name", id},
+            {"selected", true},
+            {"url", k_server_addr + id + "/"},
+            {"uuid", "uuid-" + id},
+            {"visibility", ""}
+        }
+    );
+
+    boost::nowide::ofstream file(manifest_path, std::ios::out | std::ios::binary | std::ios::trunc);
+    file << manifest.dump(4);
+}
+
 /// Restates the served hashes over the bytes actually on disk, which line endings make local.
 inline void rehash_version_manifests(const fs::path& root)
 {
@@ -457,6 +510,16 @@ struct Fixture
     void put_installed(const std::string& version)
     {
         copy_dir_content_local(resources_profile_path / ("resource" + version), installed_path);
+    }
+
+    /// Installs the presets of a version under a repo id of your choosing, which is the directory
+    /// name the updater reads the source id from.
+    void put_installed_as(const std::string& repo_id, const std::string& version)
+    {
+        copy_dir_content_local(
+            resources_profile_path / ("resource" + version) / k_repo_name,
+            installed_path / repo_id
+        );
     }
 
     void put_staged(const std::string& version)

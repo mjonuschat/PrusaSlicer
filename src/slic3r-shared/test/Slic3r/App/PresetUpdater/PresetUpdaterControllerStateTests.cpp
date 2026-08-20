@@ -183,7 +183,7 @@ TEST_CASE("ForcedReconfigurations takes only what blocks the application", "[pre
     ForcedReconfigurations forced;
     forced.reset(list);
 
-    CHECK_FALSE(forced.empty());
+    CHECK(forced.active());
     CHECK(forced.required().size() == 2);
     CHECK(forced.requires_vendor(VendorKey{k_repo, "TooOld"}));
     CHECK(forced.requires_vendor(VendorKey{k_repo, "TooNew"}));
@@ -234,7 +234,7 @@ TEST_CASE("ForcedReconfigurations releases a source only on evidence", "[preset_
     }
 }
 
-TEST_CASE("ForcedReconfigurations holds the application until the sources are known", "[preset_updater][controller]")
+TEST_CASE("ForcedReconfigurations holds the application whatever the sources say", "[preset_updater][controller]")
 {
     PresetUpdaterReconfigurationList list;
     offer(list, VendorReconfigurationState::ForcedUpdate, k_repo, k_vendor);
@@ -242,16 +242,52 @@ TEST_CASE("ForcedReconfigurations holds the application until the sources are kn
     ForcedReconfigurations forced;
     forced.reset(list);
 
-    const auto nothing_selected = [](const std::string&) { return false; };
-    const auto repo_selected    = [](const std::string& repo_id) { return repo_id == k_repo; };
-
-    CHECK(forced.active(false, nothing_selected));
-    CHECK_FALSE(forced.active(true, nothing_selected));
-    CHECK(forced.active(true, repo_selected));
+    CHECK(forced.active());
+    CHECK(forced.required_repo_ids() == std::set<std::string>{k_repo});
 
     forced.mark_satisfied(VendorKey{k_repo, k_vendor});
-    CHECK(forced.empty());
-    CHECK_FALSE(forced.active(false, repo_selected));
+    CHECK_FALSE(forced.active());
+    CHECK(forced.required_repo_ids().empty());
+}
+
+TEST_CASE("ForcedReconfigurations counts a removal as blocking", "[preset_updater][controller]")
+{
+    PresetUpdaterReconfigurationList list;
+    offer(list, VendorReconfigurationState::RemoveVendor, k_repo, k_vendor);
+
+    ForcedReconfigurations forced;
+    forced.reset(list);
+
+    CHECK(forced.active());
+    CHECK(forced.requires_vendor(VendorKey{k_repo, k_vendor}));
+}
+
+TEST_CASE("SourceStore offers a removal as a required action", "[preset_updater][controller]")
+{
+    PresetUpdaterReconfigurationList list;
+    offer(list, VendorReconfigurationState::RemoveVendor, k_repo, k_vendor);
+
+    SourceStore store;
+    run_check(store, list);
+    store.publish(SourceStore::Locks{});
+
+    CHECK(store.online_rows().at(0).counts.required == 1);
+    CHECK(store.online_rows().at(0).update_state == SourceRowState::UpdateState::HasUpdates);
+    CHECK(store.actionable_keys(true) == std::vector<VendorKey>{VendorKey{k_repo, k_vendor}});
+    CHECK(store.make_install_request({VendorKey{k_repo, k_vendor}}).list.removals().size() == 1);
+}
+
+TEST_CASE("ForcedReconfigurations names every source it needs once", "[preset_updater][controller]")
+{
+    PresetUpdaterReconfigurationList list;
+    offer(list, VendorReconfigurationState::ForcedUpdate, "repo_a", "VendorA");
+    offer(list, VendorReconfigurationState::ForcedDowngrade, "repo_a", "VendorB");
+    offer(list, VendorReconfigurationState::ForcedUpdate, "repo_b", "VendorC");
+
+    ForcedReconfigurations forced;
+    forced.reset(list);
+
+    CHECK(forced.required_repo_ids() == std::set<std::string>{"repo_a", "repo_b"});
 }
 
 // =================================================================================================
@@ -321,11 +357,11 @@ TEST_CASE("SourceStore owes a check for a source that has no result", "[preset_u
     store.reset_from(one_selected_source(), false);
 
     CHECK(store.needs_check());
-    CHECK_FALSE(store.every_selected_checked());
+    CHECK_FALSE(store.every_active_checked());
 
     store.begin_check();
     CHECK_FALSE(store.needs_check());
-    CHECK_FALSE(store.every_selected_checked());
+    CHECK_FALSE(store.every_active_checked());
     store.publish(SourceStore::Locks{});
     CHECK(store.online_rows().at(0).update_state == SourceRowState::UpdateState::Checking);
 
@@ -334,7 +370,7 @@ TEST_CASE("SourceStore owes a check for a source that has no result", "[preset_u
     const std::set<std::string> evaluated = store.apply_check(outcome_of(list));
 
     CHECK(evaluated == std::set<std::string>{k_repo});
-    CHECK(store.every_selected_checked());
+    CHECK(store.every_active_checked());
     CHECK_FALSE(store.needs_check());
 }
 
@@ -360,7 +396,7 @@ TEST_CASE("SourceStore puts a dropped check back where it can be retried", "[pre
         store.abandon_check();
 
         CHECK_FALSE(store.needs_check());
-        CHECK(store.every_selected_checked());
+        CHECK(store.every_active_checked());
         store.publish(SourceStore::Locks{});
         CHECK(store.online_rows().at(0).counts.updates == 1);
     }
@@ -428,7 +464,7 @@ TEST_CASE("SourceStore tells a failed source from a skipped vendor", "[preset_up
 
     CHECK(evaluated == std::set<std::string>{"partial_repo"});
     CHECK(store.any_check_failed());
-    CHECK(store.every_selected_checked());
+    CHECK(store.every_active_checked());
 
     store.publish(SourceStore::Locks{});
     REQUIRE(store.online_rows().size() == 2);
@@ -465,6 +501,98 @@ TEST_CASE("SourceStore forgets the results of a source once it is deselected", "
     CHECK(row.vendors->size() == 0);
     CHECK_FALSE(store.needs_check());
     CHECK_FALSE(store.has_selected_with_id(k_repo));
+}
+
+TEST_CASE("SourceStore checks a deselected source a forced reconfiguration needs", "[preset_updater][controller]")
+{
+    PresetUpdaterReconfigurationList list;
+    offer(list, VendorReconfigurationState::ForcedUpdate, k_repo, k_vendor);
+
+    SourceStore store;
+    SharedPresetUpdaterRepositoryInfoVector sources;
+    sources.push_back(source(k_repo, k_uuid, false));
+    store.reset_from(sources, false);
+
+    REQUIRE_FALSE(store.needs_check());
+
+    store.set_required_repos({k_repo});
+    CHECK(store.needs_check());
+    CHECK_FALSE(store.every_active_checked());
+
+    store.begin_check();
+    const std::set<std::string> evaluated = store.apply_check(outcome_of(list));
+    CHECK(evaluated == std::set<std::string>{k_repo});
+    CHECK(store.every_active_checked());
+
+    store.publish(SourceStore::Locks{});
+    const SourceRowState& row = store.online_rows().at(0);
+    CHECK_FALSE(row.selected);
+    CHECK(row.update_state == SourceRowState::UpdateState::HasUpdates);
+    CHECK(row.counts.required == 1);
+
+    CHECK(store.actionable_keys(true) == std::vector<VendorKey>{VendorKey{k_repo, k_vendor}});
+    CHECK(store.make_install_request({VendorKey{k_repo, k_vendor}}).keys.size() == 1);
+
+    // Required is not selected, and the commit must not tick it.
+    CHECK_FALSE(store.has_selected_with_id(k_repo));
+    REQUIRE(store.selection().size() == 1);
+    CHECK_FALSE(store.selection().front().selected);
+    CHECK(store.lookup_repo(k_repo).visibility == SourceStore::RepoVisibility::Required);
+}
+
+TEST_CASE("SourceStore forgets a source once it is no longer required", "[preset_updater][controller]")
+{
+    PresetUpdaterReconfigurationList list;
+    offer(list, VendorReconfigurationState::ForcedUpdate, k_repo, k_vendor);
+
+    SourceStore store;
+    SharedPresetUpdaterRepositoryInfoVector sources;
+    sources.push_back(source(k_repo, k_uuid, false));
+    store.reset_from(sources, false);
+    store.set_required_repos({k_repo});
+    store.begin_check();
+    store.apply_check(outcome_of(list));
+    store.publish(SourceStore::Locks{});
+    REQUIRE(store.online_rows().at(0).counts.required == 1);
+
+    store.set_required_repos({});
+    CHECK(store.publish(SourceStore::Locks{}));
+
+    const SourceRowState& row = store.online_rows().at(0);
+    CHECK(row.update_state == SourceRowState::UpdateState::NotChecked);
+    CHECK(row.counts.pending() == 0);
+    CHECK(store.actionable_keys(true).empty());
+    CHECK(store.lookup_repo(k_repo).visibility == SourceStore::RepoVisibility::Deselected);
+}
+
+TEST_CASE("SourceStore marks one source per required id", "[preset_updater][controller]")
+{
+    SharedPresetUpdaterRepositoryInfoVector sources;
+    sources.push_back(source(k_repo, "uuid-online", false));
+    sources.push_back(source(k_repo, "uuid-local", false, "somewhere/local.zip"));
+
+    SourceStore store;
+
+    SECTION("with none selected, the first one stands for the id")
+    {
+        store.reset_from(sources, false);
+        store.set_required_repos({k_repo});
+        store.begin_check();
+        store.publish(SourceStore::Locks{});
+        CHECK(store.online_rows().at(0).update_state == SourceRowState::UpdateState::Checking);
+        CHECK(store.local_rows().at(0).update_state == SourceRowState::UpdateState::NotChecked);
+    }
+
+    SECTION("a selected namesake is the one that stands for the id")
+    {
+        sources[1].selected = true;
+        store.reset_from(sources, false);
+        store.set_required_repos({k_repo});
+        store.begin_check();
+        store.publish(SourceStore::Locks{});
+        CHECK(store.online_rows().at(0).update_state == SourceRowState::UpdateState::NotChecked);
+        CHECK(store.local_rows().at(0).update_state == SourceRowState::UpdateState::Checking);
+    }
 }
 
 TEST_CASE("SourceStore keeps one selected source per id", "[preset_updater][controller]")
@@ -654,7 +782,7 @@ TEST_CASE("SourceStore forgets a finished round but not a running one", "[preset
         CHECK(store.online_rows().at(0).counts.pending() == 0);
         CHECK(store.online_rows().at(0).update_state == SourceRowState::UpdateState::Waiting);
         CHECK(store.needs_check());
-        CHECK_FALSE(store.every_selected_checked());
+        CHECK_FALSE(store.every_active_checked());
     }
 
     SECTION("a failure the user has not dealt with goes with it")

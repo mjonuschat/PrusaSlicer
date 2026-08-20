@@ -32,6 +32,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(VendorReconfigurationState, {
     {VendorReconfigurationState::ForcedDowngrade, "ForcedDowngrade"},
     {VendorReconfigurationState::NotInIndex, "NotInIndex"},
     {VendorReconfigurationState::NewVendor, "NewVendor"},
+    {VendorReconfigurationState::RemoveVendor, "RemoveVendor"},
 })
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(
@@ -54,7 +55,8 @@ void to_json(nlohmann::json& j, const PresetUpdaterReconfigurationList& list)
         {"forced_updates", list.forced_updates()},
         {"forced_downgrades", list.forced_downgrades()},
         {"not_in_index", list.not_in_index()},
-        {"new_vendors", list.new_vendors()}
+        {"new_vendors", list.new_vendors()},
+        {"removals", list.removals()}
     };
 }
 

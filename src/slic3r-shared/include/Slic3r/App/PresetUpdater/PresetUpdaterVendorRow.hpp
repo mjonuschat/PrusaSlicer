@@ -84,6 +84,7 @@ private:
     Yoga::StackLayout* m_action{nullptr};
     Yoga::LayoutButton* m_action_button{nullptr};
     Yoga::LayoutButton* m_retry_button{nullptr};
+    Yoga::Text* m_done_text{nullptr};
     Yoga::Text* m_failed_text{nullptr};
 
     Yoga::LayoutButton* m_changelog_button{nullptr};

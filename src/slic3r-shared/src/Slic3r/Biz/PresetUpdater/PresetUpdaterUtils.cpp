@@ -289,42 +289,95 @@ std::map<std::string, std::string> read_version_manifest(
 
 namespace {
 
-#if 0
-void perform_downgrades(
-    const std::vector<VendorReconfiguration>& downgrades,
+void perform_removals(
+    const std::vector<VendorReconfiguration>& removals,
     PresetUpdaterProcessStatus* process_status
 )
 {
-    for (const VendorReconfiguration& downgrade : downgrades) {
-        SPDLOG_INFO("Deleting incompatible bundle {}", downgrade.vendor_id);
-        fs::path dir_path = local_vendor_path(
-            downgrade.vendor_repo_id,
-            downgrade.vendor_id);
-        fs::path idx_path = local_vendor_path(downgrade.vendor_repo_id, downgrade.vendor_id, ".idx");
+    for (const VendorReconfiguration& removal : removals) {
+        ASSERT(
+            !removal.vendor_id.empty() && !removal.vendor_repo_id.empty(),
+            "Both paths below are built from these two names. An empty one addresses the presets"
+            " directory itself, and the removal wipes every installed vendor."
+        );
+        SPDLOG_INFO("Deleting unusable bundle {}", removal.vendor_id);
+
+        const fs::path dir_path = local_vendor_path(removal.vendor_repo_id, removal.vendor_id);
+        const fs::path idx_path =
+            local_vendor_path(removal.vendor_repo_id, removal.vendor_id, ".idx");
+
+        // Already gone is the wanted state, so only a real failure is worth reporting.
         boost::system::error_code ec;
-        if (!fs::remove_all(dir_path, ec) || ec) {
-            process_status->set_error(
-                fmt::format(
-                    "Failed to remove directory {} while performing downgrade. {}",
-                    dir_path.string(),
-                    ec.message()
-                )
+        process_status->set_warning_target(removal.vendor_repo_id, removal.vendor_id);
+        fs::remove_all(dir_path, ec);
+        if (ec) {
+            process_status->set_warning(
+                fmt::format("Failed to remove directory {}. {}", dir_path.string(), ec.message())
             , PresetUpdaterReason::LocalStorageFailed);
-            return;
+            process_status->clear_warning_target();
+            continue;
         }
-        if (!fs::remove(idx_path, ec) || ec) {
-            process_status->set_error(
-                fmt::format(
-                    "Failed to remove index {} while performing downgrade. {}",
-                    idx_path.string(),
-                    ec.message()
-                )
+        fs::remove(idx_path, ec);
+        if (ec) {
+            process_status->set_warning(
+                fmt::format("Failed to remove index {}. {}", idx_path.string(), ec.message())
             , PresetUpdaterReason::LocalStorageFailed);
-            return;
         }
+        process_status->clear_warning_target();
     }
 }
-#endif // 0
+
+void collect_removal_of_unusable_vendor(
+    const fs::path& installed_repo_dir,
+    const std::string& repo_id,
+    const PresetUpdaterIndex& index,
+    PresetUpdaterReconfigurationList& results,
+    PresetUpdaterProcessStatus* process_status
+)
+{
+    const fs::path installed_vendor_yaml_path = installed_repo_dir / index.vendor() / "vendor.yaml";
+    boost::system::error_code ec;
+    if (!fs::exists(installed_vendor_yaml_path, ec) || ec) {
+        return;
+    }
+
+    Preset::IO::HwConfigLoader hw_config_loader;
+    Domain::Preset::VendorData vendor_data;
+    try {
+        vendor_data = hw_config_loader.load(installed_vendor_yaml_path.string());
+    } catch (const std::exception& e) {
+        process_status->set_warning_target(repo_id, index.vendor());
+        process_status->set_warning(
+            fmt::format(
+                "Failed to load vendor file {}: {}",
+                installed_vendor_yaml_path.string(),
+                e.what()
+            )
+        , PresetUpdaterReason::DataInconsistent);
+        process_status->clear_warning_target();
+        return;
+    }
+
+    const Semver current_version = Semver(vendor_data.info.version);
+    const PresetUpdaterIndex::const_iterator installed = index.find(current_version);
+    if (installed == index.end() || installed->is_current_slic3r_supported()) {
+        return;
+    }
+
+    SPDLOG_WARN(
+        "No source offers a usable version of {}. Offering removal of {}.",
+        index.vendor(),
+        installed_vendor_yaml_path.string()
+    );
+    results.emplace_back(
+        VendorReconfigurationState::RemoveVendor,
+        vendor_data.info.id,
+        repo_id,
+        current_version,
+        Slic3r::Semver(),
+        std::string{}
+    );
+}
 
 void perform_update_no_source_manifest(
     const VendorReconfiguration& update,
@@ -628,7 +681,7 @@ void perform_updates(
 } // namespace
 
 PresetUpdaterReconfigurationList check_forced_reconfigurations(
-    const SharedRepositoryVector& repos,
+    const std::set<std::string>& known_repo_ids,
     PresetUpdaterProcessStatus* process_status
 )
 {
@@ -655,8 +708,11 @@ PresetUpdaterReconfigurationList check_forced_reconfigurations(
         }
         const std::string repo_id = archive_dir.path().filename().string();
 
-        const auto repo_it = std::find_if(repos.begin(), repos.end(), [repo_id](const AbstractPresetUpdaterRepository* repo){ return repo_id == repo->descriptor().id;});
-        if(repo_it == repos.end()){
+        if (!known_repo_ids.contains(repo_id)) {
+            SPDLOG_INFO(
+                "No source offers {}, so its installed presets cannot be reconfigured. Skipping.",
+                repo_id
+            );
             continue;
         }
 
@@ -669,7 +725,7 @@ PresetUpdaterReconfigurationList check_forced_reconfigurations(
             process_status->set_warning_target(repo_id);
             process_status->set_warning(msg, PresetUpdaterReason::IndexUnreadable);
             process_status->clear_warning_target();
-            return {};
+            continue;
         }
         for (const auto& index : index_db) {
             const fs::path installed_vendor_yaml_path = archive_dir.path()
@@ -875,7 +931,11 @@ PresetUpdaterReconfigurationList check_reconfigurations(
                     continue;
                 }
             } else {
-                // There is no index in update_sync - no reconfiguration
+                if (!(*repo_it)->is_selected()) {
+                    collect_removal_of_unusable_vendor(
+                        archive_dir.path(), repo_id, index, results, process_status
+                    );
+                }
                 continue;
             }
             // use update_sync_index from now
@@ -1165,6 +1225,10 @@ void perform_reconfigurations(
 
     if (has_flag(types_to_perform, ReconfigurationType::NewVendors)) {
         perform_updates(reconfigurations.new_vendors(), process_status);
+    }
+
+    if (has_flag(types_to_perform, ReconfigurationType::Removals)) {
+        perform_removals(reconfigurations.removals(), process_status);
     }
 }
 

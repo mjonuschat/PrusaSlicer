@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
 #include <memory>
 
 namespace Slic3r::Biz::PresetUpdater {
@@ -46,6 +47,15 @@ public:
      * @brief Returns const pointers to selected repositories. Used by prepare update_sync and perform reconfigurations
      */
     SharedRepositoryVector get_selected_repositories() const;
+
+    /**
+     * @brief The selected repositories, plus one repository for each required id that has none
+     * selected. Never more than one repository per id, because everything downstream addresses a
+     * repository by its id alone. A required id no repository offers is left out.
+     */
+    SharedRepositoryVector get_selected_and_required_repositories(
+        const std::set<std::string>& required_ids
+    ) const;
 
     /**
      * @brief Changes "selected" flag on repositories.

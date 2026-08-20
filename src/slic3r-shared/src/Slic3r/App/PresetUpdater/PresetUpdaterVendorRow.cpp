@@ -35,6 +35,9 @@ std::string change_label(VendorReconfigurationState state)
     case VendorReconfigurationState::NotInIndex:
         // TRN Preset updater vendor row. Change kind, noun: version not listed.
         return Biz::_u8L("Unknown version");
+    case VendorReconfigurationState::RemoveVendor:
+        // TRN Preset updater vendor row. Change kind, noun: no source can repair these.
+        return Biz::_u8L("Unusable presets");
     }
     return {};
 }
@@ -55,15 +58,29 @@ std::string action_label(VendorReconfigurationState state)
     case VendorReconfigurationState::NotInIndex:
         // TRN Preset updater vendor row button. Installs a version the source lists.
         return Biz::_u8L("Repair");
+    case VendorReconfigurationState::RemoveVendor:
+        // TRN Preset updater vendor row button. Deletes the installed presets.
+        return Biz::_u8L("Remove");
     }
     return {};
+}
+
+std::string done_label(VendorReconfigurationState state)
+{
+    if (state == VendorReconfigurationState::RemoveVendor) {
+        // TRN Preset updater vendor row. The presets were deleted.
+        return Biz::_u8L("Removed");
+    }
+    // TRN Preset updater vendor row. Install finished.
+    return Biz::_u8L("Updated");
 }
 
 bool has_warning_icon(VendorReconfigurationState state)
 {
     return state == VendorReconfigurationState::ForcedUpdate
         || state == VendorReconfigurationState::ForcedDowngrade
-        || state == VendorReconfigurationState::NotInIndex;
+        || state == VendorReconfigurationState::NotInIndex
+        || state == VendorReconfigurationState::RemoveVendor;
 }
 
 std::string version_label(const Slic3r::Semver& version)
@@ -202,8 +219,7 @@ void PresetUpdaterVendorRow::build_action_slot()
     done_icon->set_width(icon_size);
     done_icon->set_height(icon_size);
     done_icon->set_flex_shrink(0);
-    // TRN Preset updater vendor row. Install finished.
-    add_elided_text(done, Biz::_u8L("Updated"));
+    m_done_text = add_elided_text(done, std::string());
 
     Item* failed = m_action->emplace_back<Item>();
     failed->set_flex_grow(1);
@@ -268,6 +284,7 @@ void PresetUpdaterVendorRow::on_data_update()
     );
 
     m_action_button->set_label(action_label(row->state));
+    m_done_text->set_text(done_label(row->state));
     m_failed_text->set_text(row->error_text);
     m_retry_button->set_tooltip(row->error_text);
     m_retry_button->set_visible(!row->install_locked);

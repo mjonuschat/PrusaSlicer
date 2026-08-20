@@ -273,6 +273,135 @@ TEST_CASE("PresetUpdater checks forced reconfigurations of installed profiles", 
         CHECK(listener.reconfigurations()->forced_updates().empty());
         CHECK(listener.reconfigurations()->new_vendors().empty());
     }
+
+    SECTION("a deselected source is checked, because its presets are installed all the same")
+    {
+        fx.put_installed("301");
+        deselect_every_source(fx.shared_runtime_path / "RepositoryManifest.json");
+        fx.interactor().check_forced_reconfigurations();
+        REQUIRE(fx.wait(listener));
+        REQUIRE_FALSE(listener.got_error());
+        REQUIRE(listener.reconfigurations().has_value());
+        REQUIRE(listener.reconfigurations()->forced_downgrades().size() == 1);
+        CHECK(listener.reconfigurations()->forced_downgrades().front().vendor_repo_id == k_repo_name);
+    }
+
+    SECTION("presets of a source no repository offers are skipped without complaint")
+    {
+        fx.put_installed_as("vanished_repo", "301");
+        fx.interactor().check_forced_reconfigurations();
+        REQUIRE(fx.wait(listener));
+        REQUIRE_FALSE(listener.got_error());
+        REQUIRE(listener.reconfigurations().has_value());
+        CHECK(listener.reconfigurations()->empty());
+        CHECK(listener.warnings().empty());
+    }
+
+    SECTION("an unreadable index does not silence the other sources")
+    {
+        fx.put_installed("301");
+        add_source_to_manifest(fx.shared_runtime_path / "RepositoryManifest.json", "broken_repo");
+
+        const fs::path broken = fx.installed_path / "broken_repo";
+        fs::create_directories(broken);
+        {
+            boost::nowide::ofstream file(broken / "Garbage.idx");
+            file << "this is not an index";
+        }
+
+        fx.interactor().check_forced_reconfigurations();
+        REQUIRE(fx.wait(listener));
+        REQUIRE_FALSE(listener.got_error());
+        REQUIRE(listener.reconfigurations().has_value());
+        REQUIRE(listener.reconfigurations()->forced_downgrades().size() == 1);
+        CHECK(listener.reconfigurations()->forced_downgrades().front().vendor_repo_id == k_repo_name);
+    }
+}
+
+TEST_CASE("PresetUpdater offers to remove unusable presets of a deselected source", "[preset_updater]")
+{
+    Fixture fx;
+    CaptureListener listener(fx.interactor());
+
+    fx.put_installed("301");
+    fx.put_server("300");
+    deselect_every_source(fx.shared_runtime_path / "RepositoryManifest.json");
+
+    SECTION("a check that is not told about the source reports nothing for it")
+    {
+        fx.interactor().build_update_sync_and_reconfiguration_check(
+            true, PresetUpdater::VerboseStyle::NoProgress, true,
+            PresetUpdater::SourceListSync::UseStored
+        );
+        REQUIRE(fx.wait(listener));
+        REQUIRE_FALSE(listener.got_error());
+        REQUIRE(listener.reconfigurations().has_value());
+        CHECK(listener.reconfigurations()->empty());
+    }
+
+    SECTION("a required deselected source is never fetched, so removal is the only offer")
+    {
+        fx.interactor().build_update_sync_and_reconfiguration_check(
+            true, PresetUpdater::VerboseStyle::NoProgress, true,
+            PresetUpdater::SourceListSync::UseStored, {k_repo_name}
+        );
+        REQUIRE(fx.wait(listener));
+        REQUIRE_FALSE(listener.got_error());
+        REQUIRE(listener.reconfigurations().has_value());
+
+        CHECK_FALSE(fs::exists(fx.staged_path / k_repo_name / k_vendor_name));
+        CHECK_FALSE(fs::exists(fx.staged_path / k_repo_name / (k_vendor_name + ".idx")));
+        CHECK(listener.reconfigurations()->forced_downgrades().empty());
+        REQUIRE(listener.reconfigurations()->removals().size() == 1);
+        const auto& removal = listener.reconfigurations()->removals().front();
+        CHECK(removal.vendor_repo_id == k_repo_name);
+        CHECK(removal.vendor_id == k_vendor_name);
+        CHECK(removal.current_version == Slic3r::Semver{3, 0, 1});
+
+        const auto reconfigurations = *listener.reconfigurations();
+        listener.reset();
+        fx.interactor().perform_reconfigurations(reconfigurations);
+        REQUIRE(fx.wait(listener));
+        REQUIRE_FALSE(listener.got_error());
+        CHECK(listener.performed());
+
+        CHECK_FALSE(fs::exists(fx.installed_path / k_repo_name / k_vendor_name));
+        CHECK_FALSE(fs::exists(fx.installed_path / k_repo_name / (k_vendor_name + ".idx")));
+    }
+}
+
+TEST_CASE("PresetUpdater does not offer removal while the source is usable", "[preset_updater]")
+{
+    Fixture fx;
+    CaptureListener listener(fx.interactor());
+
+    SECTION("a selected source that staged nothing keeps its unusable vendor")
+    {
+        fx.put_installed("301");
+        fx.interactor().build_update_sync_and_reconfiguration_check(
+            false, PresetUpdater::VerboseStyle::NoProgress, true,
+            PresetUpdater::SourceListSync::UseStored
+        );
+        REQUIRE(fx.wait(listener));
+        REQUIRE_FALSE(listener.got_error());
+        REQUIRE(listener.reconfigurations().has_value());
+        CHECK(listener.reconfigurations()->removals().empty());
+        CHECK(fs::exists(fx.installed_path / k_repo_name / k_vendor_name));
+    }
+
+    SECTION("a deselected source whose installed version this app can use is left alone")
+    {
+        fx.put_installed("100");
+        deselect_every_source(fx.shared_runtime_path / "RepositoryManifest.json");
+        fx.interactor().build_update_sync_and_reconfiguration_check(
+            true, PresetUpdater::VerboseStyle::NoProgress, true,
+            PresetUpdater::SourceListSync::UseStored, {k_repo_name}
+        );
+        REQUIRE(fx.wait(listener));
+        REQUIRE_FALSE(listener.got_error());
+        REQUIRE(listener.reconfigurations().has_value());
+        CHECK(listener.reconfigurations()->empty());
+    }
 }
 
 TEST_CASE("PresetUpdater cleans up staged files and keeps installed profiles", "[preset_updater]")

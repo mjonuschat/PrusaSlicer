@@ -525,6 +525,34 @@ SharedRepositoryVector PresetUpdaterRepositoryDatabase::get_selected_repositorie
     return result;
 }
 
+SharedRepositoryVector PresetUpdaterRepositoryDatabase::get_selected_and_required_repositories(
+    const std::set<std::string>& required_ids
+) const
+{
+    SharedRepositoryVector result = get_selected_repositories();
+    for (const std::string& id : required_ids) {
+        const auto served = std::find_if(
+            result.begin(),
+            result.end(),
+            [&id](const AbstractPresetUpdaterRepository* repo) { return repo->descriptor().id == id; }
+        );
+        if (served != result.end()) {
+            continue;
+        }
+        const auto offering = std::find_if(
+            m_all_repositories.begin(),
+            m_all_repositories.end(),
+            [&id](const std::unique_ptr<AbstractPresetUpdaterRepository>& repo) {
+                return repo->descriptor().id == id;
+            }
+        );
+        if (offering != m_all_repositories.end()) {
+            result.emplace_back(offering->get());
+        }
+    }
+    return result;
+}
+
 void PresetUpdaterRepositoryDatabase::apply_selection(
     const SharedPresetUpdaterRepositoryInfoVector& repos,
     PresetUpdaterProcessStatus* process_status

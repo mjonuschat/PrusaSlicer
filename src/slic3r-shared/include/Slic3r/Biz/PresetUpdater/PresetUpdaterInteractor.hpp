@@ -14,6 +14,7 @@
 #include <deque>
 #include <functional>
 #include <optional>
+#include <set>
 #include <string>
 
 namespace Slic3r::Biz::PresetUpdater {
@@ -53,12 +54,15 @@ public:
      * @param source_list fetches the repository manifest from the server first. Pass UseStored to
      * check against the source list already in the data dir, which needs no network - the listing
      * or selection this check follows has just written it.
+     * @param required_repo_ids sources to stage and check on top of the selected ones, because a
+     * forced reconfiguration names them and its presets stay unusable until they are updated.
      */
     JobId build_update_sync_and_reconfiguration_check(
         bool online_allowed,
         VerboseStyle verbose,
-        bool ignore_hash            = false,
-        SourceListSync source_list  = SourceListSync::Fetch
+        bool ignore_hash                              = false,
+        SourceListSync source_list                    = SourceListSync::Fetch,
+        const std::set<std::string>& required_repo_ids = {}
     );
 
     /**

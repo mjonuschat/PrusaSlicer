@@ -653,6 +653,13 @@ void PresetUpdaterRepositorySync::sync(
         if (process_status->get_canceled()) {
             break;
         }
+        if (!repo->is_selected()) {
+            SPDLOG_INFO(
+                "Source {} is turned off, so only what the installation carries is staged for it.",
+                repo->descriptor().id
+            );
+            continue;
+        }
         if (repo->is_online() && !online_allowed) {
             SPDLOG_INFO(
                 "Preset updates over the internet are turned off. Skipping source {}.",

@@ -9,6 +9,7 @@
 #include "Slic3r/Log.hpp"
 
 #include <algorithm>
+#include <set>
 #include <vector>
 
 namespace Slic3r::Biz::PresetUpdater {
@@ -230,9 +231,13 @@ JobId PresetUpdaterInteractor::check_forced_reconfigurations()
                 dispatch_error(job_id, process_status.get_error(), process_status.get_error_reason());
                 return JobState::Failed;
             }
-            const SharedRepositoryVector& repos = repo_database.get_selected_repositories();
+            std::set<std::string> known_repo_ids;
+            for (const SharedPresetUpdaterRepositoryInfo& info :
+                 repo_database.get_all_repositories()) {
+                known_repo_ids.insert(info.descriptor.id);
+            }
             PresetUpdaterReconfigurationList reconfigurations =
-                PresetUpdater::check_forced_reconfigurations(repos, &process_status);
+                PresetUpdater::check_forced_reconfigurations(known_repo_ids, &process_status);
             if (process_status.has_error()) {
                 dispatch_error(job_id, process_status.get_error(), process_status.get_error_reason());
                 return JobState::Failed;
@@ -253,11 +258,12 @@ JobId PresetUpdaterInteractor::build_update_sync_and_reconfiguration_check(
     bool online_allowed,
     VerboseStyle verbose,
     bool ignore_hash /*= false*/,
-    SourceListSync source_list /*= SourceListSync::Fetch*/
+    SourceListSync source_list /*= SourceListSync::Fetch*/,
+    const std::set<std::string>& required_repo_ids /*= {}*/
 )
 {
     return enqueue(
-        [this, online_allowed, verbose, ignore_hash, source_list](
+        [this, online_allowed, verbose, ignore_hash, source_list, required_repo_ids](
             JThread::StopToken stop_token,
             Platform::JobManager::ProgressTracker progress_tracker,
             JobId job_id
@@ -289,7 +295,8 @@ JobId PresetUpdaterInteractor::build_update_sync_and_reconfiguration_check(
                 }
             }
 
-            const SharedRepositoryVector& repos = repo_database.get_selected_repositories();
+            const SharedRepositoryVector repos =
+                repo_database.get_selected_and_required_repositories(required_repo_ids);
             archive_sync.sync(repos, online_allowed, &process_status);
             if (process_status.has_error()) {
                 dispatch_error(job_id, process_status.get_error(), process_status.get_error_reason());

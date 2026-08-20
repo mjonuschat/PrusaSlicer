@@ -97,37 +97,6 @@ bool updates_notification_shown()
     );
 }
 
-/// The manifest is rewritten by the first job that reads it, so match its value, not its spelling.
-void deselect_every_source(const fs::path& manifest_path)
-{
-    const std::string key{"\"selected\""};
-    std::string manifest = read_file(manifest_path);
-    size_t deselected    = 0;
-
-    for (size_t position = manifest.find(key); position != std::string::npos;
-         position        = manifest.find(key, position))
-    {
-        const size_t colon = manifest.find(':', position + key.size());
-        if (colon == std::string::npos) {
-            break;
-        }
-
-        position = manifest.find_first_not_of(" \t\r\n", colon + 1);
-        if (position == std::string::npos) {
-            break;
-        }
-        if (manifest.compare(position, 4, "true") == 0) {
-            manifest.replace(position, 4, "false");
-            ++deselected;
-        }
-    }
-
-    REQUIRE(deselected > 0);
-
-    boost::nowide::ofstream file(manifest_path, std::ios::out | std::ios::binary | std::ios::trunc);
-    file << manifest;
-}
-
 /// Member order matters: the controller is destroyed before the services it reports through.
 struct ControllerFixture : Fixture
 {
@@ -268,11 +237,13 @@ TEST_CASE("PresetUpdaterController asks for the dialog when a forced reconfigura
     CHECK(fx.dialog_requests == 1);
 }
 
-TEST_CASE("PresetUpdaterController releases the application when the forced state disappears", "[preset_updater][controller]")
+TEST_CASE("PresetUpdaterController holds the application for a source that is not selected", "[preset_updater][controller]")
 {
     ControllerFixture fx;
     fx.put_installed("301");
     fx.put_server("300");
+
+    deselect_every_source(fx.shared_runtime_path / "RepositoryManifest.json");
 
     fx.controller->start();
     REQUIRE(fx.settle());
@@ -280,15 +251,42 @@ TEST_CASE("PresetUpdaterController releases the application when the forced stat
     REQUIRE(*fx.forced_answer);
     REQUIRE(fx.forced_answers == 1);
 
-    deselect_every_source(fx.shared_runtime_path / "RepositoryManifest.json");
-
     fx.controller->on_dialog_opened();
     REQUIRE(fx.settle());
 
+    CHECK(fx.controller->forced_mode());
+    CHECK_FALSE(fx.online_row().selected);
+    CHECK(fx.online_row().update_state == SourceRowState::UpdateState::HasUpdates);
+    CHECK(fx.online_row().counts.required == 1);
+    CHECK(fx.controller->has_required_updates());
+}
+
+TEST_CASE("PresetUpdaterController removes unusable presets of a source that is not selected", "[preset_updater][controller]")
+{
+    ControllerFixture fx;
+    fx.put_installed("301");
+    fx.put_server("300");
+
+    deselect_every_source(fx.shared_runtime_path / "RepositoryManifest.json");
+
+    fx.controller->start();
+    REQUIRE(fx.settle());
+    REQUIRE(*fx.forced_answer);
+
+    fx.controller->on_dialog_opened();
+    REQUIRE(fx.settle());
+    REQUIRE(fx.controller->has_required_updates());
+
+    fx.controller->update_required();
+    REQUIRE(fx.settle());
+
     CHECK_FALSE(fx.controller->forced_mode());
-    CHECK_FALSE(fx.controller->has_required_updates());
     REQUIRE(fx.forced_answers == 2);
     CHECK_FALSE(*fx.forced_answer);
+    CHECK(fx.install_reports > 0);
+
+    CHECK_FALSE(fs::exists(fx.installed_path / k_repo_name / k_vendor_name));
+    CHECK_FALSE(fx.online_row().selected);
 }
 
 TEST_CASE("PresetUpdaterController holds the application while the forced state stands", "[preset_updater][controller]")

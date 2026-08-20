@@ -69,7 +69,8 @@ bool has_forced_vendor(const PresetUpdater::SourceRowState& source)
             continue;
         }
         if (vendor.state == Biz::PresetUpdater::VendorReconfigurationState::ForcedUpdate
-            || vendor.state == Biz::PresetUpdater::VendorReconfigurationState::ForcedDowngrade)
+            || vendor.state == Biz::PresetUpdater::VendorReconfigurationState::ForcedDowngrade
+            || vendor.state == Biz::PresetUpdater::VendorReconfigurationState::RemoveVendor)
         {
             return true;
         }
