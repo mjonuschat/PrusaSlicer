@@ -1349,7 +1349,7 @@ void DoubleSliderForLayers::draw_ruler(const ImRect& slideable_region)
         ImGui::RenderFrame(
             move_line.Min,
             move_line.Max,
-            ImGui::GetColorU32(ImGuiCol_TabSelected),
+            m_theme->color_imgui(Platform::Color::AccentTertiary),
             false
         );
         m_pos_on_move = -1;
