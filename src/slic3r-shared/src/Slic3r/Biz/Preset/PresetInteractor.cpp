@@ -321,6 +321,12 @@ void PresetInteractor::load_preset_bundle(const IO::BundlePaths& bundle_paths)
     ListenerInvokeLaterBag bag;
     if (m_selected_project_id != Domain::INVALID_ID) {
         fill_printer_presets(false, bag);
+        auto& selected_preset = mutable_selected_printer_preset();
+        update_print_tool_cbi(
+            selected_preset,
+            selected_config_container_context().config_container_id
+        );
+        fill_selected_material_cbis(selected_preset, true);
         bag.add([this]
         {
             invoke_listeners<IPresetChangedListener>(
@@ -1570,11 +1576,6 @@ void PresetInteractor::fill_printer_presets(bool no_data_update, ListenerInvokeL
             &selected_preset.printer.config_box(),
             &original_printer_preset_ref.get().config_box()
         );
-        update_print_tool_cbi(
-            selected_preset,
-            selected_config_container_context().config_container_id
-        );
-        fill_selected_material_cbis(selected_preset, true);
     }
 
     // call set_selected_index after set all configs for m_printer_cbi_accessor
