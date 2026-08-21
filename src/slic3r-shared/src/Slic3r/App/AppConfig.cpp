@@ -156,7 +156,7 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->tooltip = L("Enable logging to Prusa Account, Connect tab and uploading files to Connect.");
     def->category = Domain::ConfigItemDef::Category::AppConfig_Services;
     def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_Services_ServicesSetup;
-    def->init_fn = []() { return Domain::ConfigValue(true); };
+    def->init_fn = []() { return Domain::ConfigValue(false); };
 
     def = defs.add("enable_printables", typeid(bool));
     def->location = Domain::AppConfigLocation{};
@@ -165,7 +165,7 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->tooltip = L("Enable Printables tab.");
     def->category = Domain::ConfigItemDef::Category::AppConfig_Services;
     def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_Services_ServicesSetup;
-    def->init_fn = []() { return Domain::ConfigValue(true); };
+    def->init_fn = []() { return Domain::ConfigValue(false); };
 #endif
 
     def = defs.add("enable_preset_update", typeid(bool));
@@ -175,7 +175,7 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def->tooltip = L("Let the preset updater contact online sources. When off, presets are still installed from the files that come with the application and from local sources.");
     def->category = Domain::ConfigItemDef::Category::AppConfig_Services;
     def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_Services_General;
-    def->init_fn = []() { return Domain::ConfigValue(true); };
+    def->init_fn = []() { return Domain::ConfigValue(false); }; // off by default, so it does not fire before wizard on the first run!
 
     def = defs.add("layout_main_left_column_width", typeid(double));
     def->location = Domain::AppConfigLocation{};

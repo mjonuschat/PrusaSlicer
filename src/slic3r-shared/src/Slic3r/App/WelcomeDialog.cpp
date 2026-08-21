@@ -1422,23 +1422,15 @@ void WelcomeDialog::sync_config() const
     auto& app_config{AppServices::instance().app_config()};
     auto& app_config_interactor{AppServices::instance().app_config_interactor()};
     if (app_config.is_webkit_available()) {
-        if (m_online) {
-            app_config_interactor.set_item_value("enable_printables", Domain::ConfigValue{true});
-            app_config_interactor.set_item_value("enable_prusa_account", Domain::ConfigValue{true});
-        } else {
-            app_config_interactor.set_item_value("enable_printables", Domain::ConfigValue{false});
-            app_config_interactor.set_item_value("enable_prusa_account",
-                                                 Domain::ConfigValue{false});
-        }
+        app_config_interactor.set_item_value("enable_printables", Domain::ConfigValue{m_online});
+        app_config_interactor.set_item_value("enable_prusa_account", Domain::ConfigValue{m_online});
     }
 
     if (app_config.is_sentry_available()) {
-        if (m_online && m_sentry_enabled) {
-            app_config_interactor.set_item_value("sentry", Domain::ConfigValue{true});
-        } else {
-            app_config_interactor.set_item_value("sentry", Domain::ConfigValue{false});
-        }
+        app_config_interactor.set_item_value("sentry", Domain::ConfigValue{m_online && m_sentry_enabled});
     }
+
+    app_config_interactor.set_item_value("enable_preset_update", Domain::ConfigValue{m_online});
 }
 
 } // namespace Slic3r::App
