@@ -104,6 +104,15 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
         }
     );
 
+    def = defs.add("reverse_mouse_wheel_zoom", typeid(bool));
+    def->location = Domain::AppConfigLocation{};
+    def->gui_type = GUIType::checkbox;
+    def->label = L("Reverse direction of zoom with mouse wheel");
+    def->tooltip = L("If enabled, reverses the direction of zoom with mouse wheel");
+    def->category = Domain::ConfigItemDef::Category::AppConfig_General;
+    def->option_group = Domain::ConfigItemDef::OptionGroup::AppConfig_General_Application;
+    def->init_fn = []() { return Domain::ConfigValue(false); };
+
     def               = defs.add("graphics_quality", typeid(Domain::EnumWrapper));
     def->location     = Domain::AppConfigLocation{};
     def->label        = L("Graphics quality");

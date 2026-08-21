@@ -7,6 +7,7 @@
 #include "Slic3r/Domain/Types.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/App/Scene/MouseBindingScheme.hpp"
+#include "Slic3r/App/AppServices.hpp"
 
 #include <tracy/Tracy.hpp>
 
@@ -338,7 +339,10 @@ GizmoActivationState AbstractCameraGizmo::on_mouse(GizmoEventContext& ctx, bool 
         m_state = State::Inactive;
         return m_was_activated ? GizmoActivationState::Done : GizmoActivationState::Inactive;
     } else if (type == Platform::MouseEvent::Type::Wheel) {
-        update_zoom(event.wheel_delta_y());
+        float wheel_delta_y = event.wheel_delta_y();
+        if (AppServices::instance().app_config().get<bool>("reverse_mouse_wheel_zoom"))
+            wheel_delta_y = -wheel_delta_y;
+        update_zoom(wheel_delta_y);
         return (m_state == State::Inactive) ? GizmoActivationState::Inactive : GizmoActivationState::Done;
     }
     if (m_state == State::Inactive)
