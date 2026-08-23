@@ -370,16 +370,13 @@ void SidebarObject::on_scene_selection_changed(
     update_object_name();
     update_volume_type_selector();
     update_enable_modifiers();
-    m_add_settings_button->set_tooltip(
-        m_selection.mode == Biz::Scene::SelectionMode::Instance ? Biz::_u8L("Add object settings") :
-                                                                  Biz::_u8L("Add volume settings")
-    );
 }
 
 void SidebarObject::on_reset()
 {
     // Some of the volumes may have been recreated
     m_selection = m_project_interactor.scene_interactor().object_selection();
+    update_volume_type_selector();
     update_enable_modifiers();
 }
 
@@ -551,6 +548,11 @@ void SidebarObject::update_enable_modifiers()
     m_wipe_tower_settings->set_visible(wipe_tower_selected && m_selection.elements.size() == 1);
     m_add_settings_button->set_visible(!wipe_tower_selected);
     m_add_settings_button->set_enabled(enable);
+    m_add_settings_button->set_tooltip(
+        m_selection.mode == Biz::Scene::SelectionMode::Instance ?
+            Biz::_u8L("Add object settings") :
+            Biz::_u8L("Add volume settings")
+    );
 
     const bool show_extruder_picker{enable
                                     && m_project_interactor.selected_config_container()
