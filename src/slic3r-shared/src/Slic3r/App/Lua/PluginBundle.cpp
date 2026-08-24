@@ -20,11 +20,6 @@ namespace Slic3r::App::Lua {
 template <typename T>
 using Result = tl::expected<T, std::string>;
 
-constexpr auto HASH_TYPE = Biz::Crypto::HashType::SHA_256;
-constexpr auto CHECKSUM_FILENAME = "checksum.sha256";
-constexpr auto SIGN_FILENAME = "checksum.sha256.sign";
-constexpr auto META_FILENAME = "manifest.json";
-
 namespace {
 const std::map<PluginApiType, std::string> PLUGIN_API_TYPE_NAMES = {
     {PluginApiType::Project, "project.plugin"}
@@ -63,7 +58,7 @@ Result<PluginBundleMeta> load_meta_from_text(std::string_view json_str)
                                   std::nullopt;
             }
 
-            if constexpr (std::is_same_v<T, Semver>) {
+            if constexpr (std::is_same_v<T, Semver> || std::is_same_v<T, std::optional<Semver>>) {
                 std::string v = it->get<std::string>();
                 auto parsed = Semver::parse(v);
                 if (!parsed.has_value()) {
@@ -118,10 +113,16 @@ return tl::unexpected{err.value()}; \
 #define SAFE_GET_OPT(field) SAFE_GET_(field, false)
 
         SAFE_GET(id)
-        SAFE_GET(author)
-        SAFE_GET_OPT(description)
-
+        SAFE_GET(name)
         SAFE_GET(version);
+        SAFE_GET(author)
+        SAFE_GET(license)
+        SAFE_GET_OPT(description)
+        SAFE_GET_OPT(category)
+        SAFE_GET(min_slicer_version)
+        SAFE_GET_OPT(max_slicer_version)
+        SAFE_GET_OPT(repo)
+        SAFE_GET_OPT(web)
 
         auto req_apis = parse_api_version_map();
         if (!req_apis.has_value()) {
@@ -181,7 +182,7 @@ bool PluginBundle::verify(const Biz::Crypto::KeyPair& author_pub_key) const
         const auto checksum = Biz::Crypto::DirChecksum::load_from_file(
             *m_content_provider,
             CHECKSUM_FILENAME,
-            Biz::Crypto::HashType::SHA_256
+            HASH_TYPE
         );
         Biz::Crypto::ChecksumVerifyOpts opts{
             .strict    = true,

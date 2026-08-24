@@ -10,6 +10,8 @@
 #include <optional>
 #include <thread>
 #include <iostream>
+#include <vector>
+#include <string>
 
 #include <boost/nowide/iostream.hpp>
 #include <boost/optional.hpp>
@@ -773,6 +775,163 @@ void add_sla_config_boxes_overrides(CLI::App& app, App::InitParams& params)
     add_config_boxes_overrides(app, params, config_boxes);
 }
 
+template <typename ActionParamsType>
+auto make_string_opt_parser(
+    App::InitParams& params,
+    const std::function<std::string&(ActionParamsType&)>& field_getter
+)
+{
+    return [field_getter,&params](const std::vector<std::string>& opts) -> bool
+    {
+        if (opts.size() != 1) {
+            return false;
+        }
+        auto& action_params = std::get<ActionParamsType>(params.action.subcommand_action);
+        auto& field = field_getter(action_params);
+        field = opts.at(0);
+        return true;
+    };
+}
+
+void add_plugin_subcommand(CLI::App& app, App::InitParams& params)
+{
+    using namespace Slic3r::App;
+    auto* plugin_app = app.add_subcommand("plugin", "Plugin tools");
+
+    // Command: plugin init
+    {
+        auto* plugin_init_app = plugin_app->add_subcommand("init", "Bootstrap plugin bundle");
+        plugin_init_app->preparse_callback([&params](size_t)
+        {
+            params.action.subcommand_action = PluginInitActionParams{};
+        });
+        plugin_init_app->add_flag_callback(
+            "-f,--force",
+            [&params]
+            {
+                auto& action_params =
+                    std::get<PluginInitActionParams>(params.action.subcommand_action);
+                action_params.force = true;
+            },
+            "Remove old artifacts if encountered, or suppress warnings being treated as errors"
+        );
+        plugin_init_app->add_option(
+            "-d",
+            make_string_opt_parser<PluginInitActionParams>(
+                params,
+                [](auto& action_params) -> auto& { return action_params.dest_path; }
+            ),
+            "Path to the directory where plugin directory will be created and populated"
+        )->default_str(".");
+        plugin_init_app->add_option(
+            "bundle_id",
+            make_string_opt_parser<PluginInitActionParams>(
+                params,
+                [](auto& action_params) -> auto&
+                {
+                    if (!action_params.id.has_value()) {
+                        action_params.id = "";
+                    }
+                    return action_params.id.value();
+                }
+            ),
+            "An ID of newly created plugin bundle"
+        );
+    }
+
+    // Command: plugin keygen
+    {
+        auto* plugin_keygen_app =
+            plugin_app->add_subcommand("keygen", "Generate new public and private key pair");
+        plugin_keygen_app->preparse_callback([&params](size_t)
+        {
+            params.action.subcommand_action = PluginKeygenActionParams{};
+        });
+        plugin_keygen_app->add_option(
+            "-k,--keysize",
+            [&](const auto& opts) -> bool
+            {
+                if (opts.size() != 1) {
+                    return false;
+                }
+                size_t processed_chars = 0;
+
+                auto& action_params =
+                    std::get<PluginKeygenActionParams>(params.action.subcommand_action);
+                action_params.key_size = std::stoi(opts.at(0), &processed_chars);
+                if (processed_chars == 0 || processed_chars != opts.at(0).size()) {
+                    return false;
+                }
+
+                if (action_params.key_size < 1024
+                    || (action_params.key_size & (action_params.key_size - 1)) != 0
+                    || action_params.key_size > 8192)
+                {
+                    return false;
+                }
+
+                return true;
+            },
+            "Set key size, must be power-of-two and in range [1024, 8192]"
+        )->default_str("2048");
+        plugin_keygen_app->add_option(
+            "-p,--public",
+            make_string_opt_parser<PluginKeygenActionParams>(
+                params,
+                [](auto& action_params) -> auto&
+                { return action_params.pub_key_file; }
+            ),
+            "Path to generated private key including file name"
+        )->required();
+        plugin_keygen_app
+            ->add_option(
+                "-P,--private",
+                make_string_opt_parser<PluginKeygenActionParams>(
+                    params,
+                    [](auto& action_params) -> auto& { return action_params.priv_key_file; }
+                ),
+                "Path to generated public key including file name"
+            )
+            ->required();
+    }
+
+    // Command: plugin sign
+    {
+        auto* plugin_sign_app = plugin_app->add_subcommand("sign", "Sign existing plugin bundle");
+        plugin_sign_app->preparse_callback([&params](size_t)
+        {
+            params.action.subcommand_action = PluginSignActionParams{};
+        });
+        plugin_sign_app->add_flag_callback(
+            "-f,--force",
+            [&params]
+            {
+                auto& action_params =
+                    std::get<PluginSignActionParams>(params.action.subcommand_action);
+                action_params.force = true;
+            },
+            "Remove old artifacts if encountered, or suppress warnings being treated as errors"
+        );
+        plugin_sign_app->add_option(
+            "-P,--private",
+            make_string_opt_parser<PluginSignActionParams>(
+                params,
+                [](auto& action_params) -> auto& { return action_params.private_key_path; }
+            ),
+            "Path to private key to sign the plugin bundle with"
+        )->required();
+        plugin_sign_app->add_option(
+            "bundle_path",
+            make_string_opt_parser<PluginSignActionParams>(
+                params,
+                [](auto& action_params) -> auto& { return action_params.bundle_path; }
+            ),
+            "Path to the bundle"
+        )->required();
+    }
+
+}
+
 } // namespace
 
 namespace Slic3r::App::Launcher {
@@ -797,6 +956,7 @@ InitParams read_cli(::CLI::App& app, const std::string& app_version, const int a
     ::add_misc_options(app, init_params);
     ::add_fdm_config_boxes_overrides(app, init_params);
     ::add_sla_config_boxes_overrides(app, init_params);
+    ::add_plugin_subcommand(app, init_params);
 
     app.footer(
         "\nPrint options are processed in the following order:\n"

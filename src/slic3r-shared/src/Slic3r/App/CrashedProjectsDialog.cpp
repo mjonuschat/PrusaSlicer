@@ -15,6 +15,7 @@
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
 #include "Slic3r/App/Yoga/Separator.hpp"
 
+#include <iomanip>
 #include <fmt/format.h>
 
 using namespace Slic3r::App::Yoga;

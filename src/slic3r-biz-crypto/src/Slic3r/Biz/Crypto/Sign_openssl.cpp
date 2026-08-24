@@ -4,6 +4,7 @@
 #include <fmt/format.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
+#include <openssl/err.h>
 
 namespace Slic3r::Biz::Crypto {
 
@@ -22,6 +23,24 @@ struct KeyImpl : std::unique_ptr<EVP_PKEY, decltype(&::EVP_PKEY_free)> {
 
 } // namespace Internal
 
+namespace {
+[[noreturn]] void throw_ssl_error(std::string_view what) {
+    char err_buf[256]{};
+    ERR_error_string_n(ERR_get_error(), err_buf, sizeof err_buf);
+    throw CryptoException(std::string{what} + ": " + err_buf);
+}
+
+template <typename T = SecureString>
+T bio_to_string(BIO* bio) {
+    BUF_MEM* mem = nullptr;
+    BIO_get_mem_ptr(bio, &mem);
+    if (!mem || !mem->data) {
+        throw_ssl_error("BIO_get_mem_ptr");
+    }
+    return {mem->data, mem->length};
+}
+}
+
 using BioPtr = std::unique_ptr<BIO, decltype(&::BIO_free)>;
 
 BioPtr make_bio_ptr(BIO* bio)
@@ -37,6 +56,47 @@ KeyPair::KeyPair(KeyPair&&) noexcept = default;
 KeyPair& KeyPair::operator=(KeyPair&&) noexcept = default;
 
 KeyPair::KeyPair(ImplPtr&& impl) : m_key(std::move(impl)) {}
+
+SecureString KeyPair::save_private_key_pem() const
+{
+    BioPtr bio = make_bio_ptr(BIO_new(BIO_s_mem()));
+    if (!bio)
+        throw_ssl_error("BIO_new");
+
+    std::string_view passphrase;
+    const EVP_CIPHER* cipher = passphrase.empty() ? nullptr : EVP_aes_256_cbc();
+    const auto* key_str =
+        passphrase.empty() ? nullptr : reinterpret_cast<const unsigned char*>(passphrase.data());
+
+    if (PEM_write_bio_PrivateKey(
+            bio.get(),
+            internal_impl().get(),
+            cipher,
+            key_str,
+            static_cast<int>(passphrase.size()),
+            nullptr,
+            nullptr
+        )
+        != 1)
+    {
+        throw_ssl_error("PEM_write_bio_PrivateKey");
+    }
+    return bio_to_string(bio.get());
+}
+
+std::string KeyPair::save_public_key_pem() const
+{
+    BioPtr bio = make_bio_ptr(BIO_new(BIO_s_mem()));
+    if (!bio) {
+        throw_ssl_error("BIO_new");
+    }
+
+    if (PEM_write_bio_PUBKEY(bio.get(), internal_impl().get()) != 1) {
+        throw_ssl_error("PEM_write_bio_PUBKEY");
+    }
+
+    return bio_to_string<std::string>(bio.get());
+}
 
 KeyPair KeyPair::generate(const char* algo, int size)
 {
@@ -59,6 +119,18 @@ KeyPair KeyPair::load_pub_pem(BytesView bytes)
 {
     auto bio = make_bio_ptr(BIO_new_mem_buf(bytes.data(), static_cast<int>(bytes.size())));
     Internal::KeyImpl impl = Internal::KeyImpl(PEM_read_bio_PUBKEY(bio.get(), nullptr, nullptr, nullptr));
+    if (impl == nullptr) {
+        throw CryptoException("Reading PEM failed");
+    }
+
+    ImplPtr ptr{std::make_unique<Internal::KeyImpl>(std::move(impl))};
+    return KeyPair{std::move(ptr)};
+}
+
+KeyPair KeyPair::load_priv_pem(BytesView bytes)
+{
+    auto bio = make_bio_ptr(BIO_new_mem_buf(bytes.data(), static_cast<int>(bytes.size())));
+    Internal::KeyImpl impl = Internal::KeyImpl(PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr));
     if (impl == nullptr) {
         throw CryptoException("Reading PEM failed");
     }

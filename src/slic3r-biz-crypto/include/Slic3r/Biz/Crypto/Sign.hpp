@@ -2,6 +2,7 @@
 
 #include "Slic3r/Biz/Crypto/Types.hpp"
 #include "Slic3r/Biz/Crypto/Hash.hpp"
+#include "Slic3r/Biz/Crypto/SecureString.hpp"
 
 #include <memory>
 
@@ -22,12 +23,16 @@ public:
     KeyPair(const KeyPair&) = delete;
     KeyPair& operator=(const KeyPair&) = delete;
 
+    SecureString save_private_key_pem() const;
+    std::string save_public_key_pem() const;
+
     static KeyPair generate(const char* algo, int size);
     static KeyPair generate(int size=2048);
     static KeyPair load_pub_pem(BytesView bytes);
+    static KeyPair load_priv_pem(BytesView bytes);
 
-    const Internal::KeyImpl& internal_impl() const { return *m_key;}
-    Internal::KeyImpl& internal_impl() { return *m_key;}
+    const Internal::KeyImpl& internal_impl() const { return *m_key; }
+    Internal::KeyImpl& internal_impl() { return *m_key; }
 private:
     using ImplPtr = std::unique_ptr<Internal::KeyImpl>;
     explicit KeyPair(ImplPtr&& impl);

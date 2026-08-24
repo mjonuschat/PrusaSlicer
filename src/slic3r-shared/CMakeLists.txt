@@ -1258,9 +1258,16 @@ set(SLIC3R_SHARED_FILES
         include/Slic3r/App/Lua/IPluginRescanListener.hpp
         include/Slic3r/App/Lua/PluginBundle.hpp
         src/Slic3r/App/Lua/PluginBundle.cpp
+        include/Slic3r/App/Lua/PluginCliOps.hpp
+        src/Slic3r/App/Lua/PluginCliOps.cpp
+        src/Slic3r/App/Lua/PluginCliOpsLicenses.hpp
+        src/Slic3r/App/Lua/PluginCliOpsLicenses.cpp
         include/Slic3r/App/Lua/AuthorRegistry.hpp
         src/Slic3r/App/Lua/AuthorRegistry.cpp
         include/Slic3r/App/Lua/IPluginInstallationListener.hpp
+    
+        src/Slic3r/App/Console/ConsoleInput.hpp
+        src/Slic3r/App/Console/ConsoleInput.cpp
 
         include/Slic3r/App/CustomGCodeMigration.hpp
         src/Slic3r/App/CustomGCodeMigration.cpp

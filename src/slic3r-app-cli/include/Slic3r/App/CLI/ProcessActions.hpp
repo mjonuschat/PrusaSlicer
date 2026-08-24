@@ -20,5 +20,5 @@ bool process_actions(
 );
 
 bool process_profiles_sharing(CLIRuntime& runtime, const InitParams& init_params);
-
+bool process_plugin_subcommand(CLIRuntime& runtime, InitParams& init_params);
 } // namespace Slic3r::App::CLI

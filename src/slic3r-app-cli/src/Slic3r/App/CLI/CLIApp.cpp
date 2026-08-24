@@ -191,6 +191,9 @@ int run(InitParams& init_params)
     if (process_profiles_sharing(runtime, init_params)) {
         return EXIT_SUCCESS;
     }
+    if (process_plugin_subcommand(runtime, init_params)) {
+        return EXIT_SUCCESS;
+    }
 
     // A loaded 3MF brings its own placement, so skip arrange.
     if (!init_params.transform.dont_arrange.value_or(false)

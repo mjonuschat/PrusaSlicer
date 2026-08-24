@@ -7,6 +7,7 @@
 #include "Slic3r/App/ConfigModelDump.hpp"
 #include "Slic3r/App/Init.hpp"
 #include "Slic3r/App/PresetUpdater/PresetUpdaterCLI.hpp"
+#include "Slic3r/App/Lua/PluginCliOps.hpp"
 #include "Slic3r/Biz/Algorithms/Model.hpp"
 #include "Slic3r/Biz/Config/ConfigSerialize.hpp"
 #include "Slic3r/Biz/Config/SelectedPresetJson.hpp"
@@ -476,6 +477,24 @@ bool process_profiles_sharing(CLIRuntime& runtime, const InitParams& init_params
     }
 
     return true;
+}
+
+bool process_plugin_subcommand(CLIRuntime& runtime, InitParams& init_params)
+{
+    if (auto* action = std::get_if<PluginInitActionParams>(&init_params.action.subcommand_action)) {
+        Lua::plugin_init(*action);
+        return true;
+    }
+    if (auto* action = std::get_if<PluginKeygenActionParams>(&init_params.action.subcommand_action)) {
+        Lua::plugin_keygen(*action);
+        return true;
+    }
+    if (auto* action = std::get_if<PluginSignActionParams>(&init_params.action.subcommand_action)) {
+        Lua::plugin_sign(*action);
+        return true;
+    }
+
+    return false;
 }
 
 namespace IO {

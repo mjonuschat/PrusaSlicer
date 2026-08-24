@@ -58,7 +58,7 @@ const VirtualExtruders& VirtualExtruderInteractor::
     virtual_extruders(SelectionId project_id, SelectionId config_container_id) const
 {
     // Empty fallback for an unknown project or printer group.
-    static const constexpr VirtualExtruders empty_virtual_extruders;
+    static const VirtualExtruders empty_virtual_extruders;
 
     const Project* project = m_workbench.find_project_by_id(project_id);
     if (project == nullptr) {

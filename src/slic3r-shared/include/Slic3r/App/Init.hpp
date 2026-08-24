@@ -12,6 +12,31 @@
 
 namespace Slic3r::App {
 
+struct PluginKeygenActionParams
+{
+    int key_size{2048};
+    std::string pub_key_file;
+    std::string priv_key_file;
+};
+
+struct PluginInitActionParams
+{
+    std::string dest_path{"."};
+    std::optional<std::string> id;
+    std::optional<std::string> name;
+    std::optional<std::string> author;
+    std::optional<std::string> description;
+    std::optional<std::string> license;
+    bool force{false};
+};
+
+struct PluginSignActionParams
+{
+    std::string bundle_path;
+    std::string private_key_path;
+    bool force{false};
+};
+
 struct ActionParams
 {
     bool help_fff                           = false;
@@ -36,6 +61,12 @@ struct ActionParams
     bool preset_updater_cleanup             = false;
     bool dump_json_model                    = false;
     bool generate_preset_cache              = false;
+    std::variant<
+        PluginInitActionParams,
+        PluginKeygenActionParams,
+        PluginSignActionParams,
+        std::monostate>
+        subcommand_action = std::monostate{};
 
     bool has_any_action() const
     {
@@ -60,7 +91,8 @@ struct ActionParams
             || preset_updater_switch_repo
             || preset_updater_cleanup
             || dump_json_model
-            || generate_preset_cache;
+            || generate_preset_cache
+            || !std::holds_alternative<std::monostate>(subcommand_action);
     }
 
     bool has_preset_updater_action() const
@@ -72,6 +104,11 @@ struct ActionParams
             || preset_updater_list_repos
             || preset_updater_switch_repo
             || preset_updater_cleanup;
+    }
+
+    bool has_subcommand_action() const
+    {
+        return !std::holds_alternative<std::monostate>(subcommand_action);
     }
 };
 

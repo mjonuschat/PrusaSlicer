@@ -56,7 +56,7 @@ AbstractAppInstanceMessageHandler::AbstractAppInstanceMessageHandler(
 
 AbstractAppInstanceMessageHandler::~AbstractAppInstanceMessageHandler()
 {
-    SPDLOG_INFO(__FUNCTION__);
+    SPDLOG_DEBUG(__FUNCTION__);
     ASSERT(
         m_dispatcher.is_closed(),
         "There must be no queued events (not even in the future),"

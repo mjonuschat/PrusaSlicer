@@ -4,9 +4,49 @@ This is WIP draft + description of sort of current implementation.
 
 ## Plugin anatomy
 
+- Plugins are grouped into _plugin bundles_ (a directory, e.g. `com.prusa3d.slicer.calibratuin`)
+- Plugin bundles contains `manifest.json` metadata file and one or more plugins
 - Each plugin is single .lua file located under specific directory (e.g. `(datadir)/lua` or `(configdir)/lua`).
 - Plugin file has to define `info` variable with description of the plugin.
 - Plugin file has to define `execute` function, that runs the plugin logic.
+
+### Plugin Bundle Metadata `manifest.json`
+
+The `manifest.json` file describes the plugin bundle.
+
+Here is an example of bundled plugin manifest:
+
+```
+{
+	"id": "com.prusa3d.slicer.calibration",
+	"name": "Calibration patterns",
+	"license": "AGPL-3.0-only",
+	"min_slicer_version": "3.0.0",
+	"version": "1.0.0",
+	"author": "prusa3d",
+	"description": "Calibration patterns",
+	"required_apis": {
+		"project.plugin": "1.0.0"
+	}
+}
+```
+
+This is list of recognized `manifest.json` fields. 
+
+| Key                  | Required | Description                                                                         |
+|:---------------------|:---------|:------------------------------------------------------------------------------------|
+| `id`                 | Yes      | Unique identifer of plugin bundle in reverse DNS form  e.g. `com.example.my-plugin` |
+| `name`               | Yes      | Human readable name of plugin bundle                                                |
+| `license`            | Yes      | [SPDX identifier](https://spdx.org/licenses/) of license                            |
+| `min_slicer_version` | Yes      | Minimal version of Prusa Slicer (e.g. `3.0.0`)                                      |
+| `version`            | Yes      | Version of the plugin bundle                                                        |
+| `author`             | Yes      | Unique author identifier (e.g. Prusa Account handle)                                |
+| `description`        | No       | Description of the plugin bundle                                                    |
+| `required_apis`      | Yes      | Map of Plugin APIs (key) and its required minimal version (value)                   |
+| `category`           | No       | Category identifier                                                                 |
+| `web`                | No       | Plugin bundle hompage web URL                                                       |
+| `repo`               | No       | Plugin bundle source code repository URL                                            |                
+
 
 ### Plugin Metadata `info` structure
 

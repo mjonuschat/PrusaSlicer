@@ -11,6 +11,8 @@ set(biz_crypto_SOURCES
     src/Slic3r/Biz/Crypto/Checksum.cpp
     include/Slic3r/Biz/Crypto/ContentProvider.hpp
     src/Slic3r/Biz/Crypto/ContentProvider.cpp
+    include/Slic3r/Biz/Crypto/SecureString.hpp
+    src/Slic3r/Biz/Crypto/SecureString.cpp
 )
 
 

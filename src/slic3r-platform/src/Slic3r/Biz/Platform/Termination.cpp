@@ -4,7 +4,7 @@
 
 namespace Slic3r::Biz::Platform {
     void close() {
-        SPDLOG_INFO("closing");
+        SPDLOG_DEBUG("closing");
         PlatformServices::instance().main_thread_dispatcher().close();
     }
 }

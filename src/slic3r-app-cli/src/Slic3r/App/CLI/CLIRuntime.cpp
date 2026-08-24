@@ -172,9 +172,12 @@ CLIRuntime::CLIRuntime(const InitParams& init_params) :
         m_thumbnail_image_generator
     );
 
-    m_project_interactor->preset_interactor().load_preset_bundle(
-        Preset::IO::BundlePaths::make_standard_runtime()
-    );
+    // subcommands do not need loaded presets
+    if (!init_params.action.has_subcommand_action()) {
+        m_project_interactor->preset_interactor().load_preset_bundle(
+            Preset::IO::BundlePaths::make_standard_runtime()
+        );
+    }
 }
 
 CLIRuntime::~CLIRuntime()

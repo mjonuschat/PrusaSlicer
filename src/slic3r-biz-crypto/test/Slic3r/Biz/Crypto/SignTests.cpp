@@ -11,15 +11,21 @@ TEST_CASE("Sign Tests", "[crypto]")
     SECTION("Round trip sign & verify")
     {
         KeyPair key = KeyPair::generate();
+
+        auto pub = key.save_public_key_pem();
+        auto priv = key.save_private_key_pem();
+
         std::string data = "Hello world\n";
 
-        auto sign_builder = create_signature_builder(HashType::SHA_256, key);
+        auto sign_key = KeyPair::load_priv_pem(as_bytes_view(priv.view()));
+        auto sign_builder = create_signature_builder(HashType::SHA_256, sign_key);
         sign_builder->update(as_bytes_view(data));
         auto sign = sign_builder->finalize();
 
         REQUIRE(sign.valid());
 
-        auto sign_verifier = create_signature_verifier(HashType::SHA_256, key);
+        auto verify_key = KeyPair::load_pub_pem(as_bytes_view(pub));
+        auto sign_verifier = create_signature_verifier(HashType::SHA_256, verify_key);
         sign_verifier->update(as_bytes_view(data));
         bool verified = sign_verifier->finalize(sign);
 
