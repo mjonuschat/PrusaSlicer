@@ -419,8 +419,6 @@ bool DesktopApp::OnInit()
     // The main thread dispatcher is drained from the canvas only once the window is up, so the
     // answer of the check started above cannot arrive before this point.
     m_main_frame->Show();
-    if (m_splash_screen)
-        m_splash_screen->Raise();
 
     return true;
 }

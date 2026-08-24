@@ -128,6 +128,19 @@ int main(int argc, char** argv)
 
     if (!init_params.action.has_any_action() || init_params.action.gcode_viewer) {
         if constexpr (has_gui_support) {
+#ifdef _WIN32
+            // We are a console-subsystem exe so that CLI usage from an existing
+            // terminal blocks synchronously and inherits stdio as expected.
+            // When launched without a parent console (double-click, Explorer,
+            // Start Menu), Windows allocates us a fresh one; detach it before
+            // showing the GUI so no console window is visible. A console we
+            // inherited from a shell has the shell attached too, so the
+            // process count there is at least 2 and we leave it alone.
+            DWORD console_procs[2];
+            if (GetConsoleProcessList(console_procs, 2) <= 1) {
+                FreeConsole();
+            }
+#endif
             return Slic3r::App::Desktop::run(init_params, app_services);
         } else {
             SPDLOG_ERROR("PrusaSlicer was built without GUI support. Quitting.");

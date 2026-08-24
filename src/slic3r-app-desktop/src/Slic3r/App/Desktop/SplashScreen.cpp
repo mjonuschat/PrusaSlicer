@@ -92,7 +92,13 @@ static wxBitmap make_bitmap(bool is_editor, double scale)
 SplashScreen::SplashScreen(bool is_editor, wxPoint pos) :
     // The base class constructor is called here. We generate the scaled, but undecorated,
     // bitmap by calling our static helper functions directly in the initializer list.
-    wxSplashScreen(make_bitmap(is_editor, get_display_scale_factor(pos)), wxSPLASH_CENTRE_ON_SCREEN | wxSPLASH_NO_TIMEOUT, 0, nullptr, wxID_ANY, pos, wxDefaultSize, wxSIMPLE_BORDER | wxFRAME_NO_TASKBAR),
+    wxSplashScreen(make_bitmap(is_editor, get_display_scale_factor(pos)),
+    wxSPLASH_CENTRE_ON_SCREEN | wxSPLASH_NO_TIMEOUT,
+    0, nullptr, wxID_ANY, pos, wxDefaultSize,
+    #ifdef NDEBUG // splashcreen on top is annoying in debug mode, when the app starts slowly
+        wxSTAY_ON_TOP |
+    #endif
+    wxSIMPLE_BORDER | wxFRAME_NO_TASKBAR),
     m_is_editor(is_editor),
     m_scale(get_display_scale_factor(pos)) // Initialize member variable for scale factor.
 {
