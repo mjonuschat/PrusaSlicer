@@ -141,20 +141,20 @@ static void add_experimets_page(TabsBar* top_bar, MainFrame* main_frame)
 #endif
 }
 
-// Load the icon either from the exe, or from the ico file.
+#if _WIN32
+// Loads all sizes embedded in the exe's icon resource directly from the module image
+// (see "2 ICON ..." in slic3r-app-launcher.rc.in - the "2" here must match that ID).
+static wxIconBundle main_frame_icon_bundle()
+{
+    return wxIconBundle(wxT("#2"), ::GetModuleHandle(nullptr));
+}
+#else // _WIN32
+// Load the icon from the ico file.
 static wxIcon main_frame_icon()
 {
-#if _WIN32
-    std::wstring path(size_t(MAX_PATH), wchar_t(0));
-    int len = int(::GetModuleFileName(nullptr, path.data(), MAX_PATH));
-    if (len > 0 && len < MAX_PATH) {
-        path.erase(path.begin() + len, path.end());
-    }
-    return wxIcon(path, wxBITMAP_TYPE_ICO);
-#else // _WIN32
     return wxIcon(WX::from_u8(var("PrusaSlicer_128px.png")), wxBITMAP_TYPE_PNG);
-#endif // _WIN32
 }
+#endif // _WIN32
 
 MainFrame::MainFrame(
     Domain::Workbench& workbench,
@@ -176,7 +176,11 @@ MainFrame::MainFrame(
     ASSERT(into_u8(this->GetTitle()).find("PrusaSlicer") != std::string::npos);
 
     // Load the icon either from the exe, or from the ico file.
+#if _WIN32
+    SetIcons(main_frame_icon_bundle());
+#else
     SetIcon(main_frame_icon());
+#endif
 
     WidgetsConfig* config = WidgetsConfig::instance();
     SetBackgroundColour(config->get_window_default_clr());
@@ -283,6 +287,11 @@ MainFrame::MainFrame(
         [this](wxShowEvent& event)
         {
             wxTheApp->CallAfter([this]() {
+#if _WIN32
+                // Explorer sometimes caches a stale taskbar-button icon if it's set
+                // before the button exists; re-apply once the window is really on screen.
+                this->SetIcons(main_frame_icon_bundle());
+#endif
 #ifdef USE_NATIVE_MENU
                 this->setup_macos_native_menu_bar();
 #endif
