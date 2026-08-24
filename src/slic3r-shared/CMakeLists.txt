@@ -1355,6 +1355,7 @@ endif ()
 
 find_package(magic_enum REQUIRED)
 find_package(range-v3 REQUIRED)
+find_package(libdeflate CONFIG REQUIRED)
 
 slic3r_remap_configs("pugixml::static;yoga::yogacore;${YAML_LIB}" RelWithDebInfo Release)
 
@@ -1389,6 +1390,7 @@ target_link_libraries(slic3r-shared PUBLIC
         pugixml::pugixml
         range-v3::range-v3
         libcereal
+        libdeflate::libdeflate_static
 )
 target_compile_definitions(slic3r-shared PUBLIC ${SLIC3R_YAML_DEFINE} ${USE_NATIVE_MENU_DEFINE})
 if (SLIC3R_SENTRY_DSN)

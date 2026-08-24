@@ -1,5 +1,5 @@
 #include "Model3mf.hpp"
-#include <numeric> // std::accumulate
+
 #include <array>
 #include "fast_float.h"
 #include <boost/assign.hpp>
@@ -7,8 +7,7 @@
 #include <boost/spirit/include/qi_int.hpp> // text to int
 #include <boost/uuid/string_generator.hpp>
 #include <boost/uuid/uuid_io.hpp> // uuid to stream
-#include "boost/algorithm/string.hpp"
-#include "boost/filesystem/exception.hpp"
+#include <boost/algorithm/string.hpp>
 #include <expat.h>
 #include "Slic3r/Biz/Format/Metadata.hpp"
 #include "Relations.hpp"
@@ -23,6 +22,7 @@
 #include "LocalesUtils.hpp" // CNumericLocalesSetter
 
 #include <boost/spirit/include/karma.hpp>
+#include <libdeflate.h> // ZipBackend::Compressed
 
 #include "Slic3r/Utils.hpp" // ScopeGuard
 #include "Slic3r/Version.hpp"
@@ -1215,7 +1215,18 @@ char * format_coordinate(float f, char *buf)
 #endif
 };
 
-void store_geometry(mz_zip_writer_staged_context &context, const indexed_triangle_set &its, std::string &output_buffer, bool is_mirrored = false) 
+struct ZipSink {
+    std::string *buffer = nullptr;
+    mz_uint32 *running_crc = nullptr;
+};
+
+void write_chunk(ZipSink &sink, const char *data, size_t n)
+{
+    sink.buffer->append(data, n);
+    *sink.running_crc = (mz_uint32) mz_crc32(*sink.running_crc, (const mz_uint8*) data, n);
+}
+
+void store_geometry(ZipSink &sink, const indexed_triangle_set &its, std::string &output_buffer, bool is_mirrored = false)
 {
     ASSERT(its.vertices.size() >= 4);
     ASSERT(! its.indices.empty());
@@ -1224,10 +1235,9 @@ void store_geometry(mz_zip_writer_staged_context &context, const indexed_triangl
         "   <" + MESH_TAG + ">\n" + 
         "    <" + VERTICES_TAG + ">\n";
 
-    auto flush = [&output_buffer, &context]() {
+    auto flush = [&output_buffer, &sink]() {
         if (output_buffer.size() >= 65536 * 16) {
-            if (!mz_zip_writer_add_staged_data(&context, output_buffer.data(), output_buffer.size()))
-                throw boost::filesystem::filesystem_error("Unable to add model file to archive.", {});
+            write_chunk(sink, output_buffer.data(), output_buffer.size());
             output_buffer.clear();
         }
     };
@@ -1324,33 +1334,16 @@ void store_geometry(mz_zip_writer_staged_context &context, const indexed_triangl
 }
 
 // write volume geometry as object into model file
-void store_resource_object_geometry(mz_zip_writer_staged_context &context, const indexed_triangle_set &its, unsigned object_id) 
+void store_resource_object_geometry(ZipSink &sink, const indexed_triangle_set &its, unsigned object_id)
 {
     std::string output_buffer;
     output_buffer += std::string() + "  <" + OBJECT_TAG + " " + ID_ATTR + "=\"" + std::to_string(object_id) + "\" >\n";
-    store_geometry(context, its, output_buffer);    
+    store_geometry(sink, its, output_buffer);
     output_buffer += std::string() + "  </" + OBJECT_TAG + ">\n";
-    if (!mz_zip_writer_add_staged_data(&context, output_buffer.data(), output_buffer.size()))
-        throw boost::filesystem::filesystem_error("Unable to add mesh to archive.", {});
+    write_chunk(sink, output_buffer.data(), output_buffer.size());
 }
 
-void store_resource_object_mirror_geometry(mz_zip_writer_staged_context &context, const indexed_triangle_set &its, const std::string& name, unsigned object_id, bool duplicate_geometry)
-{
-    std::string output_buffer;
-    output_buffer += std::string() + 
-        "  <" + OBJECT_TAG + " " + 
-        ID_ATTR + "=\"" + std::to_string(object_id) + "\" " +
-        NAME_ATTR + "=\"" + Slic3r::Biz::Utils::xml_escape(name) + "\" >\n";
-    if (duplicate_geometry) {
-        bool is_mirrored = true;
-        store_geometry(context, its, output_buffer, is_mirrored);
-    }
-    output_buffer += std::string() + "  </" + OBJECT_TAG + ">\n";
-    if (!mz_zip_writer_add_staged_data(&context, output_buffer.data(), output_buffer.size()))
-        throw boost::filesystem::filesystem_error("Unable to add mirrored mesh to archive.", {});
-}
-
-void write_to_context(mz_zip_writer_staged_context &context, std::stringstream& stream){
+void write_to_context(ZipSink &sink, std::stringstream& stream){
     // C++ 20 implementation
     // https://stackoverflow.com/questions/69299784/can-i-get-the-raw-pointer-for-a-stdstringstream-accumulated-data-with-0-copy
     //auto view = stream.view();
@@ -1362,8 +1355,9 @@ void write_to_context(mz_zip_writer_staged_context &context, std::stringstream& 
 
     // TODO: do not copy stream data
     std::string buf = stream.str();
-    if (!buf.empty() && !mz_zip_writer_add_staged_data(&context, buf.data(), buf.size()))
-        throw boost::filesystem::filesystem_error("Unable to add model file to archive.", {});
+    if (!buf.empty()) {
+        write_chunk(sink, buf.data(), buf.size());
+    }
 }
 
 void write_xml_commnet(std::stringstream &stream, std::string_view message, 
@@ -1461,7 +1455,7 @@ const TriangleMesh * get_mesh_ptr(const ModelVolume *volume_ptr)
     return volume.mesh_ptr().get();
 };
 
-MeshToObjectid store_meshes(mz_zip_writer_staged_context& context, const Slic3r::Domain::Model &model, 
+MeshToObjectid store_meshes(ZipSink& sink, const Slic3r::Domain::Model &model,
     unsigned &object_id) {
     MeshToObjectid stored_meshes;
     for (const ModelObject *object_ptr : model.objects) {
@@ -1477,7 +1471,7 @@ MeshToObjectid store_meshes(mz_zip_writer_staged_context& context, const Slic3r:
                 it != stored_meshes.end())
                 // already stored volume geometry
                 continue;
-            store_resource_object_geometry(context, mesh_ptr->its, object_id);
+            store_resource_object_geometry(sink, mesh_ptr->its, object_id);
             stored_meshes[mesh_ptr] = {object_id};
             ++object_id;
         }
@@ -1485,30 +1479,130 @@ MeshToObjectid store_meshes(mz_zip_writer_staged_context& context, const Slic3r:
     return stored_meshes;
 }
 
-class ZipContextScoped {
+enum class ZipBackend
+{
+    Compressed, // libdeflate
+    Uncompressed, // stored, no compression
+};
+
+class ZipContextScoped
+{
 public:
-    mz_zip_writer_staged_context* get() { return m_context.get(); }
-
-    ZipContextScoped(mz_zip_archive &archive, const char *filepath, bool zip64)
-    : m_context(std::make_unique<mz_zip_writer_staged_context>()) 
+    ZipContextScoped(
+        mz_zip_archive& archive,
+        const char* filepath,
+        bool zip64,
+        ZipBackend backend
+    ) :
+        m_backend(backend),
+        m_archive(archive),
+        m_filepath(filepath),
+        m_zip64(zip64)
     {
-        mz_uint64 max_size = zip64 ?
-            // Maximum expected and allowed 3MF file size is 16GiB.
-            // This switches the ZIP file to a 64bit mode, which adds a tiny bit of overhead to file records.
-            (uint64_t(1) << 30) * 16 :
-            // Maximum expected 3MF file size is 4GB-1. This is a workaround for interoperability with
-            // Windows 10 3D model fixing API, see GH issue #6193.
-            (uint64_t(1) << 32) - 1;
+        m_buffer = std::make_unique<std::string>();
+        m_sink   = ZipSink{m_buffer.get(), &m_running_crc};
+    }
 
-        if (!mz_zip_writer_add_staged_open(&archive, m_context.get(), filepath, max_size,
-            nullptr, nullptr, 0, MZ_DEFAULT_COMPRESSION, nullptr, 0, nullptr, 0))
-            throw boost::filesystem::filesystem_error("Unable to add staged context to archive.", {});
+    ~ZipContextScoped()
+    {
+        if (m_backend == ZipBackend::Uncompressed) {
+            ASSERT(finish_uncompressed());
+        } else {
+            ASSERT(finish_compressed());
+        }
     }
-    ~ZipContextScoped() {
-        ASSERT(mz_zip_writer_add_staged_finish(m_context.get()));
+
+    ZipSink& sink()
+    {
+        return m_sink;
     }
+
 private:
-    std::unique_ptr<mz_zip_writer_staged_context> m_context{nullptr};
+    // mz_zip_writer_add_mem_ex_v2() has no max_size parameter; enforce the same
+    // non-zip64 4GiB-1 interop limit manually so param.zip64's intent still holds.
+    bool exceeds_non_zip64_limit() const
+    {
+        return !m_zip64 && m_buffer->size() > (uint64_t(1) << 32) - 1;
+    }
+
+    bool finish_uncompressed()
+    {
+        if (exceeds_non_zip64_limit()) {
+            return false;
+        }
+        // level_and_flags = 0 (no compression, no MZ_ZIP_FLAG_COMPRESSED_DATA): miniz
+        // auto-computes size/CRC and writes this entry with method "stored".
+        return mz_zip_writer_add_mem_ex_v2(
+            &m_archive,
+            m_filepath.c_str(),
+            m_buffer->data(),
+            m_buffer->size(),
+            nullptr,
+            0,
+            /*level_and_flags=*/0,
+            0,
+            0,
+            nullptr,
+            nullptr,
+            0,
+            nullptr,
+            0
+        );
+    }
+
+    bool finish_compressed()
+    {
+        if (exceeds_non_zip64_limit()) {
+            return false;
+        }
+
+        libdeflate_compressor* compressor = libdeflate_alloc_compressor(6);
+        if (compressor == nullptr) {
+            return false;
+        }
+        ScopeGuard sg_compressor([compressor]() { libdeflate_free_compressor(compressor); });
+
+        size_t bound = libdeflate_deflate_compress_bound(compressor, m_buffer->size());
+        std::string compressed(bound, '\0');
+        // Raw DEFLATE (not the zlib/gzip-wrapped variants) -- this is what a
+        // MZ_ZIP_FLAG_COMPRESSED_DATA entry with method MZ_DEFLATED expects.
+        size_t compressed_size = libdeflate_deflate_compress(
+            compressor,
+            m_buffer->data(),
+            m_buffer->size(),
+            compressed.data(),
+            compressed.size()
+        );
+        if (compressed_size == 0) {
+            return false;
+        }
+        compressed.resize(compressed_size);
+
+        return mz_zip_writer_add_mem_ex_v2(
+            &m_archive,
+            m_filepath.c_str(),
+            compressed.data(),
+            compressed.size(),
+            nullptr,
+            0,
+            MZ_ZIP_FLAG_COMPRESSED_DATA,
+            m_buffer->size(),
+            m_running_crc,
+            nullptr,
+            nullptr,
+            0,
+            nullptr,
+            0
+        );
+    }
+
+    ZipBackend m_backend;
+    mz_zip_archive& m_archive;
+    std::string m_filepath;
+    bool m_zip64 = true;
+    mz_uint32 m_running_crc = MZ_CRC32_INIT;
+    std::unique_ptr<std::string> m_buffer;
+    ZipSink m_sink{};
 };
 
 const std::string separated_mesh_model_file_prefix(
@@ -1524,9 +1618,16 @@ R""""( </resources>
 )"""");
 
 // function to store meshes into separate file
-MeshToObjectid store_separate_meshes(mz_zip_archive &archive, const Slic3r::Domain::Model &model, bool zip64, unsigned &object_id) {
+MeshToObjectid store_separate_meshes(
+    mz_zip_archive& archive,
+    const Slic3r::Domain::Model& model,
+    bool zip64,
+    unsigned& object_id,
+    ZipBackend backend
+)
+{
     const std::string filepath_prefix = "3D/Objects/mesh_";
-    
+
     int file_counter = 0;
     MeshToObjectid stored_meshes;
     for (const ModelObject *object_ptr : model.objects) {
@@ -1544,18 +1645,17 @@ MeshToObjectid store_separate_meshes(mz_zip_archive &archive, const Slic3r::Doma
                 continue;
 
             const std::string filepath = filepath_prefix + std::to_string(++file_counter) + ".model";
-            ZipContextScoped context(archive, filepath.c_str(), zip64);
+            ZipContextScoped context(archive, filepath.c_str(), zip64, backend);
 
-            if (!mz_zip_writer_add_staged_data(context.get(), separated_mesh_model_file_prefix.data(), separated_mesh_model_file_prefix.size()))
-                throw boost::filesystem::filesystem_error("Unable to add mesh model prefix to archive.", {});
+            write_chunk(context.sink(), separated_mesh_model_file_prefix.data(), separated_mesh_model_file_prefix.size());
 
-            store_resource_object_geometry(*context.get(), mesh_ptr->its, object_id);
+            store_resource_object_geometry(context.sink(), mesh_ptr->its, object_id);
             // In 3mf filepath starts with path separator
             stored_meshes[mesh_ptr] = {object_id, "/" + filepath };
             ++object_id;
-            
-            if (!mz_zip_writer_add_staged_data(context.get(), separated_mesh_model_file_tail.data(), separated_mesh_model_file_tail.size()))
-                throw boost::filesystem::filesystem_error("Unable to add mesh model tail to archive.", {});
+
+            write_chunk(context.sink(), separated_mesh_model_file_tail.data(), separated_mesh_model_file_tail.size());
+
         }
     }
     return stored_meshes;
@@ -1778,9 +1878,11 @@ StoredStructure Slic3r::store_model3mf(mz_zip_archive &archive, const Domain::Mo
     // Inside of 3mf model/resources/object id start with 1 is unique and increase every time when use
     unsigned object_id = 1;
 
+    ZipBackend backend = param.use_uncompressed_version ? ZipBackend::Uncompressed : ZipBackend::Compressed;
+
     if (param.use_production_extension) {
         // store meshes to separate files by production extension
-        result.meshes = store_separate_meshes(archive, model, param.zip64, object_id);
+        result.meshes = store_separate_meshes(archive, model, param.zip64, object_id, backend);
         if (!result.meshes.empty()) {
             // store 3D/_rels/filepath.rels for separated meshes
             std::vector<std::string> model_paths;
@@ -1797,7 +1899,7 @@ StoredStructure Slic3r::store_model3mf(mz_zip_archive &archive, const Domain::Mo
         }
     }
 
-    ZipContextScoped context(archive, filepath, param.zip64);    
+    ZipContextScoped context(archive, filepath, param.zip64, backend);
     { // context of stream
         std::stringstream stream;
         stream << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
@@ -1817,11 +1919,11 @@ StoredStructure Slic3r::store_model3mf(mz_zip_archive &archive, const Domain::Mo
         // Start write resources
         stream << " <" << RESOURCES_TAG << ">\n";
         write_xml_commnet(stream, "Geometry of mesh - vertices and triangles");
-        write_to_context(*context.get(), stream);
+        write_to_context(context.sink(), stream);
     } // context of stream
 
     if (!param.use_production_extension) // store meshes into main model
-        result.meshes = store_meshes(*context.get(), model, object_id);
+        result.meshes = store_meshes(context.sink(), model, object_id);
     
     { // context of stream
         std::stringstream stream;
@@ -1830,7 +1932,7 @@ StoredStructure Slic3r::store_model3mf(mz_zip_archive &archive, const Domain::Mo
         stream << " </" << RESOURCES_TAG << ">\n";
         result.instances = write_instances(stream, model, result.objects);
         stream << "</" << MODEL_TAG << ">\n";
-        write_to_context(*context.get(), stream);
+        write_to_context(context.sink(), stream);
     }
 
     return result;

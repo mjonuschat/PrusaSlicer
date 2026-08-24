@@ -5,9 +5,7 @@
 #pragma once
 
 #include <string>
-#include <string_view>
 #include <vector>
-#include <limits>
 #include "Slic3r/Biz/Format/Metadata.hpp"
 #include "Slic3r/Biz/Format/ResultLoad3mf.hpp"
 #include "Slic3r/Domain/Size.hpp"
@@ -42,7 +40,7 @@ struct Store3mfParam
     // stored uncompressed 3mf - better versioning of uncompressed data
     // "0 - The file is stored (no compression)" in accordance with the OPC specification
     // ("Annex C, (normative) ZIP Appnote.txt Clarifications
-    bool use_uncompressed_version = false; // Not implemented yet
+    bool use_uncompressed_version = false;
 
     CT_Metadata_Model metadata;
 };
