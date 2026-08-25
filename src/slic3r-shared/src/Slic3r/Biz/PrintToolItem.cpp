@@ -158,11 +158,8 @@ bool PrintToolItem::is_dirty() const
     if (print_item->def().category == Domain::ConfigItemDef::Category::Hidden) {
         return false;
     }
-    // With multiple tools (>1), each tool can override this value independently, so the
-    // print-level value is not user-facing here — only tool-level overrides can be dirty.
-    // With a single tool there is no meaningful distinction between print and tool value,
-    // so only the print-level dirtiness is reported.
-    if (tool_overrides.size() > 1) {
+
+    if (shared_context.has_multiple_extruders && !tool_overrides.empty()) {
         return is_dirty_tool();
     }
     return is_dirty_print();
