@@ -31,7 +31,7 @@ tool_count: 1
 kind: printer
 technology: FFF
 id: 'COREONE'
-name: 'CORE One'
+name: 'Prusa CORE One'
 model:
   base_model: 'COREONE'
   model: 'COREONE'
@@ -204,7 +204,7 @@ features:
 kind: printer_config
 printer: COREONE
 id: 'c1-default'
-name: 'CORE One'
+name: 'Prusa CORE One'
 tool_count: 1
 tools:
   - tool: '0.4HF'
@@ -213,7 +213,7 @@ default_sheet: 'pei_smooth'
 kind: printer_config
 printer: COREONE
 id: 'c1-hf0.6'
-name: 'CORE One'
+name: 'Prusa CORE One'
 tool_count: 1
 tools:
   - tool: '0.6HF'

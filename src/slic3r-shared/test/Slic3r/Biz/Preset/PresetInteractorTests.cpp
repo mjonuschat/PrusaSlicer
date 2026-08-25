@@ -272,17 +272,17 @@ TEST_CASE_METHOD(LoadedProjectInteractorFixture, "Preset Interactor Tests", "[Pr
     {
         const auto selected_printer_idx = printer_items.selected_index();
         REQUIRE(selected_printer_idx != Slic3r::Domain::INVALID_ID);
-        REQUIRE(printer_items.items().at(selected_printer_idx).hw_printer_config_name.starts_with("CORE One"));
+        REQUIRE(printer_items.items().at(selected_printer_idx).hw_printer_config_name.starts_with("Prusa CORE One"));
     }
 
-    // Make sure the printer is switched to Core ONE 0.4 HF
-    switch_printer_and_verify("CORE One 0.4 HF");
+    // Make sure the printer is switched to Prusa CORE One 0.4 HF
+    switch_printer_and_verify("Prusa CORE One 0.4 HF");
 
     // Switch print to 0.20mm
     switch_print_and_verify("0.20mm");
 
-    // Switch printer to CORE One 0.6 HF
-    switch_printer_and_verify("CORE One 0.6 HF");
+    // Switch printer to Prusa CORE One 0.6 HF
+    switch_printer_and_verify("Prusa CORE One 0.6 HF");
 
     // Verify that printer preset stays 0.20mm
     {
@@ -332,7 +332,7 @@ TEST_CASE_METHOD(LoadedProjectInteractorFixture, "Preset Interactor Tests", "[Pr
         REQUIRE(user_preset != nullptr);
 
         preset_interactor.load_preset_bundle(bundle_paths);
-        switch_printer_and_verify("CORE One 0.6 HF");
+        switch_printer_and_verify("Prusa CORE One 0.6 HF");
         user_preset = find_if<Slic3r::Biz::Preset::PresetItem>(
             preset_interactor.print_presets().items(),
             [&](const auto& p) -> bool { return p.name == user_preset_name; }

@@ -799,7 +799,7 @@ PresetInteractorConfigContainerContext& PresetInteractor::initialize_config_cont
 void PresetInteractor::initialize_config_container_with_default(Domain::ConfigContainer& cc)
 {
     const static std::string selected_printer_name =
-        "CORE One"; //"SL1S SPEED";//"Prusa MK4S";
+        "Prusa CORE One"; //"SL1S SPEED";//"Prusa MK4S";
     const auto& preset_bundle     = m_workbench.preset_bundle();
 
     std::vector<PresetItem> items;
