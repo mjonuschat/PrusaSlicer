@@ -211,12 +211,15 @@ Vec2f Text::get_item_size()
 
 float Text::available_width() const
 {
-    return width() - padding().result_horizontal();
+    // There may be a hidden bug, it can happen that if we query
+    // width() instead of m_last_width we get wrong anser (such as 0)
+    // Investigate why Yoga reports 0
+    return m_last_width - padding().result_horizontal();
 }
 
 float Text::available_height() const
 {
-    const float avail_height = height() - padding().result_vertical();
+    const float avail_height = m_last_height - padding().result_vertical();
     return Domain::fuzzy_compare(0.f, avail_height) ? used_font_size() : avail_height;
 }
 
