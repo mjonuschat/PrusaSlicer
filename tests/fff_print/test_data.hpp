@@ -170,7 +170,8 @@ inline std::unique_ptr<Print> process_3mf(const boost::filesystem::path &path) {
     Domain::WipeTowersOnBeds wipe_towers;
     Domain::CustomGCodesOnBeds custom_gcodes;
     Biz::LegacyPresetMetadata preset_metadata;
-    Slic3rLegacy::load_3mf_legacy(path.string().c_str(), config, preset_metadata, &model, false, version, wipe_towers, custom_gcodes);
+    Biz::VirtualExtrudersConfig virtual_extruders_config;
+    Slic3rLegacy::load_3mf_legacy(path.string().c_str(), config, preset_metadata, &model, false, version, wipe_towers, custom_gcodes, virtual_extruders_config);
 
     const auto fdm_config{std::get<Domain::ConfigPackFDM>(config)};
     TestConfig test_config{static_cast<int>(fdm_config.tool.size())};

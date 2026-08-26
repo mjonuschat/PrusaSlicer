@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Slic3r/App/Plater/MMPaintingUtils.hpp"
 #include "Slic3r/App/Plater/PaintOnGizmoBase.hpp"
 #include "Slic3r/App/Yoga/ButtonGroup.hpp"
 #include "Slic3r/App/Plater/GizmoWindow.hpp"
@@ -59,9 +60,7 @@ public:
 
     void set_second_brush_color_index(size_t color_idx);
 
-    void set_painting_colors(
-        const std::vector<Domain::ColorRGBA>& colors
-    );
+    void set_painting_colors(const PaintingPalette& palette);
 
     void switch_colors();
 

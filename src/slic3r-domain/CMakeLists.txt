@@ -181,6 +181,8 @@ add_library(slic3r-domain STATIC
     include/Slic3r/Domain/Preset/SelectedPresetConfigPack.hpp
     src/Slic3r/Domain/Preset/SelectedPresetConfigPack.cpp
 
+    include/Slic3r/Domain/VirtualExtruder.hpp
+    src/Slic3r/Domain/VirtualExtruder.cpp
 )
 
 target_include_directories(slic3r-domain PUBLIC include)

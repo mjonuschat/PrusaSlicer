@@ -6,6 +6,7 @@
 #include "Slic3r/Domain/ObjectID.hpp"
 #include "Slic3r/Domain/BedInstance.hpp"
 #include "Slic3r/Domain/Preset/SelectedPreset.hpp"
+#include "Slic3r/Domain/VirtualExtruder.hpp"
 
 #include <memory>
 #include <vector>
@@ -46,6 +47,16 @@ public:
     const Domain::ProjectSettings& project_settings() const
     {
         return m_project_settings;
+    }
+
+    VirtualExtruders& virtual_extruders()
+    {
+        return m_virtual_extruders;
+    }
+
+    const VirtualExtruders& virtual_extruders() const
+    {
+        return m_virtual_extruders;
     }
 
     void set_bed(const Bed& bed)
@@ -90,6 +101,7 @@ public:
 private:
     Preset::SelectedPreset m_preset{};
     Domain::ProjectSettings m_project_settings;
+    VirtualExtruders m_virtual_extruders;
 
     const Bed* m_bed{nullptr};
     BedInstanceList m_bed_instances;

@@ -18,10 +18,14 @@
 #include "Slic3r/Math.hpp"
 #include "Slic3r/Utils.hpp"
 
+#include <array>
 #include <numeric>
+#include <optional>
 
 #include "libslic3r/TriangleMeshSlicer.hpp"
 
+using Slic3r::App::Plater::PaintingPalette;
+using Slic3r::App::Plater::PaletteEntry;
 using Slic3r::App::Plater::TriangleSelectorRenderWrapper;
 using Slic3r::Domain::ColorRGBA;
 using Slic3r::Domain::Point;
@@ -44,7 +48,7 @@ namespace {
 std::unique_ptr<App::Render::Geometry> create_painted_mesh_geometry(
     App::Render::Device& device,
     const Biz::Algorithms::TriangleSelector& triangle_selector,
-    const std::vector<ColorRGBA>& colors,
+    const PaintingPalette& colors,
     const ColorRGBA& default_volume_color
 )
 {
@@ -61,14 +65,24 @@ std::unique_ptr<App::Render::Geometry> create_painted_mesh_geometry(
         geometry_builder.add_vertex(Render::VertexP3(vertex.v));
     }
 
-    // Plus 1 in the initialization of m_gizmo_scene is because the first position is allocated for non-painted triangles, and the indices above colors.size() are allocated for seed fill.
-    std::vector<std::vector<uint32_t>> indices_per_colors(2 * (TRIANGLE_STATE_TYPE_COUNT + 1));
+    std::array<std::optional<ColorRGBA>, TRIANGLE_STATE_TYPE_COUNT> color_per_state;
+    for (const PaletteEntry& entry : colors) {
+        if (entry.state > 0 && entry.state < color_per_state.size()) {
+            color_per_state[entry.state] = entry.color;
+        }
+    }
+
+    // The first half of the buckets holds the plain triangles indexed by their state and the
+    // second half the ones selected by the seed fill.
+    std::vector<std::vector<uint32_t>> indices_per_colors(2 * TRIANGLE_STATE_TYPE_COUNT);
     for (const TriangleSelector::Triangle& tr : triangles) {
         if (tr.valid() && !tr.is_split()) {
-            int color = int(tr.get_state()) <= int(colors.size()) ? int(tr.get_state()) : 0;
-            assert(colors.size() + 1 + color < indices_per_colors.size());
-            std::vector<uint32_t>& indices_per_color =
-                indices_per_colors[color + tr.is_selected_by_seed_fill() * (colors.size() + 1)];
+            const size_t triangle_state = static_cast<size_t>(tr.get_state());
+            assert(triangle_state < state_colors.size());
+
+            const size_t color = color_per_state[triangle_state].has_value() ? triangle_state : 0;
+            std::vector<uint32_t>& indices_per_color = indices_per_colors
+                [color + tr.is_selected_by_seed_fill() * TRIANGLE_STATE_TYPE_COUNT];
 
             if (indices_per_color.size() + 3 > indices_per_color.capacity()) {
                 indices_per_color.reserve(
@@ -84,16 +98,11 @@ std::unique_ptr<App::Render::Geometry> create_painted_mesh_geometry(
 
     const auto get_color_from_color_idx = [&](const size_t color_idx) -> ColorRGBA
     {
-        if (color_idx > colors.size()) {
-            // Seed fill color.
-            return TriangleSelectorRenderWrapper::get_seed_fill_color(
-                color_idx == (colors.size() + 1) ? default_volume_color :
-                                                   colors[color_idx - (colors.size() + 1) - 1]
-            );
-        } else {
-            // Normal color.
-            return color_idx == 0 ? default_volume_color : colors[color_idx - 1];
-        }
+        const bool is_seed_fill = color_idx >= TRIANGLE_STATE_TYPE_COUNT;
+        const size_t state      = is_seed_fill ? color_idx - TRIANGLE_STATE_TYPE_COUNT : color_idx;
+        const ColorRGBA color   = color_per_state[state].value_or(default_volume_color);
+
+        return is_seed_fill ? TriangleSelectorRenderWrapper::get_seed_fill_color(color) : color;
     };
 
     size_t indices_offset = 0;
@@ -276,7 +285,7 @@ namespace Slic3r::App::Plater {
 TriangleSelectorRenderWrapper::TriangleSelectorRenderWrapper(
     const Domain::TriangleMesh& triangle_mesh,
     const AABBMesh& aabb_mesh,
-    const std::vector<ColorRGBA>& colors,
+    const PaintingPalette& colors,
     const ColorRGBA& default_volume_color
 ) :
     m_triangle_selector(triangle_mesh),

@@ -15,6 +15,15 @@
 #include <cereal/types/vector.hpp>
 #include <cereal/types/optional.hpp>
 
+using Slic3r::App::Undo::Chunk;
+using Slic3r::App::Undo::SerializedData;
+using Slic3r::App::Undo::VirtualExtrudersId;
+using Slic3r::Domain::ConfigContainer;
+using Slic3r::Domain::VirtualExtruder;
+using Slic3r::Domain::VirtualExtruderComponent;
+using Slic3r::Domain::VirtualExtruderGradient;
+using Slic3r::Domain::VirtualExtruderGradientStop;
+
 struct DeserializationContext
 {
     Slic3r::App::Undo::SerializedData snapshot;
@@ -66,6 +75,33 @@ template <class Archive>
 void serialize(Archive& archive, Slic3r::Domain::Preset::SelectedPreset& preset)
 {
     archive(preset.hw_config, preset.printer, preset.print, preset.tools, preset.materials);
+}
+
+template <class Archive>
+void serialize(Archive& ar, VirtualExtruderComponent& component)
+{
+    ar(component.extruder_id, component.ratio);
+}
+
+template <class Archive>
+void serialize(Archive& ar, VirtualExtruderGradientStop& stop)
+{
+    ar(stop.extruder_id, stop.position);
+}
+
+template <class Archive>
+void serialize(Archive& ar, VirtualExtruderGradient& gradient)
+{
+    ar(gradient.z_min, gradient.z_max, gradient.stops);
+}
+
+template <class Archive>
+void serialize(Archive& ar, VirtualExtruder& virtual_extruder)
+{
+    ar(virtual_extruder.id,
+       virtual_extruder.color,
+       virtual_extruder.components,
+       virtual_extruder.gradient);
 }
 
 } // namespace cereal
@@ -128,6 +164,41 @@ static void load_bed_instances(
     }
 }
 
+static void save_virtual_extruders(
+    cereal::BinaryOutputArchive& archive,
+    const ConfigContainer& config_container,
+    std::size_t id
+)
+{
+    SerializedData& snapshot{get_user_data<SerializedData>(archive)};
+
+    const VirtualExtrudersId channel_id{id};
+
+    std::ostringstream oss;
+    cereal::BinaryOutputArchive sub_archive{oss};
+    sub_archive(config_container.virtual_extruders());
+
+    snapshot.separate_chunks[channel_id] = oss.str();
+    archive(channel_id);
+}
+
+static void
+load_virtual_extruders(cereal::BinaryInputArchive& archive, ConfigContainer& config_container)
+{
+    DeserializationContext& context{get_user_data<DeserializationContext>(archive)};
+    SerializedData& snapshot{context.snapshot};
+
+    VirtualExtrudersId id{};
+    archive(id);
+
+    const Chunk& chunk{snapshot.separate_chunks.at(id)};
+
+    const std::string& serialized_data{std::get<std::string>(chunk)};
+    std::istringstream iss(serialized_data);
+    cereal::BinaryInputArchive sub_archive{iss};
+    sub_archive(config_container.virtual_extruders());
+}
+
 static void save_config_container(
     cereal::BinaryOutputArchive& archive,
     const Slic3r::Domain::ConfigContainer& config_container,
@@ -150,6 +221,7 @@ static void save_config_container(
         config_container.bed().id().id
     );
     save_bed_instances(sub_archive, config_container.bed_instances(), id);
+    save_virtual_extruders(sub_archive, config_container, id);
 
     snapshot.separate_chunks[channel_id] = ConfigContainerChunk{
         oss.str(),
@@ -208,6 +280,7 @@ static void load_config_container(
     config_container.set_bed(*bed);
 
     load_bed_instances(sub_archive, config_container);
+    load_virtual_extruders(sub_archive, config_container);
 }
 
 namespace Slic3r::App::Undo {

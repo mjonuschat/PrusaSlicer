@@ -86,8 +86,12 @@ LayerHeightParams compute_layer_height_params(
         config_container.find_bed_instance(bed_ref.instance_id)
     };
 
-    const std::vector<unsigned> extruder_candidates =
-        Slicing::get_extruder_candidates(project.model(), fdm_config, bed_instance);
+    const std::vector<unsigned> extruder_candidates = Slicing::get_extruder_candidates(
+        project.model(),
+        fdm_config,
+        bed_instance,
+        fdm_config.virtual_extruders
+    );
 
     const SlicingParameters slicing_parameters = SlicingParameters::create_from_config(
         fdm_config,

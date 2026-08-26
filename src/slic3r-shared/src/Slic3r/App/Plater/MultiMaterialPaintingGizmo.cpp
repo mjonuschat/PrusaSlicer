@@ -7,14 +7,29 @@
 #include "Slic3r/App/Scene/Clipper.hpp"
 #include "Slic3r/App/Scene/ClipperPresenter.hpp"
 #include "Slic3r/Biz/Algorithms/Color.hpp"
+#include "Slic3r/Biz/Algorithms/VirtualExtruder.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Domain/Color.hpp"
+#include "Slic3r/Domain/TriangleSelector.hpp"
+
+#include <algorithm>
 
 using namespace Slic3r::App::Yoga;
 
+using Slic3r::Biz::Scene::ObjectSelection;
+using Slic3r::Biz::Scene::SelectionState;
+using Slic3r::Domain::ColorRGB;
 using Slic3r::Domain::ColorRGBA;
+using Slic3r::Domain::ConfigContainer;
 using Slic3r::Domain::FacetsAnnotationKind;
 using Slic3r::Domain::ModelVolume;
+using Slic3r::Domain::PrinterTechnology;
+using Slic3r::Domain::Project;
+using Slic3r::Domain::SelectionId;
+using Slic3r::Domain::VirtualExtruder;
+
+using Slic3r::Biz::Algorithms::Color::to_rgba;
+using Slic3r::Biz::Algorithms::VirtualExtruder::effective_color;
 
 namespace Slic3r::App::Plater {
 
@@ -43,12 +58,10 @@ MultiMaterialPaintingGizmo::MultiMaterialPaintingGizmo(
     m_dialog->callbacks().second_brush_color_changed = [this](size_t color_idx)
     { m_second_brush_color_idx = color_idx; };
 
-    m_project_interactor.project_settings_interactor().add_listener<Biz::IColorsChangedListener>(
-        this
-    );
-    m_project_interactor.preset_interactor().add_listener<Biz::Preset::IPresetChangedListener>(
-        this
-    );
+    m_project_interactor.project_settings_interactor().add_listener<IColorsChangedListener>(this);
+    m_project_interactor.preset_interactor().add_listener<IPresetChangedListener>(this);
+    m_project_interactor.virtual_extruder_interactor()
+        .add_listener<IVirtualExtrudersChangedListener>(this);
 
     m_dialog->callbacks().tool_type_changed = [this](const PaintOnGizmoBase::ToolType tool_type)
     { this->set_tool_type(tool_type); };
@@ -89,12 +102,12 @@ MultiMaterialPaintingGizmo::MultiMaterialPaintingGizmo(
 
 MultiMaterialPaintingGizmo::~MultiMaterialPaintingGizmo()
 {
-    m_project_interactor.project_settings_interactor().remove_listener<Biz::IColorsChangedListener>(
+    m_project_interactor.project_settings_interactor().remove_listener<IColorsChangedListener>(
         this
     );
-    m_project_interactor.preset_interactor().remove_listener<Biz::Preset::IPresetChangedListener>(
-        this
-    );
+    m_project_interactor.preset_interactor().remove_listener<IPresetChangedListener>(this);
+    m_project_interactor.virtual_extruder_interactor()
+        .remove_listener<IVirtualExtrudersChangedListener>(this);
 }
 
 float MultiMaterialPaintingGizmo::get_cursor_radius_min() const
@@ -114,27 +127,25 @@ Scene::ToolType MultiMaterialPaintingGizmo::type() const
 
 bool MultiMaterialPaintingGizmo::enabled() const
 {
-    const Biz::Scene::ObjectSelection& selection =
-        m_project_interactor.scene_interactor().object_selection();
-    const bool whole_instance{selection.state() == Biz::Scene::SelectionState::WholeInstance};
+    const ObjectSelection& selection = m_project_interactor.scene_interactor().object_selection();
+    if (selection.state() != SelectionState::WholeInstance) {
+        return false;
+    }
 
-    const Domain::SelectionId config_container_id{
-        m_project_interactor.selected_config_container_id()
-    };
-    const Domain::Project& project{
+    const Project& project{
         m_project_interactor.workbench().project(m_project_interactor.selected_project_id())
     };
-    const Domain::ConfigContainer* config_container{
-        project.find_config_container(config_container_id)
-    };
+
+    const ConfigContainer* config_container =
+        project.find_config_container_by_element(selection.elements.front());
+
     if (config_container == nullptr) {
         return false;
     }
 
     const size_t slot_count = config_container->selected_preset().hw_config.material_slot_count();
-    return whole_instance
-        && slot_count > 1
-        && config_container->print_technology() == Domain::PrinterTechnology::FFF;
+
+    return slot_count > 1 && config_container->print_technology() == PrinterTechnology::FFF;
 }
 
 void MultiMaterialPaintingGizmo::register_commands(Platform::CommandRegistry& registry)
@@ -183,6 +194,10 @@ void MultiMaterialPaintingGizmo::register_commands(Platform::CommandRegistry& re
                 "multi-material-painting-gizmo-select-primary-color-" + std::to_string(index),
                 [this, index]()
                 {
+                    if (index >= m_painting_colors.size()) {
+                        return;
+                    }
+
                     m_first_brush_color_idx = index;
                     if (m_dialog.get()) {
                         m_dialog->set_first_brush_color_index(m_first_brush_color_idx);
@@ -225,25 +240,29 @@ bool MultiMaterialPaintingGizmo::set_facets_annotation(
 Domain::TriangleSelector::TriangleStateType
 MultiMaterialPaintingGizmo::get_left_button_state_type() const
 {
-    return Domain::TriangleSelector::TriangleStateType(m_first_brush_color_idx + 1);
+    return Domain::TriangleSelector::TriangleStateType(
+        m_painting_colors[m_first_brush_color_idx].state
+    );
 }
 
 Domain::TriangleSelector::TriangleStateType
 MultiMaterialPaintingGizmo::get_right_button_state_type() const
 {
-    return Domain::TriangleSelector::TriangleStateType(m_second_brush_color_idx + 1);
+    return Domain::TriangleSelector::TriangleStateType(
+        m_painting_colors[m_second_brush_color_idx].state
+    );
 }
 
 ColorRGBA MultiMaterialPaintingGizmo::get_cursor_sphere_left_button_color() const
 {
-    ColorRGBA color = m_painting_colors[m_first_brush_color_idx];
+    ColorRGBA color = m_painting_colors[m_first_brush_color_idx].color;
     color.a(0.25f);
     return color;
 }
 
 ColorRGBA MultiMaterialPaintingGizmo::get_cursor_sphere_right_button_color() const
 {
-    ColorRGBA color = m_painting_colors[m_second_brush_color_idx];
+    ColorRGBA color = m_painting_colors[m_second_brush_color_idx].color;
     color.a(0.25f);
     return color;
 }
@@ -277,22 +296,43 @@ ColorRGBA MultiMaterialPaintingGizmo::create_default_painting_color(
     const ModelVolume& model_volume
 ) const
 {
-    const int extruder_idx = std::max(0, model_volume.extruder_id() - 1);
-    if (extruder_idx < static_cast<int>(m_painting_colors.size())) {
-        return m_painting_colors[extruder_idx];
+    const unsigned int extruder_id =
+        static_cast<unsigned int>(std::max(1, model_volume.extruder_id()));
+
+    for (const PaletteEntry& entry : m_painting_colors) {
+        if (entry.state == extruder_id) {
+            return entry.color;
+        }
     }
 
     return PaintOnGizmoBase::create_default_painting_color(model_volume);
 }
 
-std::vector<Domain::ColorRGBA> MultiMaterialPaintingGizmo::create_painting_colors() const
+PaintingPalette MultiMaterialPaintingGizmo::create_painting_colors() const
 {
-    const auto& settings_interactor{m_project_interactor.project_settings_interactor()};
-    const auto rgb_colors{
-        settings_interactor.get_colors(m_project_interactor.selected_config_container_id())
-    };
+    const SelectionId config_container_id = m_project_interactor.selected_config_container_id();
 
-    return Biz::Algorithms::Color::to_rgba(rgb_colors);
+    const std::vector<ColorRGB> physical_colors =
+        m_project_interactor.project_settings_interactor().get_colors(config_container_id);
+
+    PaintingPalette palette;
+    for (size_t i = 0; i < physical_colors.size(); ++i) {
+        palette.push_back({to_rgba(physical_colors[i]), static_cast<unsigned int>(i) + 1});
+    }
+
+    const ConfigContainer* config_container =
+        m_project_interactor.selected_project().find_config_container(config_container_id);
+    if (config_container == nullptr) {
+        return palette;
+    }
+
+    for (const VirtualExtruder& virtual_extruder : config_container->virtual_extruders()) {
+        const ColorRGB color_rgb =
+            effective_color(virtual_extruder, physical_colors).value_or(ColorRGB::GRAY());
+        palette.push_back({to_rgba(color_rgb), virtual_extruder.id});
+    }
+
+    return palette;
 }
 
 void MultiMaterialPaintingGizmo::update_painting_dialog_tools()
@@ -308,11 +348,11 @@ void MultiMaterialPaintingGizmo::update_painting_dialog_tools()
         return;
     }
 
-    const std::vector<Domain::ColorRGBA> colors{create_painting_colors()};
+    PaintingPalette palette{create_painting_colors()};
 
-    const bool count_changed{m_painting_colors.size() != colors.size()};
+    const bool count_changed{m_painting_colors.size() != palette.size()};
 
-    m_painting_colors = colors;
+    m_painting_colors = std::move(palette);
 
     if (count_changed) {
         m_first_brush_color_idx  = 0;
@@ -344,6 +384,28 @@ void MultiMaterialPaintingGizmo::on_preset_selection_changed(
 )
 {
     update_painting_dialog_tools();
+}
+
+void MultiMaterialPaintingGizmo::
+    on_config_container_selection_changed(SelectionId project_id, SelectionId config_container_id)
+{
+    update_painting_dialog_tools();
+
+    // Painted virtual states may have been remapped or cleared.
+    for (TriangleSelectorRenderWrapper& wrapper : m_triangle_selector_wrappers) {
+        wrapper.update_painted_geometry(m_device);
+    }
+}
+
+void MultiMaterialPaintingGizmo::
+    on_virtual_extruders_changed(SelectionId project_id, SelectionId config_container_id)
+{
+    update_painting_dialog_tools();
+
+    // Painted virtual states may have been remapped or cleared.
+    for (TriangleSelectorRenderWrapper& wrapper : m_triangle_selector_wrappers) {
+        wrapper.update_painted_geometry(m_device);
+    }
 }
 
 } // namespace Slic3r::App::Plater

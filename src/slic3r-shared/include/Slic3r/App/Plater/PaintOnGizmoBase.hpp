@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Slic3r/App/Plater/MMPaintingUtils.hpp"
 #include "Slic3r/App/Plater/PaintOnGizmoHelper.hpp"
 #include "Slic3r/App/Scene/Clipper.hpp"
 #include "Slic3r/App/Scene/ClipperPresenter.hpp"
@@ -152,7 +153,7 @@ protected:
     bool m_paint_on_overhangs_only           = false;
     float m_highlight_by_angle_threshold_deg = 0.f;
 
-    std::vector<Domain::ColorRGBA> m_painting_colors;
+    PaintingPalette m_painting_colors;
 
     virtual Domain::FacetsAnnotationKind get_facets_annotation_kind() const = 0;
     virtual const Domain::FacetsAnnotation& get_facets_annotation(
@@ -180,7 +181,7 @@ protected:
     virtual Domain::ColorRGBA create_default_painting_color(
         const Domain::ModelVolume& model_volume
     ) const;
-    virtual std::vector<Domain::ColorRGBA> create_painting_colors() const;
+    virtual PaintingPalette create_painting_colors() const;
     virtual Domain::ColorRGBA get_cursor_sphere_left_button_color() const;
     virtual Domain::ColorRGBA get_cursor_sphere_right_button_color() const;
     virtual Domain::ColorRGBA get_sphere_cursor_color() const;

@@ -5,15 +5,23 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include <algorithm>
+#include <numeric>
+#include <ranges>
 #include <vector>
 #include <cmath>
 #include <cstddef>
 
 #include "Slic3r/Exception.hpp"
+#include "Slic3r/Biz/Algorithms/VirtualExtruder.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/HwConfigUtils.hpp"
+#include "libslic3r/Feature/VirtualExtruder/VirtualExtruder.hpp"
+
+using Slic3r::Biz::Algorithms::VirtualExtruder::expand_virtual_extruders_1based;
+using Slic3r::Biz::Slicing::get_nozzle_diameter;
+using Slic3r::Domain::VirtualExtruders;
 
 namespace Slic3r {
 
@@ -31,6 +39,17 @@ unsigned int PrintRegion::extruder(FlowRole role) const
         throw Slic3r::InvalidArgument("Unknown role");
 
     if (extruder == 0) {
+        return 1;
+    }
+
+    // Virtual extruders resolve to the physical extruder of their first component.
+    if (extruder > m_config.hw_config().material_slot_count()) {
+        for (const Domain::VirtualExtruder& virtual_extruder : m_config.virtual_extruders()) {
+            if (virtual_extruder.id == extruder && !virtual_extruder.components.empty()) {
+                return virtual_extruder.components.front().extruder_id;
+            }
+        }
+
         return 1;
     }
 
@@ -72,20 +91,29 @@ Flow PrintRegion::flow(const PrintObject &object, FlowRole role, double layer_he
 
 double PrintRegion::nozzle_dmr_avg(const PrintConfigView& print_config) const
 {
-    using Biz::Slicing::get_nozzle_diameter;
-    return (get_nozzle_diameter(
-                print_config.hw_config(),
-                m_config.get<int>("perimeter_extruder") - 1
-            )
-            + get_nozzle_diameter(
-                print_config.hw_config(),
-                m_config.get<int>("infill_extruder") - 1
-            )
-            + get_nozzle_diameter(
-                print_config.hw_config(),
-                m_config.get<int>("solid_infill_extruder") - 1
-            ))
-        / 3.;
+    const std::size_t num_extruders{print_config.hw_config().material_slot_count()};
+    const auto nozzle_diameter = [&](const unsigned int extruder_1based)
+    {
+        return get_nozzle_diameter(
+            print_config.hw_config(),
+            extruder_1based > 0 && extruder_1based <= num_extruders ? extruder_1based - 1 : 0
+        );
+    };
+
+    const std::vector<unsigned int> physical_extruders{expand_virtual_extruders_1based(
+        {static_cast<unsigned int>(m_config.get<int>("perimeter_extruder")),
+         static_cast<unsigned int>(m_config.get<int>("infill_extruder")),
+         static_cast<unsigned int>(m_config.get<int>("solid_infill_extruder"))},
+        m_config.virtual_extruders()
+    )};
+
+    if (physical_extruders.empty()) {
+        return nozzle_diameter(1);
+    }
+
+    const auto diameters{physical_extruders | std::views::transform(nozzle_diameter)};
+    return std::accumulate(diameters.begin(), diameters.end(), 0.)
+        / static_cast<double>(physical_extruders.size());
 }
 
 double PrintRegion::bridging_height_avg(const PrintConfigView &print_config) const
@@ -100,30 +128,65 @@ double PrintRegion::bridging_height_avg(const PrintConfigView &print_config) con
 void PrintRegion::collect_object_printing_extruders(
     const PrintRegionConfigView& config,
     const bool has_brim,
-    std::vector<unsigned int>& object_extruders
+    std::vector<unsigned int>& object_extruders,
+    const VirtualExtruders& virtual_extruders
 )
 {
     // These checks reflect the same logic used in the GUI for enabling/disabling extruder selection fields.
-    auto num_extruders    = (int) config.hw_config().material_slot_count();
-    auto emplace_extruder = [num_extruders, &object_extruders](int extruder_id)
+    const int num_extruders = static_cast<int>(config.hw_config().material_slot_count());
+    auto emplace_extruder =
+        [num_extruders, &object_extruders, &virtual_extruders](
+            int extruder_id,
+            const auto& feature_enabled
+        )
     {
-        int i = std::max(0, extruder_id - 1);
-        object_extruders.emplace_back((i >= num_extruders) ? 0 : i);
+        const unsigned int extruder_id_u = static_cast<unsigned int>(extruder_id);
+
+        if (extruder_id > num_extruders
+            && Biz::Algorithms::VirtualExtruder::is_virtual_extruder(
+                extruder_id_u,
+                virtual_extruders
+            ))
+        {
+            for (const unsigned int physical_1based :
+                 Biz::Algorithms::VirtualExtruder::expand_virtual_extruders_1based(
+                     {extruder_id_u},
+                     virtual_extruders
+                 ))
+            {
+                if (feature_enabled(physical_1based - 1)) {
+                    object_extruders.emplace_back(physical_1based - 1);
+                }
+            }
+
+            return;
+        }
+
+        const int i                        = std::max(0, extruder_id - 1);
+        const unsigned int physical_0based = static_cast<unsigned int>(i >= num_extruders ? 0 : i);
+        if (feature_enabled(physical_0based)) {
+            object_extruders.emplace_back(physical_0based);
+        }
     };
+
     const int perimeter_extruder{config.get<int>("perimeter_extruder")};
     ASSERT(perimeter_extruder > 0);
-    if (config.get<std::vector<int>>("perimeters").at(perimeter_extruder - 1) > 0 || has_brim)
-        emplace_extruder(perimeter_extruder);
+    emplace_extruder(perimeter_extruder, [&](std::size_t slot) {
+        return config.get<std::vector<int>>("perimeters").at(slot) > 0 || has_brim;
+    });
 
     const int infill_extruder{config.get<int>("infill_extruder")};
     ASSERT(infill_extruder > 0);
-    if (config.get<std::vector<Domain::Percentage>>("fill_density").at(infill_extruder - 1) > Domain::Percentage{0})
-        emplace_extruder(infill_extruder);
+    emplace_extruder(infill_extruder, [&](std::size_t slot) {
+        return config.get<std::vector<Domain::Percentage>>("fill_density").at(slot)
+            > Domain::Percentage{0};
+    });
 
     const int solid_infill_extruder{config.get<int>("solid_infill_extruder")};
-    if (config.get<std::vector<int>>("top_solid_layers").at(solid_infill_extruder - 1) > 0
-        || config.get<std::vector<int>>("bottom_solid_layers").at(solid_infill_extruder - 1) > 0)
-        emplace_extruder(solid_infill_extruder);
+    emplace_extruder(solid_infill_extruder, [&](std::size_t slot) {
+        return config.get<std::vector<int>>("top_solid_layers").at(slot) > 0
+            || config.get<std::vector<int>>("bottom_solid_layers").at(slot) > 0;
+    });
 }
 
 double PrintRegion::nozzle_diameter(FlowRole role) const
@@ -136,10 +199,14 @@ void PrintRegion::collect_object_printing_extruders(const Print &print, std::vec
     // PrintRegion, if used by some PrintObject, shall have all the extruders set to an existing printer extruder.
     // If not, then there must be something wrong with the Print::apply() function.
     auto num_extruders = int(print.config().hw_config().material_slot_count());
-    ASSERT(this->config().get<int>("perimeter_extruder") <= num_extruders);
-    ASSERT(this->config().get<int>("infill_extruder") <= num_extruders);
-    ASSERT(this->config().get<int>("solid_infill_extruder") <= num_extruders);
-    collect_object_printing_extruders(this->config(), print.has_brim(), object_extruders);
+    auto valid_extruder = [&](int id) {
+        return id <= num_extruders
+            || Biz::Algorithms::VirtualExtruder::is_virtual_extruder(static_cast<unsigned int>(id), print.virtual_extruders());
+    };
+    ASSERT(valid_extruder(this->config().get<int>("perimeter_extruder")));
+    ASSERT(valid_extruder(this->config().get<int>("infill_extruder")));
+    ASSERT(valid_extruder(this->config().get<int>("solid_infill_extruder")));
+    collect_object_printing_extruders(this->config(), print.has_brim(), object_extruders, print.virtual_extruders());
 }
 
 }

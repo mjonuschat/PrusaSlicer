@@ -11,6 +11,7 @@
 #include "Slic3r/Biz/Algorithms/Geometry/ConvexHull.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Biz/Algorithms/VirtualExtruder.hpp"
 #include "Slic3r/Biz/Scene/Selection.hpp"
 #include "Slic3r/Biz/Preset/IO/PresetMetadataLegacyLoader.hpp"
 #include "Slic3r/Biz/Platform/IAppConfigProvider.hpp"
@@ -590,7 +591,8 @@ static Loaded3MF load_legacy_project(const std::string& file_path, OptionalPrese
             false,
             loaded_3mf.version,
             loaded_3mf.config_containers_data.back().wipe_towers,
-            loaded_3mf.config_containers_data.back().custom_gcodes
+            loaded_3mf.config_containers_data.back().custom_gcodes,
+            loaded_3mf.config_containers_data.back().virtual_extruders_config
         ))
         throw Loaded3MFException(
             Read3mfIssue(Read3mfIssueType::legacy_loader_failed, "Loading of legacy 3MF failed.")
@@ -1015,6 +1017,14 @@ static Project convert_to_project(Loaded3MF&& loaded_3mf, IMessageDialogProvider
 
         if (const auto& fdm_config_pack = std::get_if<Domain::ConfigPackFDM>(&cc_data.config_pack)) {
             cc.project_settings() = fdm_config_pack->project;
+            if (!cc_data.virtual_extruders_config.virtual_extruders.empty()) {
+                cc.virtual_extruders() = Algorithms::VirtualExtruder::compatible_virtual_extruders(
+                    Algorithms::VirtualExtruder::normalize_virtual_extruders(
+                        cc_data.virtual_extruders_config.virtual_extruders
+                    ),
+                    static_cast<unsigned int>(cc.selected_preset().hw_config.material_slot_count())
+                );
+            }
         } else if (const auto& sla_config_pack = std::get_if<Domain::ConfigPackSLA>(&cc_data.config_pack)) {
             // TODO: cc.project_settings() = sla_config_pack->project;
         } else {

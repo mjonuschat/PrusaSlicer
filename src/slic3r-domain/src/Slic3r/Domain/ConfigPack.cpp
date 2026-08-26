@@ -62,7 +62,8 @@ bool ConfigPackFDM::operator==(const ConfigPackFDM& other) const
         && print == other.print
         && tool == other.tool
         && filament == other.filament
-        && project == other.project;
+        && project == other.project
+        && virtual_extruders == other.virtual_extruders;
 }
 
 const PrinterSettings& ConfigPackFDM::get_printer() const

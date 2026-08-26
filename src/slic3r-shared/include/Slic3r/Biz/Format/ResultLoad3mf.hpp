@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "Slic3r/Biz/VirtualExtrudersConfig.hpp"
 #include "Slic3r/Domain/ConfigPack.hpp"
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/Preset/SelectedPreset.hpp"
@@ -285,6 +286,7 @@ struct Loaded3MF {
         std::vector<Domain::Vec2d> bed_offsets;
         Domain::WipeTowersOnBeds wipe_towers;
         Domain::CustomGCodesOnBeds custom_gcodes;
+        Biz::VirtualExtrudersConfig virtual_extruders_config;
     };
 
     Domain::ProjectMetadata metadata;

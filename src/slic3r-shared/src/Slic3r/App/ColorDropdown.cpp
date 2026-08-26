@@ -1,12 +1,19 @@
 #include "Slic3r/App/ColorDropdown.hpp"
 #include "Slic3r/App/Imgui/ImguiExtension.hpp"
+#include "Slic3r/Biz/Algorithms/VirtualExtruder.hpp"
 #include "Slic3r/App/Yoga/ImGuiUtils.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
-#include <algorithm>
 
+#include <algorithm>
 #include <imgui_internal.h>
 
-#include <algorithm>
+using Slic3r::Biz::ProjectInteractor;
+using Slic3r::Domain::ColorRGB;
+using Slic3r::Domain::ColorRGBA;
+using Slic3r::Domain::SelectionId;
+using Slic3r::Domain::VirtualExtruder;
+
+using Slic3r::Biz::Algorithms::VirtualExtruder::effective_color;
 
 namespace Slic3r::App::Yoga {
 
@@ -221,24 +228,19 @@ void ColorMenuItem::render(const Yoga::Vec2f& pos, const Yoga::Vec2f& size)
     }
 }
 
-static std::vector<std::pair<Domain::ColorRGBA, std::string>> get_material_colors(
-    const Biz::ProjectInteractor& project_interactor
+static std::vector<std::pair<ColorRGBA, std::string>> get_material_colors(
+    const ProjectInteractor& project_interactor,
+    const std::vector<ColorRGB>& slot_colors
 )
 {
     const Slic3r::Biz::Preset::PresetInteractor& preset_interactor{
         project_interactor.preset_interactor()
     };
-    const Biz::ProjectSettingsInteractor& settings_interactor{
-        project_interactor.project_settings_interactor()
-    };
-    Domain::SelectionId config_container_id{project_interactor.selected_config_container_id()};
 
-    const auto rgb_colors{settings_interactor.get_colors(config_container_id)};
-
-    std::vector<Domain::ColorRGBA> colors;
-    colors.reserve(rgb_colors.size());
+    std::vector<ColorRGBA> colors;
+    colors.reserve(slot_colors.size());
     std::ranges::transform(
-        rgb_colors,
+        slot_colors,
         std::back_inserter(colors),
         [](const Domain::ColorRGB& color)
         { return Domain::ColorRGBA{color.r(), color.g(), color.b(), 1.0f}; }
@@ -260,11 +262,16 @@ static std::vector<std::pair<Domain::ColorRGBA, std::string>> get_material_color
     return result;
 }
 
-
-ColorDropdown::ColorDropdown(Biz::ProjectInteractor& project_interactor, bool with_default, bool with_numbers) :
+ColorDropdown::ColorDropdown(
+    ProjectInteractor& project_interactor,
+    bool with_default,
+    bool with_numbers,
+    bool with_virtual
+) :
     m_project_interactor{project_interactor},
     m_with_default{with_default},
-    m_with_numbers{with_numbers}
+    m_with_numbers{with_numbers},
+    m_with_virtual{with_virtual}
 {
     m_project_interactor.project_settings_interactor().add_listener<Biz::IColorsChangedListener>(
         this
@@ -272,6 +279,8 @@ ColorDropdown::ColorDropdown(Biz::ProjectInteractor& project_interactor, bool wi
     m_project_interactor.preset_interactor().add_listener<Biz::Preset::IPresetChangedListener>(
         this
     );
+    m_project_interactor.virtual_extruder_interactor()
+        .add_listener<IVirtualExtrudersChangedListener>(this);
 
     set_object_name("ColorDropdown");
 
@@ -304,7 +313,7 @@ ColorDropdown::ColorDropdown(Biz::ProjectInteractor& project_interactor, bool wi
 
     m_default_colors = {m_theme->color(Platform::Color::Text)};
 
-    set_items(get_material_colors(m_project_interactor));
+    this->reload_items();
 }
 
 ColorDropdown::~ColorDropdown()
@@ -315,24 +324,97 @@ ColorDropdown::~ColorDropdown()
     m_project_interactor.preset_interactor().remove_listener<Biz::Preset::IPresetChangedListener>(
         this
     );
+    m_project_interactor.virtual_extruder_interactor()
+        .remove_listener<IVirtualExtrudersChangedListener>(this);
 }
 
 void ColorDropdown::on_colors_changed(
-    Domain::SelectionId project_id,
-    Domain::SelectionId config_container_id,
+    SelectionId project_id,
+    SelectionId config_container_id,
     const std::vector<Domain::ColorRGB>& colors
 )
 {
-    set_items(get_material_colors(m_project_interactor));
+    if (config_container_id != m_project_interactor.selected_config_container_id()) {
+        return;
+    }
+
+    this->reload_items();
 }
 
 void ColorDropdown::on_preset_selection_changed(
-    Domain::SelectionId project_id,
-    Domain::SelectionId config_container_id,
+    SelectionId project_id,
+    SelectionId config_container_id,
     Biz::Preset::PresetItemType type
 )
 {
-    set_items(get_material_colors(m_project_interactor));
+    if (config_container_id != m_project_interactor.selected_config_container_id()) {
+        return;
+    }
+
+    this->reload_items();
+}
+
+void
+ColorDropdown::on_virtual_extruders_changed(SelectionId project_id, SelectionId config_container_id)
+{
+    if (config_container_id != m_project_interactor.selected_config_container_id()) {
+        return;
+    }
+
+    this->reload_items();
+}
+
+void ColorDropdown::
+    on_config_container_selection_changed(SelectionId project_id, SelectionId config_container_id)
+{
+    if (config_container_id != m_project_interactor.selected_config_container_id()) {
+        return;
+    }
+
+    this->reload_items();
+}
+
+void ColorDropdown::reload_items()
+{
+    const std::optional<int> selected_extruder_id = this->selected_item_extruder_id();
+
+    const SelectionId container_id = m_project_interactor.selected_config_container_id();
+
+    const std::vector<ColorRGB> slot_colors =
+        m_project_interactor.project_settings_interactor().get_colors(container_id);
+
+    std::vector<std::pair<ColorRGBA, std::string>> items =
+        get_material_colors(m_project_interactor, slot_colors);
+
+    m_extruder_ids.clear();
+    for (size_t i = 0; i < items.size(); ++i) {
+        m_extruder_ids.push_back(static_cast<int>(i) + 1);
+    }
+
+    if (m_with_virtual && container_id != Domain::INVALID_ID) {
+        for (const VirtualExtruder& virtual_extruder :
+             m_project_interactor.selected_config_container().virtual_extruders())
+        {
+            const ColorRGB color =
+                effective_color(virtual_extruder, slot_colors).value_or(ColorRGB::GRAY());
+
+            items.emplace_back(
+                ColorRGBA{color.r(), color.g(), color.b(), 1.f},
+                "[V] " + Biz::_u8L("Extruder") + " " + std::to_string(virtual_extruder.id)
+            );
+            m_extruder_ids.push_back(static_cast<int>(virtual_extruder.id));
+        }
+    }
+
+    this->set_items(items);
+
+    // Clearing the selection when the extruder is gone would make current_index() abort.
+    if (selected_extruder_id.has_value()) {
+        const std::optional<std::size_t> index = this->index_of_extruder_id(*selected_extruder_id);
+        if (index.has_value()) {
+            this->set_current_index(index);
+        }
+    }
 }
 
 void ColorDropdown::set_items(
@@ -345,6 +427,33 @@ void ColorDropdown::set_items(
 
     m_material_colors = material_colors;
     reload();
+}
+
+std::optional<int> ColorDropdown::selected_item_extruder_id() const
+{
+    if (!m_current_index.has_value()) {
+        return std::nullopt;
+    }
+
+    const std::size_t index = *m_current_index;
+    if (m_with_default && index == 0) {
+        return 0;
+    }
+
+    const std::size_t position = index - (m_with_default ? 1 : 0);
+    if (position >= m_extruder_ids.size()) {
+        return std::nullopt;
+    }
+
+    return m_extruder_ids[position];
+}
+
+void ColorDropdown::append_default_color_of_extruder(const int extruder_id)
+{
+    const std::optional<std::size_t> item_index = index_of_extruder_id(extruder_id);
+    if (item_index.has_value()) {
+        m_default_colors.push_back(m_material_colors[*item_index - (m_with_default ? 1 : 0)].first);
+    }
 }
 
 void ColorDropdown::reload() {
@@ -383,7 +492,9 @@ void ColorDropdown::set_current_index(std::optional<std::size_t> index)
 
 void ColorDropdown::reload_default_colors()
 {
-    if (!m_with_default) {
+    if (!m_with_default
+        || m_project_interactor.selected_config_container_id() == Domain::INVALID_ID)
+    {
         return;
     }
 
@@ -433,7 +544,7 @@ void ColorDropdown::reload_default_colors()
         }
 
         for (int extruder : object_extruders) {
-            m_default_colors.push_back(m_material_colors.at(extruder - 1).first);
+            append_default_color_of_extruder(extruder);
         }
     } else {
         std::set<int> print_extruders;
@@ -441,13 +552,10 @@ void ColorDropdown::reload_default_colors()
         {
             const int extruder{config_fdm->print.items.opt(extruder_key).get<int>()};
             ASSERT(extruder > 0);
-            if (extruder > m_material_colors.size()) {
-                continue;
-            }
             print_extruders.insert(extruder);
         }
         for (int extruder : print_extruders) {
-            m_default_colors.push_back(m_material_colors.at(extruder - 1).first);
+            append_default_color_of_extruder(extruder);
         }
     }
 }
@@ -470,6 +578,36 @@ std::size_t ColorDropdown::current_index() const
 {
     ASSERT(m_current_index);
     return *m_current_index;
+}
+
+int ColorDropdown::extruder_id_at(std::size_t index) const
+{
+    if (m_with_default && index == 0) {
+        return 0;
+    }
+
+    const std::size_t position = index - (m_with_default ? 1 : 0);
+    if (position < m_extruder_ids.size()) {
+        return m_extruder_ids[position];
+    }
+
+    return static_cast<int>(index);
+}
+
+std::optional<std::size_t> ColorDropdown::index_of_extruder_id(int extruder_id) const
+{
+    if (extruder_id == 0) {
+        return m_with_default ? std::optional<std::size_t>{0} : std::nullopt;
+    }
+
+    const std::size_t offset = m_with_default ? 1 : 0;
+    for (std::size_t i = 0; i < m_extruder_ids.size(); ++i) {
+        if (m_extruder_ids[i] == extruder_id) {
+            return offset + i;
+        }
+    }
+
+    return std::nullopt;
 }
 
 void ColorDropdown::style_node()

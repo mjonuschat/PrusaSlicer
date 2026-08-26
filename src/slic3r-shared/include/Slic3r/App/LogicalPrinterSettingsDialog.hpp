@@ -29,6 +29,10 @@ class InputText;
 class StackLayout;
 } // namespace Slic3r::App::Yoga
 
+namespace Slic3r::App::ColorMix {
+class ColorMixDialog;
+} // namespace Slic3r::App::ColorMix
+
 namespace Slic3r::App {
 class PrinterAddDialog;
 class Navigator;
@@ -55,11 +59,19 @@ public:
         Biz::Preset::PresetItemType type
     ) override;
 
+    void on_hw_item_selection_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id,
+        Biz::Preset::HwItemType type
+    ) override;
+
     void on_list_selection_changed(Domain::SelectionId new_selection) override;
 
     void on_selected_project_changed_final(size_t index) override;
 
     PrinterAdvancedSettingsDialog& printer_advanced_settings_dialog();
+    ColorMix::ColorMixDialog& color_mix_dialog();
+
     void select_page_settings();
 
     void on_app_config_changed(const std::string& key) override;
@@ -70,6 +82,7 @@ private:
 
     void on_about_to_show() override;
     void update_settings_data();
+    void update_color_mix_visibility();
 
     void on_config_container_selection_changed(
         Domain::SelectionId project_id,
@@ -147,9 +160,11 @@ private:
     Yoga::ComboBoxListViewSelection<Domain::Preset::HwSheetConfigDef>* m_combo_sheets;
     WarningPanel* m_warning{nullptr};
     NozzleListView* m_nozzle_list_view{nullptr};
+    Yoga::LayoutButton* m_color_mix_button{nullptr};
 
     PrinterAdvancedSettingsDialog* m_advanced_dialog{nullptr};
     PrinterAddDialog* m_printer_add_dialog{nullptr};
+    ColorMix::ColorMixDialog* m_color_mix_dialog{nullptr};
 };
 
 } // namespace Slic3r::App

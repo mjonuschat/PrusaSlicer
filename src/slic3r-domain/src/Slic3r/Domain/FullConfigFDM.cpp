@@ -47,8 +47,10 @@ MutBoxOrBoxesVector as_mut_boxes(ConfigPackFDM& config_pack) {
 FullConfigFDM::FullConfigFDM(
     const ConfigPackFDM& config_pack,
     const std::vector<unsigned>& extruder_candidates,
-    const Preset::HwPrinterConfig& hw_config) :
-    FullConfig{as_boxes(config_pack), extruder_candidates, hw_config}
+    const Preset::HwPrinterConfig& hw_config
+) :
+    FullConfig{as_boxes(config_pack), extruder_candidates, hw_config},
+    m_virtual_extruders{config_pack.virtual_extruders}
 {}
 
 FullConfigFDM FullConfigFDM::defaults()

@@ -1,10 +1,12 @@
 #pragma once
 
+#include "Slic3r/App/Plater/MMPaintingUtils.hpp"
 #include "Slic3r/App/Plater/PaintOnGizmoBase.hpp"
 #include "Slic3r/App/Scene/ClipperPresenter.hpp"
 #include "Slic3r/App/Scene/IGizmo.hpp"
 #include "Slic3r/App/Yoga/Item.hpp"
 #include "Slic3r/Biz/IColorsChangedListener.hpp"
+#include "Slic3r/Biz/IVirtualExtrudersChangedListener.hpp"
 
 namespace Slic3r::App::Scene {
 class Clipper;
@@ -25,7 +27,8 @@ class PlaterScenePresenter;
 class MultiMaterialPaintingGizmo :
     public PaintOnGizmoBase,
     public Biz::IColorsChangedListener,
-    public Biz::Preset::IPresetChangedListener
+    public Biz::Preset::IPresetChangedListener,
+    public Biz::IVirtualExtrudersChangedListener
 {
 public:
     static constexpr float CursorRadiusMin = 0.1f;
@@ -77,7 +80,7 @@ protected:
     Domain::ColorRGBA create_default_painting_color(
         const Domain::ModelVolume& model_volume
     ) const override;
-    std::vector<Domain::ColorRGBA> create_painting_colors() const override;
+    PaintingPalette create_painting_colors() const override;
 
     void update_painting_dialog_tools();
 
@@ -91,6 +94,16 @@ protected:
         Domain::SelectionId project_id,
         Domain::SelectionId config_container_id,
         Biz::Preset::PresetItemType type
+    ) override;
+
+    void on_virtual_extruders_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id
+    ) override;
+
+    void on_config_container_selection_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id
     ) override;
 
 private:

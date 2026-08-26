@@ -124,6 +124,11 @@ public:
     [[nodiscard]] const Bed* find_bed_by_id(size_t id) const;
     [[nodiscard]] Bed* find_bed_by_id(size_t id);
 
+    [[nodiscard]] const ConfigContainer*
+    find_config_container_by_element(const Domain::ElementRef& element) const;
+    [[nodiscard]] ConfigContainer*
+    find_config_container_by_element(const Domain::ElementRef& element);
+
     /**
      * @brief Updates all config container's printer presets with given @a preset if its IDs match.
      * @param printer preset to update stored evaluated presets with.

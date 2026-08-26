@@ -99,4 +99,21 @@ bool is_dark(ImColor color);
 
 ImColor contrast_color(ImColor color);
 
+/**
+ * @brief Draw a dashed border around a rounded rectangle.
+ *
+ * The dashes use the same path as a solid AddRect(), so a dashed and a solid border of the
+ * same rectangle line up exactly.
+ */
+void draw_dashed_rounded_rect(
+    ImDrawList* draw_list,
+    const ImVec2& rect_min,
+    const ImVec2& rect_max,
+    ImU32 color,
+    float thickness,
+    float rounding,
+    float dash_length,
+    float gap_length
+);
+
 } // namespace Slic3r::App::Imgui

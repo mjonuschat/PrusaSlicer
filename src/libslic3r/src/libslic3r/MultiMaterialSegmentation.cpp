@@ -66,6 +66,8 @@ using Biz::Algorithms::ColoredLines;
 using Biz::CGAL::Algorithms::VoronoiUtils;
 using Biz::CGAL::Algorithms::SegmentCellRange;
 using Biz::CGAL::Algorithms::PointCellRange;
+using Slic3r::Domain::VirtualExtruder;
+
 using VD = Biz::CGAL::Algorithms::VoronoiDiagram;
 
 const constexpr double POLYGON_FILTER_MIN_AREA_SCALED                 = scaled<double>(0.1f);
@@ -2381,9 +2383,23 @@ std::vector<std::vector<ExPolygons>> segmentation_by_painting(const PrintObject 
     return segmented_regions_merged;
 }
 
+static size_t calc_num_facets_states(const Print& print)
+{
+    unsigned int max_extruder_id =
+        static_cast<unsigned int>(print.config().hw_config().material_slot_count());
+    for (const VirtualExtruder& virtual_extruder : print.virtual_extruders()) {
+        max_extruder_id = std::max(max_extruder_id, virtual_extruder.id);
+    }
+
+    const size_t num_facets_states = size_t(max_extruder_id) + 1;
+    ASSERT(num_facets_states <= Domain::TriangleSelector::TRIANGLE_STATE_TYPE_COUNT);
+
+    return num_facets_states;
+}
+
 // Returns multi-material segmentation based on painting in multi-material segmentation gizmo
 std::vector<std::vector<ExPolygons>> multi_material_segmentation_by_painting(const PrintObject &print_object, const std::function<void()> &throw_on_cancel_callback) {
-    const size_t num_facets_states  = print_object.config().hw_config().material_slot_count() + 1;
+    const size_t num_facets_states  = calc_num_facets_states(*print_object.print());
     const float  max_width          = float(print_object.config().get<double>("mmu_segmented_region_max_width"));
     const float  interlocking_depth = float(print_object.config().get<double>("mmu_segmented_region_interlocking_depth"));
     const bool   interlocking_beam  = print_object.config().get<bool>("interlocking_beam");

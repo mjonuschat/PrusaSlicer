@@ -695,6 +695,10 @@ PrintAndObjectSteps merge(const PrintAndObjectSteps& a, const PrintAndObjectStep
 
 PrintAndObjectSteps get_invalidated_steps(const PrintRegion& current, const PrintRegion& next)
 {
+    if (current.source_virtual_extruder_id() != next.source_virtual_extruder_id()) {
+        return {AllSteps{}, AllSteps{}};
+    }
+
     const std::vector<std::string> diff{
         current.config().diff_keys(next.config())
     };

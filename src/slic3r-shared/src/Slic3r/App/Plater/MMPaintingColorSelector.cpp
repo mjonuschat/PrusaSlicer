@@ -152,7 +152,7 @@ ColorSelector::ColorSelector(ImColor mouse_left_color, ImColor mouse_right_color
     set_gap(3);
 }
 
-void ColorSelector::set_colors(const std::vector<Domain::ColorRGBA>& colors)
+void ColorSelector::set_colors(const PaintingPalette& palette)
 {
     while (!m_children.empty()) {
         remove(m_children.back().get());
@@ -160,8 +160,8 @@ void ColorSelector::set_colors(const std::vector<Domain::ColorRGBA>& colors)
 
     m_selectors.clear();
 
-    for (std::size_t index{}; index < colors.size(); ++index) {
-        const Domain::ColorRGBA& color{colors[index]};
+    for (std::size_t index{}; index < palette.size(); ++index) {
+        const Domain::ColorRGBA& color{palette[index].color};
         m_selectors.push_back(
             emplace_back<ColorButton>(
                 std::to_string(index + 1),

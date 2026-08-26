@@ -23,8 +23,9 @@ public:
         const Domain::FullConfigFDMPtr& full_config,
         const Domain::PartialObjectConfigFDMPtr& object_settings,
         const std::vector<Domain::PartialVolumeConfigFDMPtr>& volume_settings
-    ):
-        ConfigView{full_config, join(object_settings, volume_settings)}
+    ) :
+        ConfigView{full_config, join(object_settings, volume_settings)},
+        m_virtual_extruders{full_config->virtual_extruders()}
     {}
 
     PrintRegionConfigView():
@@ -34,6 +35,19 @@ public:
     void add_override(const Domain::PartialVolumeConfigFDMPtr& override) {
         m_partial_configs.push_back(override);
     }
+
+    [[nodiscard]] const Domain::VirtualExtruders& virtual_extruders() const
+    {
+        return m_virtual_extruders;
+    }
+
+    /** @brief
+     * Virtual extruder id resolved from perimeter_extruder, std::nullopt when physical.
+     */
+    [[nodiscard]] std::optional<unsigned int> source_virtual_extruder() const;
+
+private:
+    Domain::VirtualExtruders m_virtual_extruders;
 };
 
 class PrintObjectConfigView : public Domain::ConfigView

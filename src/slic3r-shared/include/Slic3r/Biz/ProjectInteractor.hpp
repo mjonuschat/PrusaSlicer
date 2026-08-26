@@ -6,6 +6,7 @@
 #include "Slic3r/Biz/GeneratedSupportPointsCache.hpp"
 #include "Slic3r/Biz/IMdb.hpp"
 #include "Slic3r/Biz/ProjectSettingsInteractor.hpp"
+#include "Slic3r/Biz/VirtualExtruderInteractor.hpp"
 #include "Slic3r/Biz/Preset/IPresetChangedListener.hpp"
 #include "Slic3r/Biz/SLAResultCache.hpp"
 #include "Slic3r/Biz/SLAObjectCache.hpp"
@@ -32,6 +33,7 @@
 #include "Slic3r/Biz/BackupStore.hpp"
 
 namespace Slic3r::Domain {
+class Model;
 class Project;
 class Workbench;
 } // namespace Slic3r::Domain
@@ -74,6 +76,7 @@ class ProjectInteractor final :
     public ISelectedBedInstancesChangedListener,
     public ISlicingInputChangedListener,
     public IColorsChangedListener,
+    public IVirtualExtrudersChangedListener,
     public UserAccount::IUserAccountListener,
     public Platform::IAppInstanceMessageContentListener,
     public FileDownloader::IFileDownloaderListener,
@@ -88,6 +91,7 @@ public:
         m_arrange_interactor(m_scene_interactor, workbench),
         m_clipboard_interactor(m_scene_interactor, m_arrange_interactor, workbench),
         m_project_settings_interactor(workbench, m_null_mdb),
+        m_virtual_extruder_interactor(workbench),
         m_slicing_interactor(dispatcher, thumbnail_image_generator),
         m_result_export_interactor(dispatcher),
         m_user_account_interactor(dispatcher),
@@ -111,7 +115,9 @@ public:
         m_preset_interactor.add_listener<ISlicingInputChangedListener>(this);
         m_preset_interactor.add_listener<Preset::IPresetChangedListener>(&m_scene_interactor);
         m_preset_interactor.add_listener<Preset::IPresetChangedListener>(&m_project_settings_interactor);
+        m_preset_interactor.add_listener<Preset::IPresetChangedListener>(&m_virtual_extruder_interactor);
         m_project_settings_interactor.add_listener<IColorsChangedListener>(this);
+        m_virtual_extruder_interactor.add_listener<IVirtualExtrudersChangedListener>(this);
         m_slicing_interactor.set_listener<Slicing::IFDMResultListener>(&m_fdm_result_cache);
         m_slicing_interactor.set_listener<Slicing::ISLAResultListener>(&m_sla_result_cache);
         m_slicing_interactor.set_listener<Slicing::ISLAObjectListener>(&m_sla_object_cache);
@@ -236,7 +242,8 @@ public:
     void select_config_container(Domain::SelectionId config_container_id);
     void reload_config_containers_after_undo(
         Domain::SelectionId project_id,
-        Domain::Project::ConfigContainerList new_containers
+        Domain::Project::ConfigContainerList new_containers,
+        InvokeLaterBag& listener_notifications
     );
 
     /** @} */
@@ -388,6 +395,24 @@ public:
     {
         return m_backup_store;
     }
+
+    VirtualExtruderInteractor& virtual_extruder_interactor()
+    {
+        return m_virtual_extruder_interactor;
+    }
+
+    /**
+     * @brief Replace the virtual extruders of one printer group and clean up after the removed ones.
+     *
+     * @param removed_virtual_extruder_ids IDs the user deleted.
+     * @return Nothing on success, the validation error otherwise.
+     */
+    tl::expected<void, std::string> apply_virtual_extruders(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id,
+        const Domain::VirtualExtruders& new_virtual_extruders,
+        const std::vector<unsigned int>& removed_virtual_extruder_ids
+    );
 
     IUndoProvider& undo_provider() {
         return *ASSERT_VAL(m_undo_provider);
@@ -623,6 +648,10 @@ private:
         Domain::SelectionId config_container_id,
         const std::vector<Domain::ColorRGB>& colors
     ) override;
+    void on_virtual_extruders_changed(
+        Domain::SelectionId project_id,
+        Domain::SelectionId config_container_id
+    ) override;
 
     Domain::SelectionId add_project(Domain::Project&& p, InvokeLaterBag& bag);
     void do_select_project(Domain::SelectionId project_id, InvokeLaterBag& bag);
@@ -669,6 +698,7 @@ private:
     ClipboardInteractor m_clipboard_interactor;
     NullMdb m_null_mdb;
     ProjectSettingsInteractor m_project_settings_interactor;
+    VirtualExtruderInteractor m_virtual_extruder_interactor;
     Slicing::SlicingInteractor m_slicing_interactor;
     FDMResultCache m_fdm_result_cache;
     SLAResultCache m_sla_result_cache;

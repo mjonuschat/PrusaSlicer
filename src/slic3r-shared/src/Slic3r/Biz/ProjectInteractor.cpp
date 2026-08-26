@@ -16,7 +16,16 @@
 #include "Slic3r/Biz/FileLoadingLogic.hpp"
 #include "Slic3r/Biz/Scene/BedFactory.hpp"
 #include "Slic3r/Biz/Algorithms/Point.hpp"
+#include "Slic3r/Biz/Algorithms/TriangleSelector.hpp"
 #include "Slic3r/Biz/Utils/SetDiff.hpp"
+#include "Slic3r/Domain/ModelVolume.hpp"
+#include "Slic3r/Domain/TriangleSelector.hpp"
+
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <optional>
+#include <set>
 
 #include "Slic3r/Directories.hpp"
 
@@ -25,12 +34,20 @@
 #include <tracy/Tracy.hpp>
 
 using Slic3r::Domain::ConfigContainer;
+using Slic3r::Domain::ConfigItem;
 using Slic3r::Domain::ConfigPack;
 using Slic3r::Domain::ConfigPackFDM;
+using Slic3r::Domain::ModelObject;
+using Slic3r::Domain::ModelVolume;
+using Slic3r::Domain::PrinterTechnology;
 using Slic3r::Domain::Project;
 using Slic3r::Domain::SelectionId;
+using Slic3r::Domain::VirtualExtruder;
+using Slic3r::Domain::VirtualExtruders;
 using Slic3r::Domain::Preset::SelectedPreset;
 using Slic3r::Domain::Preset::SelectedPresetMetadata;
+using Slic3r::Domain::TriangleSelector::TRIANGLE_STATE_TYPE_COUNT;
+using Slic3r::Domain::TriangleSelector::TriangleStateType;
 
 namespace Slic3r::Biz {
 Domain::SelectionId ProjectInteractor::Selection::config_container_id() const
@@ -612,6 +629,155 @@ void ProjectInteractor::on_colors_changed(
     }
 }
 
+void ProjectInteractor::on_virtual_extruders_changed(
+    SelectionId project_id,
+    SelectionId config_container_id
+)
+{
+    Project* project = m_workbench.find_project_by_id(project_id);
+    if (project == nullptr) {
+        return;
+    }
+
+    const ConfigContainer* config_container = project->find_config_container(config_container_id);
+    if (config_container == nullptr) {
+        return;
+    }
+
+    const SelectedPreset& selected_preset = config_container->selected_preset();
+    for (const auto& bed_instance : config_container->bed_instances()) {
+        m_slicing_interactor.update_process(
+            project->model(),
+            project->metadata(),
+            selected_preset.metadata(),
+            config_container->build_print_config(),
+            *bed_instance
+        );
+    }
+}
+
+tl::expected<void, std::string> ProjectInteractor::apply_virtual_extruders(
+    SelectionId project_id,
+    SelectionId config_container_id,
+    const VirtualExtruders& new_virtual_extruders,
+    const std::vector<unsigned int>& removed_virtual_extruder_ids
+)
+{
+    Project* project = m_workbench.find_project_by_id(project_id);
+    if (project == nullptr) {
+        return tl::make_unexpected(std::string("Project not found."));
+    }
+
+    // Validates first, so on failure the model stays untouched.
+    tl::expected<void, std::string> write_result =
+        m_virtual_extruder_interactor
+            .set_virtual_extruders(project_id, config_container_id, new_virtual_extruders);
+    if (!write_result.has_value()) {
+        return write_result;
+    }
+
+    // Facet states are numbered project wide, so ids have to be checked against every group.
+    std::set<unsigned int> all_defined_ids;
+    unsigned int max_physical_slot_count = 0;
+    for (const std::unique_ptr<ConfigContainer>& config_container : project->config_containers()) {
+        for (const VirtualExtruder& definition : config_container->virtual_extruders()) {
+            all_defined_ids.insert(definition.id);
+        }
+
+        if (config_container->print_technology() == PrinterTechnology::FFF) {
+            max_physical_slot_count = std::max(
+                max_physical_slot_count,
+                static_cast<unsigned int>(
+                    config_container->selected_preset().hw_config.material_slot_count()
+                )
+            );
+        }
+    }
+
+    // Drop references to virtual extruder ids that no ConfigGroup defines.
+    bool any_reference_dropped = false;
+    for (const unsigned int removed_id : removed_virtual_extruder_ids) {
+        if (all_defined_ids.contains(removed_id) || removed_id <= max_physical_slot_count) {
+            continue;
+        }
+
+        const bool id_can_be_painted = static_cast<size_t>(removed_id) < TRIANGLE_STATE_TYPE_COUNT;
+        std::map<TriangleStateType, TriangleStateType> state_remap;
+        if (id_can_be_painted) {
+            state_remap
+                .emplace(static_cast<TriangleStateType>(removed_id), TriangleStateType::NONE);
+        }
+
+        for (ModelObject* object : project->model().objects) {
+            if (object == nullptr) {
+                continue;
+            }
+
+            // 0 means "inherit the defaults".
+            ConfigItem& object_extruder = object->object_settings.items.opt("extruder");
+            if (object_extruder.get<int>() == static_cast<int>(removed_id)) {
+                object_extruder.set(0);
+                any_reference_dropped = true;
+            }
+
+            for (ModelVolume* volume : object->volumes) {
+                if (volume == nullptr) {
+                    continue;
+                }
+
+                // Disabling the override falls back to the object value.
+                const std::optional<ConfigItem> volume_extruder =
+                    volume->volume_settings.overrides.get("extruder");
+                if (volume_extruder.has_value()
+                    && volume_extruder->get<int>() == static_cast<int>(removed_id))
+                {
+                    volume->volume_settings.overrides.disable("extruder");
+                    any_reference_dropped = true;
+                }
+
+                if (!id_can_be_painted || !volume->is_mm_painted()) {
+                    continue;
+                }
+
+                const std::vector<bool>& used_states =
+                    volume->mm_segmentation_facets.get_data().used_states;
+                if (static_cast<std::size_t>(removed_id) >= used_states.size()
+                    || !used_states[static_cast<std::size_t>(removed_id)])
+                {
+                    continue;
+                }
+
+                Algorithms::TriangleSelector selector(volume->mesh());
+                selector.deserialize(volume->mm_segmentation_facets.get_data(), false);
+                selector.remap_states(state_remap);
+
+                volume->mm_segmentation_facets.set_data(selector.serialize());
+                any_reference_dropped = true;
+            }
+        }
+    }
+
+    if (!any_reference_dropped) {
+        return {};
+    }
+
+    // Dropping the references changed the model, so every bed has to reslice.
+    for (const std::unique_ptr<ConfigContainer>& config_container : project->config_containers()) {
+        const SelectedPreset& selected_preset = config_container->selected_preset();
+        for (const auto& bed_instance : config_container->bed_instances()) {
+            m_slicing_interactor.update_process(
+                project->model(),
+                project->metadata(),
+                selected_preset.metadata(),
+                config_container->build_print_config(),
+                *bed_instance
+            );
+        }
+    }
+
+    return {};
+}
+
 void ProjectInteractor::do_select_project(Domain::SelectionId project_id, InvokeLaterBag& bag)
 {
     m_selection.project_id = project_id;
@@ -1116,7 +1282,8 @@ static void reload_config_container_after_undo(
 
 void ProjectInteractor::reload_config_containers_after_undo(
     Domain::SelectionId project_id,
-    Domain::Project::ConfigContainerList new_containers
+    Domain::Project::ConfigContainerList new_containers,
+    InvokeLaterBag& listener_notifications
 )
 {
     Domain::Project::ConfigContainerList& old_containers{
@@ -1151,6 +1318,11 @@ void ProjectInteractor::reload_config_containers_after_undo(
         insert_config_container(project_id, std::move(*it), position);
         // Moved out unique ptr is already guaranteed nullptr, but lets be explicit.
         *it = nullptr;
+
+        listener_notifications.add(
+            [this, project_id, id]
+            { m_virtual_extruder_interactor.notify_virtual_extruders_changed(project_id, id); }
+        );
     }
 
     for (std::size_t config_container_id : containers_diff.changed) {
@@ -1184,6 +1356,18 @@ void ProjectInteractor::reload_config_containers_after_undo(
             m_scene_interactor,
             is_different_printer
         );
+
+        const bool virtual_extruders_differ =
+            (*active_it)->virtual_extruders() != (*new_it)->virtual_extruders();
+
+        if (virtual_extruders_differ) {
+            m_virtual_extruder_interactor.restore_virtual_extruders_after_undo(
+                project_id,
+                config_container_id,
+                std::move((*new_it)->virtual_extruders()),
+                listener_notifications
+            );
+        }
 
         if (is_different_printer) {
             invoke_listeners<ISelectedConfigContainerChangedListener>(

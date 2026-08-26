@@ -108,7 +108,8 @@ enum class UndoSnapshotType
     HeightRangeLayerHeightOverride,
     ExecutePlugin,
     ReplaceWithStl,
-    ReloadFromDisk
+    ReloadFromDisk,
+    EditVirtualExtruders,
 };
 
 namespace UndoSnapshotSelection {

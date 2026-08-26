@@ -2,6 +2,7 @@
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"
+#include "Slic3r/InvokeLaterBag.hpp"
 
 namespace Slic3r::App::Undo {
 
@@ -268,6 +269,8 @@ static std::string to_string(Biz::UndoSnapshotType type)
         return _u8L("Replace with STL");
     case Type::ReloadFromDisk:
         return _u8L("Reload from disk");
+    case Type::EditVirtualExtruders:
+        return _u8L("Edit virtual extruders");
     }
     PANIC("Unknown option");
     return {};
@@ -302,9 +305,11 @@ void Store::select_snapshot(Biz::UndoSnapshotSelection::Variant snapshot_variant
     m_snapshotting_enabled = false;
     const ScopeGuard guard{[&]() { m_snapshotting_enabled = true; }};
 
+    InvokeLaterBag listener_notifications;
     m_project_interactor.reload_config_containers_after_undo(
         project_id,
-        std::move(loaded_snapshot.config_containers)
+        std::move(loaded_snapshot.config_containers),
+        listener_notifications
     );
 
     m_scene_interactor.bed_selection().set_state(
@@ -323,6 +328,8 @@ void Store::select_snapshot(Biz::UndoSnapshotSelection::Variant snapshot_variant
 
     ASSERT_VAL(m_gizmo_controller)->activate_tool(loaded_snapshot.selected_tool_gizmo);
     m_gizmo_controller->set_tools_state(loaded_snapshot.tools_state);
+
+    listener_notifications.invoke_now();
 
     update_top_bar(project_id, it->second);
 }

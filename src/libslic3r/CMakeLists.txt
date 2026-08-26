@@ -100,6 +100,7 @@ set(SLIC3R_SOURCES
     src/libslic3r/ConfigUtils.hpp
     src/libslic3r/ConfigUtils.cpp
     src/libslic3r/ConfigViews.hpp
+    src/libslic3r/ConfigViews.cpp
     src/libslic3r/CSGMesh/CSGMesh.hpp
     src/libslic3r/CSGMesh/VoxelizeCSGMesh.hpp
     src/libslic3r/CSGMesh/CSGMeshCopy.hpp
@@ -131,6 +132,8 @@ set(SLIC3R_SOURCES
     src/libslic3r/ExtrudeConfig.cpp
     src/libslic3r/Feature/FuzzySkin/FuzzySkin.cpp
     src/libslic3r/Feature/FuzzySkin/FuzzySkin.hpp
+    src/libslic3r/Feature/VirtualExtruder/VirtualExtruder.cpp
+    src/libslic3r/Feature/VirtualExtruder/VirtualExtruder.hpp
     src/libslic3r/Feature/Interlocking/InterlockingGenerator.cpp
     src/libslic3r/Feature/Interlocking/InterlockingGenerator.hpp
     src/libslic3r/Feature/Interlocking/VoxelUtils.cpp

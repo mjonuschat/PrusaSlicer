@@ -20,7 +20,15 @@ public:
         const Preset::HwPrinterConfig& hw_config
     );
 
+    const VirtualExtruders& virtual_extruders() const
+    {
+        return m_virtual_extruders;
+    }
+
     static FullConfigFDM defaults();
+
+private:
+    VirtualExtruders m_virtual_extruders;
 };
 
 class PartialObjectConfigFDM : public PartialConfig {

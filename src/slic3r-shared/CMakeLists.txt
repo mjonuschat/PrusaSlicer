@@ -242,6 +242,22 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/App/PresetUpdater/PresetUpdaterSourceRow.cpp
         include/Slic3r/App/PresetUpdater/PresetUpdaterVendorRow.hpp
         src/Slic3r/App/PresetUpdater/PresetUpdaterVendorRow.cpp
+        include/Slic3r/App/ColorMix/ColorMixUtils.hpp
+        src/Slic3r/App/ColorMix/ColorMixUtils.cpp
+        include/Slic3r/App/ColorMix/ColorMixRecipeRow.hpp
+        src/Slic3r/App/ColorMix/ColorMixRecipeRow.cpp
+        include/Slic3r/App/ColorMix/BarycentricRatioPicker.hpp
+        src/Slic3r/App/ColorMix/BarycentricRatioPicker.cpp
+        include/Slic3r/App/ColorMix/BlendRatioBar.hpp
+        src/Slic3r/App/ColorMix/BlendRatioBar.cpp
+        include/Slic3r/App/ColorMix/LayerSequenceBar.hpp
+        src/Slic3r/App/ColorMix/LayerSequenceBar.cpp
+        include/Slic3r/App/ColorMix/ExtruderFilterButton.hpp
+        src/Slic3r/App/ColorMix/ExtruderFilterButton.cpp
+        include/Slic3r/App/ColorMix/BlendRecipeTile.hpp
+        src/Slic3r/App/ColorMix/BlendRecipeTile.cpp
+        include/Slic3r/App/ColorMix/ColorMixDialog.hpp
+        src/Slic3r/App/ColorMix/ColorMixDialog.cpp
         include/Slic3r/App/SidebarToolHeadRow.hpp
         src/Slic3r/App/SidebarToolHeadRow.cpp
         include/Slic3r/App/PrinterNozzleRow.hpp
@@ -1100,6 +1116,8 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/Format/3mf/Relations.cpp
         src/Slic3r/Biz/Format/3mf/Relations.hpp
         src/Slic3r/Biz/Format/3mf/ResultLoad3mf.cpp
+        include/Slic3r/Biz/Format/VirtualExtruder.hpp
+        src/Slic3r/Biz/Format/VirtualExtruder.cpp
 
         include/Slic3r/Biz/FileLoadingLogic.hpp
         src/Slic3r/Biz/FileLoadingLogic.cpp
@@ -1122,10 +1140,14 @@ set(SLIC3R_SHARED_FILES
         src/Slic3r/Biz/ArrangeInteractor.cpp
         include/Slic3r/Biz/ClipboardInteractor.hpp
         src/Slic3r/Biz/ClipboardInteractor.cpp
+        include/Slic3r/Biz/VirtualExtruderInteractor.hpp
+        src/Slic3r/Biz/VirtualExtruderInteractor.cpp
 
         include/Slic3r/Biz/IMdb.hpp
         include/Slic3r/Biz/IColorsChangedListener.hpp
         include/Slic3r/Biz/ProjectSettingsInteractor.hpp
+        include/Slic3r/Biz/IVirtualExtrudersChangedListener.hpp
+        include/Slic3r/Biz/VirtualExtrudersConfig.hpp
         src/Slic3r/Biz/ProjectSettingsInteractor.cpp
 
         include/Slic3r/Biz/PresetUpdater/IPresetUpdaterResultListener.hpp

@@ -1,14 +1,21 @@
 #include "libslic3r/ExtruderCandidates.hpp"
 #include "Slic3r/Domain/ConfigDefsFDM.hpp"
 
+#include "Slic3r/Biz/Algorithms/VirtualExtruder.hpp"
+
+using Slic3r::Domain::ModelObject;
 using Slic3r::Domain::ModelVolume;
+using Slic3r::Domain::VirtualExtruders;
 using Slic3r::Domain::TriangleSelector::TRIANGLE_STATE_TYPE_COUNT;
 using Slic3r::Domain::TriangleSelector::TriangleStateType;
 
 namespace Slic3r::Biz::Slicing {
 
-std::vector<unsigned int>
-get_painting_extruders(const Domain::ModelObject& model_object, const unsigned int num_extruders)
+std::vector<unsigned int> get_painting_extruders(
+    const ModelObject& model_object,
+    const unsigned int num_extruders,
+    const VirtualExtruders& virtual_extruders
+)
 {
     if (!model_object.is_mm_painted()) {
         return {};
@@ -36,12 +43,18 @@ get_painting_extruders(const Domain::ModelObject& model_object, const unsigned i
          state_idx < used_facet_states.size();
          ++state_idx)
     {
-        if (used_facet_states[state_idx] && state_idx <= num_extruders) {
+        if (used_facet_states[state_idx]
+            && (state_idx <= num_extruders
+                || Algorithms::VirtualExtruder::is_virtual_extruder(
+                    static_cast<unsigned int>(state_idx),
+                    virtual_extruders
+                )))
+        {
             result.emplace_back(state_idx);
         }
     }
 
-    return result;
+    return Algorithms::VirtualExtruder::expand_virtual_extruders_1based(result, virtual_extruders);
 }
 
 static std::set<unsigned> get_extra_support_extruders(
@@ -92,7 +105,8 @@ static std::set<unsigned> get_extra_support_extruders(
 std::set<unsigned> get_volume_extruder_candidates(
     const Domain::VolumeSettings& volume_settings,
     const Domain::ObjectSettings& object_settings,
-    const Domain::PrintSettings& print_settings
+    const Domain::PrintSettings& print_settings,
+    const VirtualExtruders& virtual_extruders
 )
 {
     std::set<unsigned> result;
@@ -127,20 +141,34 @@ std::set<unsigned> get_volume_extruder_candidates(
         }
         result.insert(static_cast<unsigned>(print_settings.items.opt(key).get<int>()) - 1);
     }
-    return result;
+
+    const std::vector<unsigned> collected_extruders{result.begin(), result.end()};
+    const std::vector<unsigned> expanded_extruders{
+        Algorithms::VirtualExtruder::expand_virtual_extruders_0based(
+            collected_extruders,
+            virtual_extruders
+        )
+    };
+
+    return std::set<unsigned>{expanded_extruders.begin(), expanded_extruders.end()};
 }
 
 /**
- * @brief Returns whether the volume is painted with an extruder that exceeds the number of extruders.
+ * @brief Returns whether the volume is painted with an extruder that does not exist.
  *
  * Facets painted with such an extruder are printed with the default extruder of the volume.
  *
  * @param volume Volume with multi-material painting.
- * @param num_extruders Number of extruders of the current printer.
- * @return True when any painting extruder of the volume exceeds num_extruders.
+ * @param num_extruders Number of physical extruders of the current printer.
+ * @param virtual_extruders Virtual extruder definitions valid for the current printer.
+ * @return True when any painting extruder of the volume is neither a physical slot
+ *         nor a declared virtual extruder.
  */
-bool
-has_paint_extruder_exceeding_extruder_count(const ModelVolume& volume, const size_t num_extruders)
+bool has_paint_extruder_exceeding_extruder_count(
+    const ModelVolume& volume,
+    const size_t num_extruders,
+    const VirtualExtruders& virtual_extruders
+)
 {
     const std::vector<bool>& used_facet_states =
         volume.mm_segmentation_facets.get_data().used_states;
@@ -149,7 +177,8 @@ has_paint_extruder_exceeding_extruder_count(const ModelVolume& volume, const siz
          state_idx < used_facet_states.size();
          ++state_idx)
     {
-        if (used_facet_states[state_idx] && state_idx > num_extruders) {
+        if (used_facet_states[state_idx] && state_idx > num_extruders
+            && !Algorithms::VirtualExtruder::is_virtual_extruder(static_cast<unsigned int>(state_idx), virtual_extruders)) {
             return true;
         }
     }
@@ -159,7 +188,8 @@ has_paint_extruder_exceeding_extruder_count(const ModelVolume& volume, const siz
 
 std::set<unsigned> get_object_extruder_candidates(
     const Domain::ModelObject& object,
-    const Domain::IConfigPackFDMViewer& config
+    const Domain::IConfigPackFDMViewer& config,
+    const VirtualExtruders& virtual_extruders
 )
 {
     const bool all_instances_not_printable{std::ranges::all_of(
@@ -177,9 +207,12 @@ std::set<unsigned> get_object_extruder_candidates(
 
     for (const auto& pair : object.layer_config_ranges) {
         const Domain::VolumeSettings& volume_settings{pair.second};
-        extruders.merge(
-            get_volume_extruder_candidates(volume_settings, object_settings, print_settings)
-        );
+        extruders.merge(get_volume_extruder_candidates(
+            volume_settings,
+            object_settings,
+            print_settings,
+            virtual_extruders
+        ));
     }
 
     for (const Domain::ModelVolume* volume : object.volumes) {
@@ -192,7 +225,11 @@ std::set<unsigned> get_object_extruder_candidates(
         // A fully painted part doesn't use its default extruders, unless some painting extruder doesn't exist.
         const bool default_extruders_unused = volume->type() == MODEL_PART
             && volume->is_fully_mm_painted()
-            && !has_paint_extruder_exceeding_extruder_count(*volume, config.filament_size());
+            && !has_paint_extruder_exceeding_extruder_count(
+                                                  *volume,
+                                                  config.filament_size(),
+                                                  virtual_extruders
+            );
 
         if (default_extruders_unused) {
             continue;
@@ -201,11 +238,12 @@ std::set<unsigned> get_object_extruder_candidates(
         extruders.merge(get_volume_extruder_candidates(
             volume->volume_settings,
             object.object_settings,
-            config.get_print()
+            config.get_print(),
+            virtual_extruders
         ));
     }
     const std::vector<unsigned> painting_extruders{
-        get_painting_extruders(object, config.filament_size())
+        get_painting_extruders(object, config.filament_size(), virtual_extruders)
     };
     for (unsigned extruder : painting_extruders) {
         extruders.insert(extruder - 1);
@@ -222,7 +260,8 @@ std::set<unsigned> get_object_extruder_candidates(
 std::vector<unsigned> get_extruder_candidates(
     const Domain::Model& model,
     const Domain::IConfigPackFDMViewer& config,
-    const Domain::BedInstance& bed
+    const Domain::BedInstance& bed,
+    const VirtualExtruders& virtual_extruders
 )
 {
     ASSERT(config.tool_size() > 0);
@@ -238,7 +277,7 @@ std::vector<unsigned> get_extruder_candidates(
     }
 
     for (const Domain::ModelObject* object : model.objects) {
-        extruders.merge(get_object_extruder_candidates(*object, config));
+        extruders.merge(get_object_extruder_candidates(*object, config, virtual_extruders));
     }
 
     const bool can_have_wipe_tower{

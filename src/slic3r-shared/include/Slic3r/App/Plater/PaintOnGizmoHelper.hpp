@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Slic3r/App/Plater/MMPaintingUtils.hpp"
 #include "Slic3r/App/Render/Device.hpp"
 #include "Slic3r/App/Scene/GeometryDataFactory.hpp"
 #include "Slic3r/App/Scene/Node.hpp"
@@ -16,7 +17,7 @@ public:
     TriangleSelectorRenderWrapper(
         const Domain::TriangleMesh& triangle_mesh,
         const AABBMesh& aabb_mesh,
-        const std::vector<Domain::ColorRGBA>& colors,
+        const PaintingPalette& colors,
         const Domain::ColorRGBA& default_volume_color
     );
     virtual ~TriangleSelectorRenderWrapper() = default;
@@ -54,7 +55,7 @@ public:
 private:
     Biz::Algorithms::TriangleSelector m_triangle_selector;
     const AABBMesh& m_aabb_mesh;
-    const std::vector<Domain::ColorRGBA>& m_colors;
+    const PaintingPalette& m_colors;
     const Domain::ColorRGBA m_default_volume_color;
 
     Render::Material m_painted_mesh_base_material;

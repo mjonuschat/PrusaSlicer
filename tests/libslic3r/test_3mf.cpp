@@ -38,7 +38,8 @@ SCENARIO("Reading 3mf file", "[3mf]") {
             boost::optional<Semver> version;
             Domain::WipeTowersOnBeds wipe_towers;
             Domain::CustomGCodesOnBeds custom_gcodes;
-            bool ret = Slic3rLegacy::load_3mf_legacy(path.c_str(), config, preset_metadata, &model, false, version, wipe_towers, custom_gcodes);
+            Biz::VirtualExtrudersConfig virtual_extruders_config;
+            bool ret = Slic3rLegacy::load_3mf_legacy(path.c_str(), config, preset_metadata, &model, false, version, wipe_towers, custom_gcodes, virtual_extruders_config);
             THEN("load should succeed") {
                 REQUIRE(ret);
             }
@@ -114,7 +115,8 @@ TEST_CASE("Export+Import geometry to/from 3mf file cycle", "[3mf]") {
             Domain::CustomGCodesOnBeds dst_custom_gcodes;
             {
                 boost::optional<Semver> version;
-                Slic3rLegacy::load_3mf_legacy(test_file.c_str(), dst_config, dst_preset_metadata, &dst_model, false, version, dst_wipe_towers, dst_custom_gcodes);
+                Biz::VirtualExtrudersConfig dst_virtual_extruders_config;
+                Slic3rLegacy::load_3mf_legacy(test_file.c_str(), dst_config, dst_preset_metadata, &dst_model, false, version, dst_wipe_towers, dst_custom_gcodes, dst_virtual_extruders_config);
             }
             boost::filesystem::remove(test_file);
 
