@@ -3,6 +3,8 @@
 #include "Slic3r/Biz/Slicing/TestUtils.hpp"
 #include "Slic3r/Domain/Model.hpp"
 #include "Slic3r/Domain/Project.hpp"
+#include "Slic3r/Biz/Config/3mf_legacy.hpp"
+#include "Slic3r/Biz/Config/ConfigLegacy.hpp"
 
 #include <boost/filesystem.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -131,4 +133,98 @@ TEST_CASE("3MF round trip restores used_states of painted volumes - NONE", "[3mf
 
     CHECK_FALSE(loaded_seam_painted.seam_facets.empty());
     CHECK(loaded_seam_painted.seam_facets.get_data().used_states[STATE_TYPE_NONE]);
+}
+
+namespace {
+
+// Loads a 3mf written by the current (core-spec) writer using the legacy 2.x importer, which
+// only understands MM segmentation stored inline as slic3rpe:mmu_segmentation <triangle>
+// attributes - never Metadata/Slic3r_facets_annotation.json.
+Domain::Model load_with_legacy_importer(const fs::path& file_path)
+{
+    Domain::Model legacy_model;
+    Domain::ConfigPack cfg;
+    Biz::LegacyPresetMetadata preset_metadata;
+    boost::optional<Slic3r::Semver> generator_version;
+    Domain::WipeTowersOnBeds wipe_towers;
+    Domain::CustomGCodesOnBeds custom_gcodes;
+    Biz::VirtualExtrudersConfig virtual_extruders_config;
+
+    bool loaded_ok = Slic3rLegacy::load_3mf_legacy(
+        file_path.string().c_str(),
+        cfg,
+        preset_metadata,
+        &legacy_model,
+        true,
+        generator_version,
+        wipe_towers,
+        custom_gcodes,
+        virtual_extruders_config
+    );
+    REQUIRE(loaded_ok);
+    return legacy_model;
+}
+
+} // namespace
+
+TEST_CASE("3MF dual-write: version-1 MM segmentation is readable by the legacy 2.x importer", "[3mf]")
+{
+    Project project;
+    project.model() = Test::generate_cubes(1, 1);
+
+    ModelVolume* volume = project.model().objects[0]->volumes.front();
+    const int facets_count = static_cast<int>(volume->mesh().facets_count());
+    // Extruder16 (value 16) is the highest state that still fits version 1 encoding.
+    paint_facets(*volume, &ModelVolume::mm_segmentation_facets, facets_count, TriangleStateType::Extruder16);
+
+    const fs::path temp_dir = fs::temp_directory_path() / fs::unique_path("slic3r-3mf-dualwrite-v1-%%%%-%%%%");
+    fs::create_directories(temp_dir);
+    const fs::path file_path = temp_dir / "dual_write_v1.3mf";
+    store_3mf(file_path.string(), project);
+
+    const Domain::Model legacy_model = load_with_legacy_importer(file_path);
+
+    boost::system::error_code cleanup_error;
+    fs::remove_all(temp_dir, cleanup_error);
+
+    REQUIRE(legacy_model.objects.size() == 1);
+    REQUIRE(legacy_model.objects[0]->volumes.size() == 1);
+
+    const ModelVolume& legacy_volume = *legacy_model.objects[0]->volumes.front();
+    REQUIRE_FALSE(legacy_volume.mm_segmentation_facets.empty());
+    for (int i = 0; i < facets_count; ++i) {
+        CHECK(
+            legacy_volume.mm_segmentation_facets.get_triangle_as_string(i) ==
+            volume->mm_segmentation_facets.get_triangle_as_string(i)
+        );
+    }
+}
+
+TEST_CASE("3MF dual-write: version-2 MM segmentation is not dual-written for the legacy importer", "[3mf]")
+{
+    Project project;
+    project.model() = Test::generate_cubes(1, 1);
+
+    ModelVolume* volume = project.model().objects[0]->volumes.front();
+    const int facets_count = static_cast<int>(volume->mesh().facets_count());
+    // Any state beyond the named Extruder1..16 enumerators (17-255) forces version 2 encoding,
+    // which the legacy inline attribute can't represent - a 2.x reader can't decode it anyway.
+    paint_facets(*volume, &ModelVolume::mm_segmentation_facets, facets_count, static_cast<TriangleStateType>(20));
+
+    const fs::path temp_dir = fs::temp_directory_path() / fs::unique_path("slic3r-3mf-dualwrite-v2-%%%%-%%%%");
+    fs::create_directories(temp_dir);
+    const fs::path file_path = temp_dir / "dual_write_v2.3mf";
+    store_3mf(file_path.string(), project);
+
+    const Domain::Model legacy_model = load_with_legacy_importer(file_path);
+
+    boost::system::error_code cleanup_error;
+    fs::remove_all(temp_dir, cleanup_error);
+
+    REQUIRE(legacy_model.objects.size() == 1);
+    REQUIRE(legacy_model.objects[0]->volumes.size() == 1);
+
+    // A 2.x reader only ever sees MM painting via the inline attribute, so when it's skipped
+    // (version 2 data can't be dual-written) the legacy importer must find no MM painting at all.
+    CHECK(legacy_model.objects[0]->volumes.front()->mm_segmentation_facets.empty());
 }

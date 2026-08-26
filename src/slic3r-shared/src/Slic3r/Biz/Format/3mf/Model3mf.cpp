@@ -17,6 +17,7 @@
 #include "Slic3r/Biz/Algorithms/Geometry/Geometry.hpp"
 #include "Slic3r/Biz/Format/ResultLoad3mf.hpp"
 #include "Slic3r/Biz/Utils/XmlEscape.hpp"
+#include "Slic3r/Biz/Format/3mf/LegacyPaintingCompat.hpp"
 
 #include "Slic3r/Time.hpp" // utc_timestamp
 #include "LocalesUtils.hpp" // CNumericLocalesSetter
@@ -77,7 +78,7 @@ constexpr const char *RECOMMENDED_EXTENSION_ATTR = "recommendedextensions";
 constexpr const char *XMLNS_VALUE =            "http://schemas.microsoft.com/3dmanufacturing/core/2015/02";
 constexpr const char *XMLNS_PRODUCTION_VALUE = "http://schemas.microsoft.com/3dmanufacturing/production/2015/06";
 constexpr const char *XMLNS_MIRRORMESH_VALUE = "http://schemas.microsoft.com/3dmanufacturing/mirroring/2021/07";
-constexpr const char *XMLNS_SLIC3R_VALUE =     "http://schemas.slic3r.org/3mf/2017/06"; // not used any more
+constexpr const char *XMLNS_SLIC3R_VALUE =     "http://schemas.slic3r.org/3mf/2017/06"; // slic3rpe: prefix, also written when dual-writing MM segmentation for 2.x readers
 
 // model nodes
 constexpr const char *METADATA_TAG = "metadata";
@@ -324,6 +325,9 @@ void process_triangle_atts(LoadedModelFile &model, const XML_Char **atts, int nu
                 triangle[1] = parse_int(value);
             } else if (::strcmp(name, V3_ATTR) == 0) {
                 triangle[2] = parse_int(value);
+            } else if (::strcmp(name, Legacy::MM_SEGMENTATION_ATTR) == 0) {
+                // Dual-written for 2.x readers (see store_meshes()). This reader gets the
+                // same data from Metadata/Slic3r_facets_annotation.json, so just ignore it here.
             } else {
                 collected_issues.add_issue(Read3mfIssue(Read3mfIssueType::model_triangle_unknown_attr,
                     std::string(name), std::string(value)));
@@ -1226,7 +1230,25 @@ void write_chunk(ZipSink &sink, const char *data, size_t n)
     *sink.running_crc = (mz_uint32) mz_crc32(*sink.running_crc, (const mz_uint8*) data, n);
 }
 
-void store_geometry(ZipSink &sink, const indexed_triangle_set &its, std::string &output_buffer, bool is_mirrored = false)
+// Appends a legacy slic3rpe:mmu_segmentation attribute for one triangle, if painted. Written
+// in addition to Metadata/Slic3r_facets_annotation.json so 2.x readers, which never look at
+// that JSON, still see MM segmentation (see store_meshes() for when this is called at all).
+void append_mm_segmentation_attr(const Domain::FacetsAnnotation &facets, int triangle_idx, std::string &output_buffer)
+{
+    std::string data = facets.get_triangle_as_string(triangle_idx);
+    if (data.empty())
+        return;
+    output_buffer += " ";
+    output_buffer += Legacy::MM_SEGMENTATION_ATTR;
+    output_buffer += "=\"";
+    output_buffer += data;
+    output_buffer += "\"";
+}
+
+// mm_segmentation_facets is null when dual-writing is off (see store_model3mf), or non-null
+// but still produces no attribute for a given triangle when that triangle isn't painted.
+void store_geometry(ZipSink &sink, const indexed_triangle_set &its, std::string &output_buffer,
+    bool is_mirrored = false, const Domain::FacetsAnnotation *mm_segmentation_facets = nullptr)
 {
     ASSERT(its.vertices.size() >= 4);
     ASSERT(! its.indices.empty());
@@ -1288,29 +1310,48 @@ void store_geometry(ZipSink &sink, const indexed_triangle_set &its, std::string 
                t[2] >= 0 && t[2] < vertices_count;
     };
 
+    // Fills the fixed buffer via the fast, unchecked karma generator - only safe because
+    // v1/v2/v3 are plain integers with a small bounded text length.
     auto triangle_to_string = [&buf](int t0, int t1, int t2){
         char *ptr = buf;
         boost::spirit::karma::generate(ptr, boost::spirit::lit("     <")
                 << TRIANGLE_TAG << " v1=\"" << boost::spirit::int_ << "\" v2=\""
-                << boost::spirit::int_ << "\" v3=\"" << boost::spirit::int_ << "\" />\n",
+                << boost::spirit::int_ << "\" v3=\"" << boost::spirit::int_ << "\"",
             t0, t1, t2);
         *ptr = '\0'; // TODO: try to add it into spirit
         return buf;
     };
 
+    // Writes one complete <triangle .../> element, including the optional legacy MM
+    // segmentation attribute. That attribute can't be generated into the fixed buffer above:
+    // its encoded length is unbounded (a recursively split triangle's bitstream can be
+    // arbitrarily long), unlike the small, bounded v1/v2/v3 integers.
+    auto write_triangle = [&](int t0, int t1, int t2, int triangle_idx) {
+        output_buffer += triangle_to_string(t0, t1, t2);
+        if (mm_segmentation_facets)
+            append_mm_segmentation_attr(*mm_segmentation_facets, triangle_idx, output_buffer);
+        output_buffer += " />\n";
+    };
+
+    // Triangle index passed to write_triangle matches FacetsAnnotation's indexing (position
+    // within its.indices), same convention used to key Slic3r_facets_annotation.json.
+    int triangle_idx = 0;
+
     // condition SHOULD be before loop(which could be HUGE)
     if (!is_mirrored) {
         for (const Domain::Index3& t : its.indices) {
             // Disallowe storing of negative idices or bigger than vertices count
-            if (!is_valid(t)) continue;
-            output_buffer += triangle_to_string(t[0], t[1], t[2]);
+            if (!is_valid(t)) { ++triangle_idx; continue; }
+            write_triangle(t[0], t[1], t[2], triangle_idx);
+            ++triangle_idx;
             flush();
         }
     } else {
         // same as above only indices 2 and 0 are swaped to invert volume
         for (const Domain::Index3& t : its.indices) {
-            if (!is_valid(t)) continue;
-            output_buffer += triangle_to_string(t[2], t[1], t[0]);
+            if (!is_valid(t)) { ++triangle_idx; continue; }
+            write_triangle(t[2], t[1], t[0], triangle_idx);
+            ++triangle_idx;
             flush();
         }
     }
@@ -1334,11 +1375,12 @@ void store_geometry(ZipSink &sink, const indexed_triangle_set &its, std::string 
 }
 
 // write volume geometry as object into model file
-void store_resource_object_geometry(ZipSink &sink, const indexed_triangle_set &its, unsigned object_id)
+void store_resource_object_geometry(ZipSink &sink, const indexed_triangle_set &its, unsigned object_id,
+    const Domain::FacetsAnnotation *mm_segmentation_facets = nullptr)
 {
     std::string output_buffer;
     output_buffer += std::string() + "  <" + OBJECT_TAG + " " + ID_ATTR + "=\"" + std::to_string(object_id) + "\" >\n";
-    store_geometry(sink, its, output_buffer);
+    store_geometry(sink, its, output_buffer, false, mm_segmentation_facets);
     output_buffer += std::string() + "  </" + OBJECT_TAG + ">\n";
     write_chunk(sink, output_buffer.data(), output_buffer.size());
 }
@@ -1456,7 +1498,7 @@ const TriangleMesh * get_mesh_ptr(const ModelVolume *volume_ptr)
 };
 
 MeshToObjectid store_meshes(ZipSink& sink, const Slic3r::Domain::Model &model,
-    unsigned &object_id) {
+    unsigned &object_id, bool dual_write_mm_segmentation) {
     MeshToObjectid stored_meshes;
     for (const ModelObject *object_ptr : model.objects) {
         if (!is_valid_object(object_ptr))
@@ -1467,11 +1509,17 @@ MeshToObjectid store_meshes(ZipSink& sink, const Slic3r::Domain::Model &model,
              || mesh_ptr->its.vertices.size() < 4
              || mesh_ptr->its.indices.empty())
                 continue;
-            if (auto it = stored_meshes.find(mesh_ptr); 
+            if (auto it = stored_meshes.find(mesh_ptr);
                 it != stored_meshes.end())
                 // already stored volume geometry
                 continue;
-            store_resource_object_geometry(sink, mesh_ptr->its, object_id);
+            // Null means "don't dual-write": either off for the whole file, or this particular
+            // volume isn't MM-painted (append_mm_segmentation_attr would just no-op anyway,
+            // but skip it outright to avoid a get_triangle_as_string() call per triangle).
+            const Domain::FacetsAnnotation *mm_segmentation_facets =
+                (dual_write_mm_segmentation && !volume_ptr->mm_segmentation_facets.empty()) ?
+                    &volume_ptr->mm_segmentation_facets : nullptr;
+            store_resource_object_geometry(sink, mesh_ptr->its, object_id, mm_segmentation_facets);
             stored_meshes[mesh_ptr] = {object_id};
             ++object_id;
         }
@@ -1880,6 +1928,17 @@ StoredStructure Slic3r::store_model3mf(mz_zip_archive &archive, const Domain::Mo
 
     ZipBackend backend = param.use_uncompressed_version ? ZipBackend::Uncompressed : ZipBackend::Compressed;
 
+    // Dual-write MM segmentation into legacy slic3rpe:mmu_segmentation triangle attributes
+    // (in addition to Metadata/Slic3r_facets_annotation.json) so 2.x readers, which only
+    // understand the inline attribute, still see it. Only worthwhile when the whole model's
+    // painting fits version 1 - a 2.x reader can't decode version 2 states regardless of where
+    // they are stored, and the version is a single file-wide flag, not per volume.
+    // Not supported together with the production extension: that stores geometry in separate
+    // 3D/Objects/*.model parts, a structure 2.x readers never had.
+    bool dual_write_mm = !param.use_production_extension
+        && model.is_mm_painted()
+        && model.minimum_required_painting_version(&ModelVolume::mm_segmentation_facets) == 1;
+
     if (param.use_production_extension) {
         // store meshes to separate files by production extension
         result.meshes = store_separate_meshes(archive, model, param.zip64, object_id, backend);
@@ -1907,13 +1966,18 @@ StoredStructure Slic3r::store_model3mf(mz_zip_archive &archive, const Domain::Mo
             << UNIT_ATTR << "=\"" << unit_to_name.left.at(ST_Unit::millimeter) << "\" "
             << LANG_ATTR << "=\"en-US\" "
             << XMLNS_ATTR << "=\"" << XMLNS_VALUE << "\"";
-        if (param.use_production_extension) 
-            // Use "p" as production extension namespace name and set it as required 
+        if (param.use_production_extension)
+            // Use "p" as production extension namespace name and set it as required
             stream << " xmlns:p=\"" << XMLNS_PRODUCTION_VALUE << "\""
                    << " requiredextensions=\"p\"";
+        if (dual_write_mm)
+            // "slic3rpe" is the namespace prefix 2.x readers expect for their custom attributes.
+            stream << " xmlns:slic3rpe=\"" << XMLNS_SLIC3R_VALUE << "\"";
         stream << ">\n";
-        
+
         auto metadata = param.metadata; // copy from const
+        if (dual_write_mm)
+            metadata.push_back(ModelMetadata{std::string(Legacy::MM_PAINTING_VERSION_METADATA_NAME), "1"});
         write(stream, update(metadata, model));
 
         // Start write resources
@@ -1923,7 +1987,7 @@ StoredStructure Slic3r::store_model3mf(mz_zip_archive &archive, const Domain::Mo
     } // context of stream
 
     if (!param.use_production_extension) // store meshes into main model
-        result.meshes = store_meshes(context.sink(), model, object_id);
+        result.meshes = store_meshes(context.sink(), model, object_id, dual_write_mm);
     
     { // context of stream
         std::stringstream stream;

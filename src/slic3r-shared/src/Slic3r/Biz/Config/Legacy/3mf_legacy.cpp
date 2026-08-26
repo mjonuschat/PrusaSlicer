@@ -59,6 +59,7 @@ namespace pt = boost::property_tree;
 #include "Slic3r/Biz/Utils/XmlEscape.hpp"
 #include "Slic3r/Biz/Config/Legacy/LegacyCustomGCodesList.hpp"
 #include "Slic3r/Biz/Format/VirtualExtruder.hpp"
+#include "Slic3r/Biz/Format/3mf/LegacyPaintingCompat.hpp"
 
 using Slic3r::Domain::TriangleMesh;
 using Slic3r::Domain::Index3;
@@ -177,7 +178,7 @@ static constexpr const char* PRINTABLE_ATTR = "printable";
 static constexpr const char* INSTANCESCOUNT_ATTR = "instances_count";
 static constexpr const char* CUSTOM_SUPPORTS_ATTR = "slic3rpe:custom_supports";
 static constexpr const char* CUSTOM_SEAM_ATTR = "slic3rpe:custom_seam";
-static constexpr const char* MM_SEGMENTATION_ATTR = "slic3rpe:mmu_segmentation";
+static constexpr const char* MM_SEGMENTATION_ATTR = Slic3r::format_3MF::Legacy::MM_SEGMENTATION_ATTR;
 static constexpr const char* FUZZY_SKIN_ATTR = "slic3rpe:fuzzy_skin";
 
 static constexpr const char* KEY_ATTR = "key";
