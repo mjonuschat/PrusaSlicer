@@ -887,13 +887,50 @@ bool ObjectList::render_config_containers()
     return is_changed_selection;
 }
 
+namespace {
+static bool utf8_last_byte_is_ascii_space(std::string_view s)
+{
+    return !s.empty() && std::isspace(static_cast<unsigned char>(s.back()));
+}
+
+static void utf8_remove_last_codepoint(std::string_view& s)
+{
+    if (s.empty()) {
+        return;
+    }
+    size_t i = s.size() - 1;
+    while (i > 0 && (static_cast<unsigned char>(s[i]) & 0xC0) == 0x80) {
+        --i;
+    }
+    s.remove_suffix(s.size() - i);
+}
+} // namespace
+
 void ObjectList::render_group_name(const std::string& name)
 {
     IndentGuard ig(m_inner_padding.x());
     BoldFontGuard bfg(m_imgui_render);
 
+    static const float btn_width = 2 * m_horizontal_padding
+        + ImGui::CalcTextSize(icon_str(Render::Icon::AddBedIcon).c_str()).x;
+    auto target_size_x = ImGui::GetContentRegionAvail().x - btn_width;
+
+    std::string_view elided_text = name;
+    std::string render_name{name};
+    ImVec2 current_size = ImGui::CalcTextSize(elided_text.data());
+    // As long as the text do not fit target_size keep removing characters from the end
+    while (current_size.x > target_size_x && !elided_text.empty()) {
+        utf8_remove_last_codepoint(elided_text);
+        // also remove trailing whitespaces
+        while (!elided_text.empty() && utf8_last_byte_is_ascii_space(elided_text)) {
+            utf8_remove_last_codepoint(elided_text);
+        }
+        render_name  = std::string(elided_text) + "…";
+        current_size = ImGui::CalcTextSize(render_name.c_str());
+    }
+
     ImGui::AlignTextToFramePadding();
-    ImGui::Text("%s", name.c_str());
+    ImGui::Text("%s", render_name.c_str());
 }
 
 void ObjectList::render_all_beds_node()
