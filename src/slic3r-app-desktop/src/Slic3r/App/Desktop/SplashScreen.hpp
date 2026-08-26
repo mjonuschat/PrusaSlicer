@@ -25,9 +25,6 @@ private:
         wxFont credits_font;
 
         void init(const wxFont& init_font, bool is_editor, int text_banner_width);
-        // wrap a string for the strings no longer then 55 symbols
-        // return extent of the longest string
-        int word_wrap_string(wxString& input, wxDC& dc);
     } m_constant_text;
 
     void init_constant_text();
@@ -35,6 +32,8 @@ private:
 
 private:
     bool m_is_editor{true};
+    wxColour m_text_color;
+    wxColour m_highlighted_text_color;
     wxBitmap m_main_bitmap;
     wxFont m_action_font;
     wxRect m_state_text_rect;
