@@ -833,6 +833,7 @@ void PlaterRenderModule::init_dialog_navigation()
         };
         dialog->set_title(tool_name(tool_type));
         dialog->set_shortcut(tool_shortcut(tool_type));
+        dialog->set_icon(tool_icon(tool_type));
 
         m_layout->sidebar_stack_layout()->insert_gizmo(tool_type, std::move(dialog));
     };
