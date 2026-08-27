@@ -230,3 +230,31 @@ TEST_CASE("Object crosses concave edge of L-shaped custom bed", "[algorithms][be
         check_containment(bed, mesh, bounding_box, convex_hull) == BedContainmentState::Colliding
     );
 }
+
+TEST_CASE("Object is colliding with two beds", "[algorithms][bed-containment]")
+{
+    const Vec2ds contour1 = {{0, 0}, {10, 0}, {10, 10}, {0, 10}};
+
+    Bed bed1 = Bed::create(
+        BedCreationData{BedType::Rectangle, contour1, bed_contour_as_its(contour1), 250.0f}
+    );
+
+    const Vec2ds contour2 = {{20, 0}, {30, 0}, {30, 10}, {20, 10}};
+
+    Bed bed2 = Bed::create(
+        BedCreationData{BedType::Rectangle, contour2, bed_contour_as_its(contour2), 250.0f}
+    );
+
+    AABBMesh mesh1 = bed_contour_as_aabb_mesh(bed1);
+    AABBMesh mesh2 = bed_contour_as_aabb_mesh(bed2);
+
+    Vec2ds convex_hull         = {{0, 0}, {40, 0}, {40, 10}, {0, 10}};
+    BoundingBox2d bounding_box = Algorithms::BoundingBox::construct(convex_hull);
+
+    CHECK(
+        check_containment(bed1, mesh1, bounding_box, convex_hull) == BedContainmentState::Colliding
+    );
+    CHECK(
+        check_containment(bed2, mesh2, bounding_box, convex_hull) == BedContainmentState::Colliding
+    );
+}

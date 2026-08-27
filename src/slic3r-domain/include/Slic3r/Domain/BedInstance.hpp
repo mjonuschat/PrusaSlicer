@@ -7,10 +7,13 @@
 #include "Slic3r/Domain/ObjectID.hpp"
 #include "Slic3r/Domain/Transformation.hpp"
 
+#include <unordered_set>
+
 namespace Slic3r::Domain {
 
 // TODO: move this to better place
 using ModelInstanceList      = std::vector<ModelInstance*>;
+using ModelInstanceSet       = std::unordered_set<ModelInstance*>;
 using ConstModelInstanceList = std::vector<const ModelInstance*>;
 
 class Bed;
@@ -46,7 +49,7 @@ struct BedInstance : public ObjectBase
     std::reference_wrapper<const Bed> bed;
     Transformation transformation;
     ModelInstanceList model_instances;
-    ModelInstanceList colliding_instances;
+    ModelInstanceSet colliding_instances;
     bool print_volume_enabled{false};
     ModelWipeTower wipe_tower{};
     std::optional<CustomGCode::Info> custom_gcode;

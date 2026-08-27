@@ -458,7 +458,7 @@ std::pair<Domain::ModelInstanceList, Domain::ModelInstanceList> get_instances_on
     for (const auto& bed_instance : bed_instances) {
         const Domain::ModelInstanceList& instances_on_bed{bed_instance.get().model_instances};
         result.first.insert(result.first.end(), instances_on_bed.begin(), instances_on_bed.end());
-        const Domain::ModelInstanceList& instances_colliding{ bed_instance.get().colliding_instances };
+        const Domain::ModelInstanceSet& instances_colliding{ bed_instance.get().colliding_instances };
         result.second.insert(result.second.end(), instances_colliding.begin(), instances_colliding.end());
     }
     return result;

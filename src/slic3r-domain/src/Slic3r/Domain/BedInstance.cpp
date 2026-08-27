@@ -24,7 +24,7 @@ std::unique_ptr<BedInstance> BedInstance::copy(
     bed_instance->colliding_instances.reserve(colliding_instances.size());
     std::ranges::transform(
         colliding_instances,
-        std::back_inserter(bed_instance->colliding_instances),
+        std::inserter(bed_instance->colliding_instances, bed_instance->colliding_instances.end()),
         [&](ModelInstance* model_instance)
         { return model_instance_translation_table.at(model_instance); }
     );

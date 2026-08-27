@@ -28,6 +28,15 @@ bool remove_instance(Domain::ModelInstanceList& instances, Domain::ModelInstance
     instances.erase(it);
     return true;
 }
+
+bool remove_instance(Domain::ModelInstanceSet& instances, Domain::ModelInstance* inst)
+{
+    auto it = std::find(instances.begin(), instances.end(), inst);
+    if (it == instances.end())
+        return false;
+    instances.erase(it);
+    return true;
+}
 } // anonymous namespace
 
 void remove_instance_from_bed(
@@ -37,22 +46,22 @@ void remove_instance_from_bed(
 )
 {
     ZoneScoped;
-    if (remove_instance(project.unplaced_model_instances(), model_instance)) {
-        changes.unplaced_instances_updated = true;
-        for (auto& cc : project.config_containers()) {
-            for (auto& bi : cc->bed_instances()) {
-                if (remove_instance(bi->colliding_instances, model_instance)) {
-                    --changes.colliding_instances_updated_count;
-                }
-            }
-        }
-        return;
-    }
+
+    bool found_instance = remove_instance(project.unplaced_model_instances(), model_instance);
+    changes.unplaced_instances_updated |= found_instance;
+
     for (auto& cc : project.config_containers()) {
         for (auto& bi : cc->bed_instances()) {
-            if (remove_instance(bi->model_instances, model_instance)) {
+            // Remove only first occurence of model_instance
+            if (!found_instance && remove_instance(bi->model_instances, model_instance)) {
+                found_instance = true;
                 changes.updated_beds.insert(Domain::BedRef{cc->id().id, bi->id().id});
-                return;
+            }
+
+            // Instance may be colliding with mulitple beds
+            // Go through everything and remove every instance of it
+            if (remove_instance(bi->colliding_instances, model_instance)) {
+                --changes.colliding_instances_updated_count;
             }
         }
     }
@@ -252,8 +261,10 @@ void BedTracking::update_instance_bed_placement(
                 );
             return;
         } else {
-            bi->colliding_instances.push_back(&inst);
-            ++changes.colliding_instances_updated_count;
+            if (!bi->colliding_instances.contains(&inst)) {
+                bi->colliding_instances.insert(&inst);
+                ++changes.colliding_instances_updated_count;
+            }
         }
     }
     project.unplaced_model_instances().push_back(&inst);
