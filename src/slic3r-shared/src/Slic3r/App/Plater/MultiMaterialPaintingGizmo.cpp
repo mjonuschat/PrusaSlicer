@@ -24,7 +24,6 @@ using Slic3r::Domain::ConfigContainer;
 using Slic3r::Domain::FacetsAnnotationKind;
 using Slic3r::Domain::ModelVolume;
 using Slic3r::Domain::PrinterTechnology;
-using Slic3r::Domain::Project;
 using Slic3r::Domain::SelectionId;
 using Slic3r::Domain::VirtualExtruder;
 
@@ -132,12 +131,9 @@ bool MultiMaterialPaintingGizmo::enabled() const
         return false;
     }
 
-    const Project& project{
-        m_project_interactor.workbench().project(m_project_interactor.selected_project_id())
-    };
-
     const ConfigContainer* config_container =
-        project.find_config_container_by_element(selection.elements.front());
+        m_project_interactor.selected_project()
+            .find_config_container(m_project_interactor.selected_config_container_id());
 
     if (config_container == nullptr) {
         return false;

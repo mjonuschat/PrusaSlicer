@@ -1333,23 +1333,17 @@ void PaintOnGizmoBase::render_scene(Render::CommandBuffer& cmd_buffer)
 
 bool PaintOnGizmoBase::enabled() const
 {
-    const ObjectSelection& selection = m_project_interactor.scene_interactor().object_selection();
+    const ObjectSelection& selection = m_scene_interactor.object_selection();
     if (selection.state() != SelectionState::WholeInstance) {
         return false;
     }
 
-    const Project& project{
-        m_project_interactor.workbench().project(m_project_interactor.selected_project_id())
-    };
-
     const ConfigContainer* config_container =
-        project.find_config_container_by_element(selection.elements.front());
+        m_project_interactor.selected_project()
+            .find_config_container(m_project_interactor.selected_config_container_id());
 
-    if (config_container == nullptr) {
-        return false;
-    }
-
-    return config_container->print_technology() == PrinterTechnology::FFF;
+    return config_container != nullptr
+        && config_container->print_technology() == PrinterTechnology::FFF;
 }
 
 void PaintOnGizmoBase::provide_gizmo_controller(Scene::IGizmoController& gizmo_controller)
