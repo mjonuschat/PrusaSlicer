@@ -1764,15 +1764,15 @@ bool SceneInteractor::can_export_selection_as_mesh() const
         return false;
     }
 
+    if (selection.mode == SelectionMode::Volume) {
+        ASSERT(selection.elements.front().has_volume());
+        return selection.elements.size() == 1;
+    }
+
     const Project& project    = m_workbench.project(m_selected_project_id);
     const ModelObject* object = project.find_object_by_id(selection.elements.front().object_id);
     if (object == nullptr) {
         return false;
-    }
-
-    if (selection.mode == SelectionMode::Volume) {
-        ASSERT(selection.elements.size() == 1);
-        return selection.elements.front().has_volume();
     }
 
     return selection.elements.size() == 1 || selection.elements.size() == object->instances.size();
