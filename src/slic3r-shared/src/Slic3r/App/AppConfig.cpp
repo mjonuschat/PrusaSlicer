@@ -226,7 +226,7 @@ void appconfig_config_init_fn(Domain::ConfigDefinitions& defs)
     def = defs.add("show_ruler_in_dbl_slider", typeid(bool));
     def->location = Domain::AppConfigLocation{};
     def->category = Category::Hidden;
-    def->init_fn = []() { return Domain::ConfigValue(true); };
+    def->init_fn = []() { return Domain::ConfigValue(false); };
 
     def = defs.add("show_ruler_bg_in_dbl_slider", typeid(bool));
     def->location = Domain::AppConfigLocation{};
