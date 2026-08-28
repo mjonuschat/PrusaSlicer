@@ -37,6 +37,7 @@ using Slic3r::Domain::ConfigContainer;
 using Slic3r::Domain::ConfigItem;
 using Slic3r::Domain::ConfigPack;
 using Slic3r::Domain::ConfigPackFDM;
+using Slic3r::Domain::ElementRefs;
 using Slic3r::Domain::ModelObject;
 using Slic3r::Domain::ModelVolume;
 using Slic3r::Domain::PrinterTechnology;
@@ -696,13 +697,14 @@ tl::expected<void, std::string> ProjectInteractor::apply_virtual_extruders(
 
     // Drop references to virtual extruder ids that no ConfigGroup defines.
     bool any_reference_dropped = false;
+    std::map<TriangleStateType, TriangleStateType> state_remap;
+    ElementRefs volume_refs_to_remap;
     for (const unsigned int removed_id : removed_virtual_extruder_ids) {
         if (all_defined_ids.contains(removed_id) || removed_id <= max_physical_slot_count) {
             continue;
         }
 
         const bool id_can_be_painted = static_cast<size_t>(removed_id) < TRIANGLE_STATE_TYPE_COUNT;
-        std::map<TriangleStateType, TriangleStateType> state_remap;
         if (id_can_be_painted) {
             state_remap
                 .emplace(static_cast<TriangleStateType>(removed_id), TriangleStateType::NONE);
@@ -747,15 +749,25 @@ tl::expected<void, std::string> ProjectInteractor::apply_virtual_extruders(
                     continue;
                 }
 
-                Algorithms::TriangleSelector selector(volume->mesh());
-                selector.deserialize(volume->mm_segmentation_facets.get_data(), false);
-                selector.remap_states(state_remap);
-
-                volume->mm_segmentation_facets.set_data(selector.serialize());
+                volume_refs_to_remap.emplace_back(object->id().id, 0, volume->id().id);
                 any_reference_dropped = true;
             }
         }
     }
+
+    m_scene_interactor.modify_facets_annotations(
+        volume_refs_to_remap,
+        Domain::FacetsAnnotationKind::MultiMaterial,
+        [&state_remap](const Domain::ElementRef&, ModelVolume& volume)
+        {
+            Algorithms::TriangleSelector selector(volume.mesh());
+            selector.deserialize(volume.mm_segmentation_facets.get_data(), false);
+            selector.remap_states(state_remap);
+
+            volume.mm_segmentation_facets.set_data(selector.serialize());
+            return true;
+        }
+    );
 
     if (!any_reference_dropped) {
         return {};
