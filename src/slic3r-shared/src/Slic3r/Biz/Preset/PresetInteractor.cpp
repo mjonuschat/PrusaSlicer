@@ -28,8 +28,9 @@
 #include <vector>
 #include <string>
 #include <boost/algorithm/string.hpp>
-#include "boost/filesystem/path.hpp"
+#include <boost/filesystem/path.hpp>
 #include <Slic3r/Log.hpp>
+#include <magic_enum/magic_enum.hpp>
 
 using Slic3r::Domain::Vec2d;
 using Slic3r::Domain::Vec2ds;
@@ -182,9 +183,51 @@ PresetInteractor::PresetInteractor(
 
 void PresetInteractor::update_vendor_presets(std::mutex& mut, Domain::Preset::Bundle& preset_bundle, const std::string& vendor_id)
 {
-    const auto& vendor_bundle = preset_bundle.vendor_bundles.at(vendor_id);
-
     spdlog::stopwatch sw;
+    auto& mut_vendor_bundle = preset_bundle.vendor_bundles.at(vendor_id);
+
+    auto upgrade_hw_config_features =
+        [&preset_bundle, &vendor_id, this](Domain::Preset::HwPrinterConfig& hw_config)
+    {
+        if (hw_config.vendor_id == vendor_id) {
+            auto result = update_hw_config_features(preset_bundle, hw_config);
+            if (!result.has_value()) {
+                SPDLOG_WARN(
+                    "Error updating hw_config (name: {}, id: {}) features upgrade failed with error: {}",
+                    hw_config.name,
+                    hw_config.id,
+                    result.error()
+                );
+            }
+        }
+    };
+
+    for (auto& hw_config : preset_bundle.printer_configs | std::views::values) {
+        upgrade_hw_config_features(hw_config);
+    }
+
+    for (auto& hw_config : mut_vendor_bundle.printer_configs) {
+        upgrade_hw_config_features(hw_config);
+    }
+
+    for (auto& p : m_project_contexts | std::views::values) {
+        for (auto& hw_config : p.runtime_presets.printer_configs | std::views::values) {
+            upgrade_hw_config_features(hw_config);
+        }
+
+        if (p.invalid_hw_config.has_value()) {
+            upgrade_hw_config_features(p.invalid_hw_config.value());
+        }
+    }
+
+    for (auto& p : m_workbench.projects() | std::views::values) {
+        for (auto& cc : p.config_containers()) {
+            upgrade_hw_config_features(cc->mutable_selected_preset().hw_config);
+        }
+    }
+
+
+    const auto& vendor_bundle = mut_vendor_bundle;
 
     // Update presets for global hw configs
     PresetEvaluator preset_evaluator{vendor_bundle.presets};
@@ -322,6 +365,7 @@ void PresetInteractor::load_preset_bundle(const IO::BundlePaths& bundle_paths)
     if (m_selected_project_id != Domain::INVALID_ID) {
         fill_printer_presets(false, bag);
         auto& selected_preset = mutable_selected_printer_preset();
+        fill_tool_items(selected_preset.hw_config);
         update_print_tool_cbi(
             selected_preset,
             selected_config_container_context().config_container_id
@@ -1755,6 +1799,12 @@ PresetInteractor::ToolItems PresetInteractor::get_tool_items(
     ToolItems result;
 
     HwConfigEvaluator config_eval;
+#if DEBUG_CONDITION_EVAL
+    config_eval.set_debug_output([](std::string_view message)
+    {
+        SPDLOG_INFO(message);
+    });
+#endif // DEBUG_CONDITION_EVAL
     const auto& tools = hw_config.vendor_id.empty() ? std::map<std::string, Domain::Preset::HwToolConfigDef>{} : (m_workbench.preset_bundle()
             .vendor_bundles.at(hw_config.vendor_id)
             .vendor_data.defs.at(hw_config.technology)
@@ -3189,31 +3239,11 @@ void update_features(const Domain::Preset::FeatureDefs& defs, Domain::Preset::Fe
 
 } // namespace
 
-tl::expected<void, std::string>  PresetInteractor::load_selected_preset_from_3mf(
-    Domain::SelectionId project_id,
-    Domain::Preset::SelectedPreset& selected_preset
+tl::expected<void, std::string> PresetInteractor::update_hw_config_features(
+    const Domain::Preset::Bundle& preset_bundle,
+    HwPrinterConfig& hw_config
 )
 {
-    using Domain::Preset::PresetOrigin;
-
-    auto& pc              = get_or_create_project_context(project_id);
-    auto& runtime_presets = pc.runtime_presets;
-
-    bool runtime_presets_evaluation_required = false;
-    const auto& preset_bundle = m_workbench.preset_bundle();
-
-    // update origin:
-    selected_preset.printer.origin = PresetOrigin::Runtime;
-    selected_preset.print.origin   = PresetOrigin::Runtime;
-    for (auto& p : selected_preset.tools) {
-        p.origin = PresetOrigin::Runtime;
-    }
-    for (auto& p : selected_preset.materials) {
-        p.origin = PresetOrigin::Runtime;
-    }
-
-    // 0. Update features according to up-to-date definitions
-    auto& hw_config = selected_preset.hw_config;
     const auto vendor_it = preset_bundle.vendor_bundles.find(hw_config.vendor_id);
     if (vendor_it == preset_bundle.vendor_bundles.end()) {
         return tl::unexpected(
@@ -3221,7 +3251,17 @@ tl::expected<void, std::string>  PresetInteractor::load_selected_preset_from_3mf
         );
     }
     const auto& vendor_bundle = vendor_it->second;
-    const auto& vendor_defs = vendor_bundle.vendor_data.defs.at(hw_config.technology);
+    auto vendor_def_it        = vendor_bundle.vendor_data.defs.find(hw_config.technology);
+    if (vendor_def_it == vendor_bundle.vendor_data.defs.end()) {
+        return tl::unexpected(
+            fmt::format(
+                fmt::runtime(_u8L("Unsupported technology {} for vendor: {}")),
+                magic_enum::enum_name(hw_config.technology),
+                hw_config.vendor_id
+            )
+        );
+    }
+    const auto& vendor_defs   = vendor_def_it->second;
 
     const auto printer_it = vendor_defs.printers.find(hw_config.printer_id);
     if (printer_it == vendor_defs.printers.end()) {
@@ -3268,6 +3308,38 @@ tl::expected<void, std::string>  PresetInteractor::load_selected_preset_from_3mf
         update_features(feeder_def.features, feeder_cfg.features);
         update_features(vendor_bundle.vendor_data.info.features.feeder, feeder_cfg.features);
     }
+    return {};
+}
+
+tl::expected<void, std::string>  PresetInteractor::load_selected_preset_from_3mf(
+    Domain::SelectionId project_id,
+    Domain::Preset::SelectedPreset& selected_preset
+)
+{
+    using Domain::Preset::PresetOrigin;
+
+    auto& pc              = get_or_create_project_context(project_id);
+    auto& runtime_presets = pc.runtime_presets;
+
+    bool runtime_presets_evaluation_required = false;
+    const auto& preset_bundle = m_workbench.preset_bundle();
+
+    // update origin:
+    selected_preset.printer.origin = PresetOrigin::Runtime;
+    selected_preset.print.origin   = PresetOrigin::Runtime;
+    for (auto& p : selected_preset.tools) {
+        p.origin = PresetOrigin::Runtime;
+    }
+    for (auto& p : selected_preset.materials) {
+        p.origin = PresetOrigin::Runtime;
+    }
+
+    // 0. Update features according to up-to-date definitions
+    auto& hw_config = selected_preset.hw_config;
+    auto update_result =
+        update_hw_config_features(preset_bundle, hw_config);
+    if (!update_result.has_value())
+        return update_result;
 
     // 1. Reconcile HwPrinterConfig
     // deduplicate existing hw configuration (same_values())

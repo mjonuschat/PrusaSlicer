@@ -138,6 +138,8 @@ public:
     HwSheetConfigIterator iterate_sheets(const Domain::Preset::HwPrinterConfig& printer, const HwSheetConfigIterator::Container& sheets) const;
 
     Domain::Preset::HwPrinterConfig create_printer_config(const Domain::Preset::HwPrinterConfigTemplate& templ, const Domain::Preset::VendorData& vendor_data) const;
+    void set_debug_output(const Expr::Eval::Logger& logger);
+
 private:
     const Domain::Preset::HwSheetConfigDef* first_compatible_sheet(const Domain::Preset::HwPrinterConfig& printer, const HwSheetConfigIterator::Container& sheets) const;
 private:

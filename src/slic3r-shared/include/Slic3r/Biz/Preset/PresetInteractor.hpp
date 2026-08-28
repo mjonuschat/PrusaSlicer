@@ -883,6 +883,10 @@ private:
         Domain::SelectionId project_id,
         Domain::SelectionId config_container_id
     );
+    tl::expected<void, std::string> update_hw_config_features(
+        const Domain::Preset::Bundle& preset_bundle,
+        Domain::Preset::HwPrinterConfig& hw_config
+    );
 
     /**
      * @brief Updates presets for changed hw configuration

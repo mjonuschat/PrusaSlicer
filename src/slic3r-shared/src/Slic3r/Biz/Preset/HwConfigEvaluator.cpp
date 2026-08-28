@@ -134,6 +134,11 @@ Domain::Preset::HwPrinterConfig HwConfigEvaluator::create_printer_config(
     return printer_config;
 }
 
+void HwConfigEvaluator::set_debug_output(const Expr::Eval::Logger& logger)
+{
+    m_eval.set_debug_output(logger);
+}
+
 const Domain::Preset::HwSheetConfigDef* HwConfigEvaluator::first_compatible_sheet(
     const Domain::Preset::HwPrinterConfig& printer,
     const HwSheetConfigIterator::Container& sheets
