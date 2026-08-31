@@ -30,7 +30,7 @@ constexpr float k_viewport_fraction{0.9f};
 
 constexpr float k_top_row_height{40};
 
-constexpr const char* k_preset_repo_url{"https://preset-repo-api.prusa3d.com"};
+constexpr const char* k_preset_repo_url{"https://help.prusa3d.com/slicer-profiles/3"};
 
 void append_words(Item* row, std::string_view text)
 {
