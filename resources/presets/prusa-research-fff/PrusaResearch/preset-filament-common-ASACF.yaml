@@ -68,7 +68,7 @@ variants:
       values:
         filament_max_volumetric_speed: 18
 ## XL
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: LEvbnh1eRnSDKGw6KsmcQg
   variants:
   # XL 0.4
@@ -121,6 +121,62 @@ variants:
     - condition: tool.nozzle_high_flow
       name: '*ABSCF* @XL HF0.8'
       id: COyQr3dkQiaw/fi2FFFgSg
+      values:
+        filament_max_volumetric_speed: 18
+## XL+
+- condition: printer.model == "XLP"
+  id: NYpmrdEXT3yUSqBARrH4Ng
+  variants:
+  # XL+ 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: '*ABSCF* @XL+ 0.4'
+    id: jAiotXKiSC2kxNnNZn6g8A
+    values:
+      filament_max_volumetric_speed: 15
+    variants:
+    # XL+ HF0.4
+    - condition: tool.nozzle_high_flow
+      name: '*ABSCF* @XL+ HF0.4'
+      id: y1k2CwhEQW2BvUXAZbK3jg
+      values:
+        filament_max_volumetric_speed: 15
+  # XL+ 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    name: '*ABSCF* @XL+ 0.5'
+    id: T6I54twkQCiFzCHC8nWxjQ
+    values:
+      filament_max_volumetric_speed: 15
+    variants:
+    # XL+ HF0.5
+    - condition: tool.nozzle_high_flow
+      name: '*ABSCF* @XL+ HF0.5'
+      id: T6kgDUAsTv6cHAlAy7385g
+      values:
+        filament_max_volumetric_speed: 15
+  # XL+ 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: '*ABSCF* @XL+ 0.6'
+    id: zSMzEjA1SjGjrEFbVPXhfg
+    values:
+      filament_max_volumetric_speed: 15
+    variants:
+    # XL+ HF0.6
+    - condition: tool.nozzle_high_flow
+      name: '*ABSCF* @XL+ HF0.6'
+      id: RCpDeQxUQNC/cr7e4oPn0Q
+      values:
+        filament_max_volumetric_speed: 15
+  # XL+ 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: '*ABSCF* @XL+ 0.8'
+    id: HHnQth0SQTyrxnpo9bp7YA
+    values:
+      filament_max_volumetric_speed: 18
+    variants:
+    # XL+ HF0.8
+    - condition: tool.nozzle_high_flow
+      name: '*ABSCF* @XL+ HF0.8'
+      id: WUSPSpjFTvWyD54sUivbDQ
       values:
         filament_max_volumetric_speed: 18
 ## MK4

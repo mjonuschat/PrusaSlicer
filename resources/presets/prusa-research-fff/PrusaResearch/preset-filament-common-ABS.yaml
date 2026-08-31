@@ -2,6 +2,8 @@ kind: filament
 id: '*ABS*'
 inherits:
 - '*common*'
+- '*chamber_ABS*'
+- '*shrinkage_ABS*'
 features:
   $.type: ABS
 values:
@@ -59,8 +61,6 @@ variants:
 - condition: printer.base_model == "COREONE"
   id: yo/MZfPmS2+prbp4l4VqzA
   values:
-    chamber_minimal_temperature: 40
-    chamber_temperature: 55
     first_layer_bed_temperature: 110
     enable_dynamic_fan_speeds: 0
     idle_temperature: 130
@@ -76,8 +76,6 @@ variants:
     fan_below_layer_time: 30
     filament_infill_max_speed: 0
     start_filament_gcode: M142 S40 ; set heatbreak target temp
-    filament_shrinkage_compensation_xy: 0.22%
-    filament_shrinkage_compensation_z: 0.22%
   variants:
   # C1 0.25
   - condition: tool.nozzle_diameter == 0.25
@@ -176,7 +174,7 @@ variants:
         temperature: 265
         first_layer_temperature: 265
 ## XL
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: 66gCxWNBSHavXoKJ5u2iPw
   values:
     first_layer_bed_temperature: 100
@@ -279,6 +277,119 @@ variants:
     - condition: tool.nozzle_high_flow
       name: '*ABS* @XL HF0.8'
       id: yHDLJUqnSXm62Jam/gB/og
+      values:
+        filament_max_volumetric_speed: 36
+        pressure_advance_value: 0.01
+        filament_infill_max_crossing_speed: 0
+        first_layer_temperature: 265
+        temperature: 265
+## XL+
+- condition: printer.model == "XLP"
+  id: DCYAyzYUQYilnPN8q3C7uA
+  values:
+    first_layer_bed_temperature: 100
+    bed_temperature: 105
+    fan_below_layer_time: 30
+    filament_max_volumetric_speed: 15
+    filament_multitool_ramming: 1
+    filament_multitool_ramming_flow: 40
+    filament_multitool_ramming_volume: 5
+    retract_length_toolchange: 20
+    idle_temperature: 100
+    min_print_speed: 15
+    slowdown_below_layer_time: 20
+    filament_infill_max_speed: 0
+    max_fan_speed: 15
+    min_fan_speed: 12
+    bridge_fan_speed: 20
+    filament_minimal_purge_on_wipe_tower: 35
+  variants:
+  # XL+ 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    name: '*ABS* @XL+ 0.25'
+    id: C08N7DYESbeaft6FOxRAVg
+    values:
+      filament_max_volumetric_speed: 15
+      slowdown_below_layer_time: 20
+      pressure_advance_value: 0.09
+      temperature: 255
+      first_layer_temperature: 255
+  # XL+ 0.3
+  - condition: tool.nozzle_diameter == 0.3
+    name: '*ABS* @XL+ 0.3'
+    id: x2j1iO/YTnWUOzPbdnMu9Q
+    values:
+      filament_max_volumetric_speed: 15
+      slowdown_below_layer_time: 20
+      pressure_advance_value: 0.065
+      filament_infill_max_crossing_speed: 140
+  # XL+ 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: '*ABS* @XL+ 0.4'
+    id: sRpf9XUKRGKzZp/D8Kcu9A
+    values:
+      filament_max_volumetric_speed: 15
+      slowdown_below_layer_time: 20
+      pressure_advance_value: 0.05
+      filament_infill_max_crossing_speed: 140
+    variants:
+    # XL+ HF0.4
+    - condition: tool.nozzle_high_flow
+      name: '*ABS* @XL+ HF0.4'
+      id: GUjWjQnuR9uPv+qcjYIy8g
+      values:
+        filament_max_volumetric_speed: 26
+        pressure_advance_value: 0.02
+        filament_infill_max_crossing_speed: 200
+  # XL+ 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    name: '*ABS* @XL+ 0.5'
+    id: YFISeYJHTLSrvKdkf/wNgQ
+    values:
+      filament_max_volumetric_speed: 15
+      slowdown_below_layer_time: 20
+      pressure_advance_value: 0.018
+      filament_infill_max_crossing_speed: 140
+    variants:
+    # XL+ HF0.5
+    - condition: tool.nozzle_high_flow
+      name: '*ABS* @XL+ HF0.5'
+      id: Vz5ABUHkTgKgnaWvfBqcww
+      values:
+        filament_max_volumetric_speed: 27
+        pressure_advance_value: 0.018
+        filament_infill_max_crossing_speed: 200
+  # XL+ 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: '*ABS* @XL+ 0.6'
+    id: kQxSw100StydDwQMz8Besg
+    values:
+      filament_max_volumetric_speed: 15
+      slowdown_below_layer_time: 20
+      pressure_advance_value: 0.012
+      filament_infill_max_crossing_speed: 140
+    variants:
+    # XL+ HF0.6
+    - condition: tool.nozzle_high_flow
+      name: '*ABS* @XL+ HF0.6'
+      id: kosngQnWTniShzrsY5nYqg
+      values:
+        filament_max_volumetric_speed: 34
+        filament_infill_max_crossing_speed: 0
+  # XL+ 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: '*ABS* @XL+ 0.8'
+    id: gwp4xgtZSiW1U8fQEzlc8g
+    values:
+      filament_max_volumetric_speed: 18
+      slowdown_below_layer_time: 25
+      pressure_advance_value: 0.01
+      filament_infill_max_crossing_speed: 140
+    variants:
+    # XL+ HF0.8
+    - condition: tool.nozzle_high_flow
+      name: '*ABS* @XL+ HF0.8'
+      id: xyA/HVjIRfmIVCS4wVaprw
       values:
         filament_max_volumetric_speed: 36
         pressure_advance_value: 0.01

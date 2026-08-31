@@ -60,7 +60,7 @@ variants:
       name: '*PLA220* @COREONE HF0.8'
 ## XL
       id: 6XM/Q2U0T62MWQN9iVKu+A
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: 8fHTrRlER5OOvXbh4Z1tmw
   values:
     temperature: 220
@@ -110,6 +110,58 @@ variants:
     # XL HF0.8
     - condition: tool.nozzle_high_flow
       name: '*PLA220* @XL HF0.8'
+# XL+
+      id: nfTdh+y3T567JAPJnKHSaQ
+- condition: printer.model == "XLP"
+  id: V2bxdHJaS6meAuembUg82Q
+  values:
+    temperature: 220
+  variants:
+  # XL+ 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    name: '*PLA220* @XL+ 0.25'
+  # XL+ 0.3
+    id: rBCHXz14Sf61xo3CYTDVqA
+  - condition: tool.nozzle_diameter == 0.3
+    name: '*PLA220* @XL+ 0.3'
+  # XL+ 0.4
+    id: wnfttzmsQJCToH4bcDI67Q
+  - condition: tool.nozzle_diameter == 0.4
+    name: '*PLA220* @XL+ 0.4'
+    id: MpVWxI0jT+KFyGZGhYibDg
+    variants:
+    # XL+ HF0.4
+    - condition: tool.nozzle_high_flow
+      name: '*PLA220* @XL+ HF0.4'
+  # XL+ 0.5
+      id: Fgop1bc/Qt6MvzAcwyd7pg
+  - condition: tool.nozzle_diameter == 0.5
+    name: '*PLA220* @XL+ 0.5'
+    id: FdONkh7MRJy65QDUObOwmA
+    variants:
+    # XL+ HF0.5
+    - condition: tool.nozzle_high_flow
+      name: '*PLA220* @XL+ HF0.5'
+  # XL+ 0.6
+      id: zkAKZSV6T7OsRZd2VYzlaQ
+  - condition: tool.nozzle_diameter == 0.6
+    name: '*PLA220* @XL+ 0.6'
+    id: bdCvZy7bS8Cjw+utghSGoQ
+    variants:
+    # XL+ HF0.6
+    - condition: tool.nozzle_high_flow
+      name: '*PLA220* @XL+ HF0.6'
+  # XL+ 0.8
+      id: QLzRYKAsQJuZZWDp7EtKhA
+  - condition: tool.nozzle_diameter == 0.8
+    name: '*PLA220* @XL+ 0.8'
+    id: 3xV7moqaQ7Kc1UF0ZsuoKw
+    values:
+      temperature: 230
+    variants:
+    # XL+ HF0.8
+    - condition: tool.nozzle_high_flow
+      name: '*PLA220* @XL+ HF0.8'
 ## MK4
       id: 7jPUekOzRTGPbaJ48ShbAQ
 - condition: printer.model=~/(MK4|MK3.9)/

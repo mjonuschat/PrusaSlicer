@@ -2,6 +2,7 @@ kind: filament
 inherits:
 - '*PLA*'
 - '*sheets_PLA_common*'
+- '*chamber_PLA*'
 condition: printer.base_model=~/(COREONE|MK4|MK3.5|MK2|XL|MK3|MK2.5|MINI)/ and tool.nozzle_diameter >= 0.4 and feeder.base_model!~/.*MMU.*/
 id: '*PLAFILL*'
 values:
@@ -77,7 +78,7 @@ variants:
         filament_max_volumetric_speed: 12
         pressure_advance_value: 0.012
 ## XL
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: rzHOR4PwRiKTP4q8OH3/YA
   variants:
   # XL 0.4
@@ -137,6 +138,70 @@ variants:
     - condition: tool.nozzle_high_flow
       name: '*PLAFILL* @XL HF0.8'
       id: pCgDbtv1QwyKaDAqpFQ+yg
+      values:
+        filament_max_volumetric_speed: 12
+        pressure_advance_value: 0.012
+## XL+
+- condition: printer.model == "XLP"
+  id: VXKRxnofRHGr5wPANqJ09Q
+  variants:
+  # XL+ 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: '*PLAFILL* @XL+ 0.4'
+    id: MD6+SzNlSPq1gKeZhyGeuA
+    values:
+      filament_max_volumetric_speed: 8
+      pressure_advance_value: 0.03
+    variants:
+    # XL+ HF0.4
+    - condition: tool.nozzle_high_flow
+      name: '*PLAFILL* @XL+ HF0.4'
+      id: xq3C5r9CTA2+VtkVR1dHCg
+      values:
+        filament_max_volumetric_speed: 8
+        pressure_advance_value: 0.03
+  # XL+ 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    name: '*PLAFILL* @XL+ 0.5'
+    id: vfOibDTXQBOqYxt8w8RTmw
+    values:
+      filament_max_volumetric_speed: 9
+      pressure_advance_value: 0.022
+    variants:
+    # XL+ HF0.5
+    - condition: tool.nozzle_high_flow
+      name: '*PLAFILL* @XL+ HF0.5'
+      id: ecVfr9KSQM+qYXzBOEJC+g
+      values:
+        filament_max_volumetric_speed: 9
+        pressure_advance_value: 0.022
+  # XL+ 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: '*PLAFILL* @XL+ 0.6'
+    id: bx6CdbzqTxaPhrhAr8/EiQ
+    values:
+      filament_max_volumetric_speed: 12
+      pressure_advance_value: 0.018
+    variants:
+    # XL+ HF0.6
+    - condition: tool.nozzle_high_flow
+      name: '*PLAFILL* @XL+ HF0.6'
+      id: PEb3cFFwThO2AUXL+GU+/A
+      values:
+        filament_max_volumetric_speed: 12
+        pressure_advance_value: 0.018
+  # XL+ 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: '*PLAFILL* @XL+ 0.8'
+    id: mPpvNX23TUOfIv3iyJPgjg
+    values:
+      filament_max_volumetric_speed: 12
+      pressure_advance_value: 0.012
+    variants:
+    # XL+ HF0.8
+    - condition: tool.nozzle_high_flow
+      name: '*PLAFILL* @XL+ HF0.8'
+      id: d98yAXwVTjyHR5YZtytl5g
       values:
         filament_max_volumetric_speed: 12
         pressure_advance_value: 0.012

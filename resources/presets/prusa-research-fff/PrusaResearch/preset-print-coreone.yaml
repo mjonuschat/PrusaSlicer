@@ -167,9 +167,8 @@ variants:
     solid_infill_extrusion_width: 0.45
     solid_infill_speed: 200
     over_bridge_speed: 50%
-    support_material: 0
+    support_material: enforcers_only
     support_material_angle: 0
-    support_material_auto: 1
     support_material_bottom_contact_distance: 0
     support_material_bottom_interface_layers: 0
     support_material_buildplate_only: 0
@@ -879,7 +878,7 @@ variants:
             top_solid_layers: 5
             support_material_contact_distance: 0.22
             raft_contact_distance: 0.2
-            top_solid_infill_speed: 70
+            top_solid_infill_speed: 120
             bridge_acceleration: 1500
             extrusion_width: 0.68
             perimeter_extrusion_width: 0.62
@@ -887,13 +886,13 @@ variants:
             infill_extrusion_width: 0.65
             solid_infill_extrusion_width: 0.65
             top_infill_extrusion_width: 0.5
-            perimeter_speed: 200
+            perimeter_speed: 230
             external_perimeter_speed: 200
             small_perimeter_speed: 170
             solid_infill_speed: 200
-            infill_speed: 200
+            infill_speed: 250
             bridge_speed: 40
-            gap_fill_speed: 80
+            gap_fill_speed: 120
             support_material_speed: 110
             support_material_interface_speed: 50%
             overhang_speed_2: 30
@@ -954,14 +953,14 @@ variants:
             support_material_contact_distance: 0.25
             raft_contact_distance: 0.25
             top_solid_infill_acceleration: 2000
-            gap_fill_speed: 70
-            top_solid_infill_speed: 60
-            perimeter_speed: 180
+            gap_fill_speed: 120
+            top_solid_infill_speed: 120
+            perimeter_speed: 200
             external_perimeter_speed: 180
             small_perimeter_speed: 170
-            infill_speed: 190
+            infill_speed: 200
             solid_infill_speed: 190
-            support_material_speed: 110
+            support_material_speed: 120
             support_material_interface_speed: 50%
             bridge_speed: 40
             bridge_acceleration: 1500
@@ -1024,15 +1023,15 @@ variants:
             top_solid_layers: 4
             support_material_contact_distance: 0.25
             raft_contact_distance: 0.25
-            gap_fill_speed: 60
+            gap_fill_speed: 120
             bridge_acceleration: 1500
-            perimeter_speed: 145
+            perimeter_speed: 160
             external_perimeter_speed: 145
             small_perimeter_speed: 145
-            infill_speed: 145
+            infill_speed: 160
             solid_infill_speed: 140
             bridge_speed: 40
-            top_solid_infill_speed: 60
+            top_solid_infill_speed: 110
             support_material_speed: 110
             top_solid_infill_acceleration: 2000
             support_material_interface_speed: 50%
@@ -1072,12 +1071,12 @@ variants:
             top_solid_layers: 4
             support_material_contact_distance: 0.25
             raft_contact_distance: 0.25
-            perimeter_speed: 120
-            external_perimeter_speed: 115
-            small_perimeter_speed: 115
-            infill_speed: 130
+            perimeter_speed: 130
+            external_perimeter_speed: 120
+            small_perimeter_speed: 120
+            infill_speed: 150
             solid_infill_speed: 120
-            top_solid_infill_speed: 60
+            top_solid_infill_speed: 80
             support_material_speed: 110
             support_material_interface_speed: 50%
             bridge_speed: 40
@@ -1153,10 +1152,10 @@ variants:
             bottom_solid_layers: 3
             top_solid_layers: 4
             bridge_acceleration: 1000
-            perimeter_speed: 125
+            perimeter_speed: 150
             external_perimeter_speed: 125
             small_perimeter_speed: 125
-            infill_speed: 130
+            infill_speed: 180
             solid_infill_speed: 125
             top_solid_infill_speed: 80
             support_material_speed: 110
@@ -1197,14 +1196,14 @@ variants:
             bottom_solid_layers: 3
             top_solid_layers: 4
             bridge_acceleration: 1000
-            perimeter_speed: 100
+            perimeter_speed: 120
             external_perimeter_speed: 85
             small_perimeter_speed: 85
-            infill_speed: 105
+            infill_speed: 130
             solid_infill_speed: 100
             top_solid_infill_speed: 75
             support_material_speed: 90
-            gap_fill_speed: 65
+            gap_fill_speed: 75
             external_perimeter_acceleration: 2500
             perimeter_acceleration: 3000
             solid_infill_acceleration: 5000
@@ -1245,14 +1244,14 @@ variants:
             top_infill_extrusion_width: 0.75
             perimeter_extrusion_width: 1
             external_perimeter_extrusion_width: 1
-            perimeter_speed: 75
+            perimeter_speed: 100
             external_perimeter_speed: 70
             small_perimeter_speed: 70
-            infill_speed: 80
+            infill_speed: 100
             solid_infill_speed: 70
             top_solid_infill_speed: 60
             support_material_speed: 80
-            gap_fill_speed: 60
+            gap_fill_speed: 75
             external_perimeter_acceleration: 2500
             perimeter_acceleration: 3000
             solid_infill_acceleration: 5000
@@ -2025,93 +2024,93 @@ variants:
           top_infill_extrusion_width: 0.75
           perimeter_extrusion_width: 1
           external_perimeter_extrusion_width: 1
-# MMU branch
-  - name: '*MMU branch*'
-    id: LqfnPO1uRT6N9qS5gGGx3A
-    variants:
-    - condition: feeder.base_model=~/.*MMU.*/ and ! feeder.single_mode
-      id: 5ud5vPhMRRCu8kxvR7FXqA
-      variants:
-      - condition: tool.nozzle_diameter == 0.4
-        id: /h75Z3deRdapdMhZUB0ncQ
-        variants:
-# 0.4n/0.20mm/MMU SOLUBLE
-        - name: 0.20mm SOLUBLE FULL @COREONE 0.4
-          id: OarWuh5sRMGx5vk8ELQL3w
-          values:
-            layer_height: 0.2
-            bottom_solid_layers: 3
-            top_solid_layers: 5
-            raft_contact_distance: 0.2
-            top_infill_extrusion_width: 0.42
-            overhangs: 1
-            support_material: 1
-            support_material_extruder: 5
-            support_material_extrusion_width: 0.4
-            support_material_interface_extruder: 5
-            support_material_interface_spacing: 0.1
-            support_material_synchronize_layers: 1
-            support_material_threshold: 60
-            support_material_with_sheath: 1
-            wipe_tower_bridging: 6
-            support_material_bottom_interface_layers: -1
-            thick_bridges: 0
-            support_material_xy_spacing: 40%
-            raft_first_layer_density: 90%
-            support_material_first_layer_density: 90%
-            support_material_interface_pattern: auto
-            perimeter_speed: 80
-            external_perimeter_speed: 45
-            small_perimeter_speed: 45
-            infill_speed: 120
-            gap_fill_speed: 60
-            top_solid_infill_speed: 80
-            external_perimeter_acceleration: 1500
-            perimeter_acceleration: 2500
-            solid_infill_acceleration: 3000
-            default_acceleration: 2500
-            overhang_speed_3: 90%
-            support_material_contact_distance: 0
-            solid_infill_speed: 60
-            support_material_speed: 80
-            support_material_interface_speed: 40
-        - name: 0.20mm SOLUBLE INTERFACE @COREONE 0.4
-          id: CJxl7wmiSpy8GRdv58aTzg
-          values:
-            support_material_interface_layers: 3
-            layer_height: 0.2
-            bottom_solid_layers: 3
-            top_solid_layers: 5
-            raft_contact_distance: 0.2
-            top_infill_extrusion_width: 0.42
-            overhangs: true
-            support_material: true
-            support_material_extruder: 0
-            support_material_extrusion_width: 0.4
-            support_material_interface_extruder: 5
-            support_material_interface_spacing: 0.1
-            support_material_synchronize_layers: 1
-            support_material_threshold: 60
-            support_material_with_sheath: false
-            wipe_tower_bridging: 6
-            support_material_bottom_interface_layers: -1
-            thick_bridges: 0
-            support_material_xy_spacing: 40%
-            raft_first_layer_density: 90%
-            support_material_first_layer_density: 90%
-            support_material_interface_pattern: auto
-            perimeter_speed: 80
-            external_perimeter_speed: 45
-            small_perimeter_speed: 45
-            infill_speed: 120
-            gap_fill_speed: 60
-            top_solid_infill_speed: 80
-            external_perimeter_acceleration: 1500
-            perimeter_acceleration: 2500
-            solid_infill_acceleration: 3000
-            default_acceleration: 2500
-            overhang_speed_3: 90%
-            support_material_contact_distance: 0
-            solid_infill_speed: 60
-            support_material_speed: 80
-            support_material_interface_speed: 40
+# # MMU branch
+  # - name: '*MMU branch*'
+    # id: LqfnPO1uRT6N9qS5gGGx3A
+    # variants:
+    # - condition: feeder.base_model=~/.*MMU.*/ and ! feeder.single_mode
+      # id: 5ud5vPhMRRCu8kxvR7FXqA
+      # variants:
+      # - condition: tool.nozzle_diameter == 0.4
+        # id: /h75Z3deRdapdMhZUB0ncQ
+        # variants:
+# # 0.4n/0.20mm/MMU SOLUBLE
+        # - name: 0.20mm SOLUBLE FULL @COREONE 0.4
+          # id: OarWuh5sRMGx5vk8ELQL3w
+          # values:
+            # layer_height: 0.2
+            # bottom_solid_layers: 3
+            # top_solid_layers: 5
+            # raft_contact_distance: 0.2
+            # top_infill_extrusion_width: 0.42
+            # overhangs: 1
+            # support_material: everywhere
+            # support_material_extruder: 5
+            # support_material_extrusion_width: 0.4
+            # support_material_interface_extruder: 5
+            # support_material_interface_spacing: 0.1
+            # support_material_synchronize_layers: 1
+            # support_material_threshold: 60
+            # support_material_with_sheath: 1
+            # wipe_tower_bridging: 6
+            # support_material_bottom_interface_layers: -1
+            # thick_bridges: 0
+            # support_material_xy_spacing: 40%
+            # raft_first_layer_density: 90%
+            # support_material_first_layer_density: 90%
+            # support_material_interface_pattern: auto
+            # perimeter_speed: 80
+            # external_perimeter_speed: 45
+            # small_perimeter_speed: 45
+            # infill_speed: 120
+            # gap_fill_speed: 60
+            # top_solid_infill_speed: 80
+            # external_perimeter_acceleration: 1500
+            # perimeter_acceleration: 2500
+            # solid_infill_acceleration: 3000
+            # default_acceleration: 2500
+            # overhang_speed_3: 90%
+            # support_material_contact_distance: 0
+            # solid_infill_speed: 60
+            # support_material_speed: 80
+            # support_material_interface_speed: 40
+        # - name: 0.20mm SOLUBLE INTERFACE @COREONE 0.4
+          # id: CJxl7wmiSpy8GRdv58aTzg
+          # values:
+            # support_material_interface_layers: 3
+            # layer_height: 0.2
+            # bottom_solid_layers: 3
+            # top_solid_layers: 5
+            # raft_contact_distance: 0.2
+            # top_infill_extrusion_width: 0.42
+            # overhangs: true
+            # support_material: everywhere
+            # support_material_extruder: 0
+            # support_material_extrusion_width: 0.4
+            # support_material_interface_extruder: 5
+            # support_material_interface_spacing: 0.1
+            # support_material_synchronize_layers: 1
+            # support_material_threshold: 60
+            # support_material_with_sheath: false
+            # wipe_tower_bridging: 6
+            # support_material_bottom_interface_layers: -1
+            # thick_bridges: 0
+            # support_material_xy_spacing: 40%
+            # raft_first_layer_density: 90%
+            # support_material_first_layer_density: 90%
+            # support_material_interface_pattern: auto
+            # perimeter_speed: 80
+            # external_perimeter_speed: 45
+            # small_perimeter_speed: 45
+            # infill_speed: 120
+            # gap_fill_speed: 60
+            # top_solid_infill_speed: 80
+            # external_perimeter_acceleration: 1500
+            # perimeter_acceleration: 2500
+            # solid_infill_acceleration: 3000
+            # default_acceleration: 2500
+            # overhang_speed_3: 90%
+            # support_material_contact_distance: 0
+            # solid_infill_speed: 60
+            # support_material_speed: 80
+            # support_material_interface_speed: 40

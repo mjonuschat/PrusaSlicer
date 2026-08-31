@@ -4,7 +4,7 @@ inherits:
 features:
   $.type: TPU
 name: Print With Smile TPU96A
-condition: tool.nozzle_diameter >= 0.4 and (feeder.base_model!~/.*MMU.*/ or (feeder.base_model=~/.*MMU.*/ and feeder.single_mode)) and printer.base_model != "MINI"
+condition: printer.base_model=~/(COREONE|MK4|MK3.5|MK2|XL|MK3|MK2.5)/ and tool.nozzle_diameter >= 0.4 and (feeder.base_model!~/.*MMU.*/ or (feeder.base_model=~/.*MMU.*/ and feeder.single_mode))
 id: Print With Smile TPU96A
 values:
   filament_vendor: Print With Smile
@@ -45,7 +45,7 @@ variants:
     values:
       filament_max_volumetric_speed: 7
 ## XL
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: sjDNP3qoRRiTSsSgk6EzCA
   values:
     retract_length_toolchange: 2
@@ -71,6 +71,39 @@ variants:
   # XL 0.8
   - condition: tool.nozzle_diameter == 0.8
     id: YrK7jccKSPmrcsb7cjoaaw
+    values:
+      filament_max_volumetric_speed: 7
+      filament_multitool_ramming_flow: 7
+## XL+
+- condition: printer.model == "XLP"
+  id: CppL0V9fTEGTGW6nUKW/wQ
+  values:
+    retract_length_toolchange: 2
+    min_fan_speed: 45
+    max_fan_speed: 45
+    bridge_fan_speed: 60
+  variants:
+  # XL+ 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    id: uo3xSpCMToaTVLXcO+pAaQ
+    values:
+      filament_max_volumetric_speed: 2.5
+      filament_multitool_ramming_flow: 2.5
+  # XL+ 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    id: hukDbsz9R2aZ6OtI5sp5fA
+    values:
+      filament_max_volumetric_speed: 2.5
+      filament_multitool_ramming_flow: 2.5
+  # XL+ 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    id: gbarc5PBTWKpRXpA2RGNPQ
+    values:
+      filament_max_volumetric_speed: 3.5
+      filament_multitool_ramming_flow: 3.5
+  # XL+ 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    id: Eaq+2kNjQr21+fw2H3aN5A
     values:
       filament_max_volumetric_speed: 7
       filament_multitool_ramming_flow: 7

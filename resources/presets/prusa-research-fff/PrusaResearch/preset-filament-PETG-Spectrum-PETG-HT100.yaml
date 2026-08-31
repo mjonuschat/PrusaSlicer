@@ -14,7 +14,7 @@ values:
   max_fan_speed: 60
   filament_notes: HT_MBL10
 variants:
-- condition: printer.model=~/(MK4S|MK3.9S)/
+- condition: printer.model=~/(MK4S|MK3.9S|XLP)/
   id: l9D81h2ySIy25e+D4IBRjQ
   values:
     max_fan_speed: 45

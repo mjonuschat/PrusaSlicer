@@ -22,7 +22,7 @@ values:
   wipe:
   retract_lift:
 variants:
-- condition: printer.model=~/(COREONE|COREONEL|COREONEOAK|MK4S|MK3.9S)/
+- condition: printer.model=~/(COREONE|COREONEL|COREONEOAK|MK4S|MK3.9S|XLP)/
   id: zwglRC0PSIe5rdT9m9sv2w
   values:
     min_fan_speed: 70

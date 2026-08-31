@@ -4,7 +4,7 @@ inherits:
 features:
   $.type: TPU
 name: Fiberlogy MattFlex 40D
-condition: tool.nozzle_diameter >= 0.4 and (feeder.base_model!~/.*MMU.*/ or (feeder.base_model=~/.*MMU.*/ and feeder.single_mode)) and printer.base_model != "MINI"
+condition: printer.base_model=~/(COREONE|MK4|MK3.5|MK2|XL|MK3|MK2.5)/ and tool.nozzle_diameter >= 0.4 and (feeder.base_model!~/.*MMU.*/ or (feeder.base_model=~/.*MMU.*/ and feeder.single_mode))
 id: Fiberlogy MattFlex 40D
 values:
   filament_vendor: Fiberlogy
@@ -52,7 +52,7 @@ variants:
     values:
       filament_max_volumetric_speed: 8
 ## XL
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: SHoqLbpOQaOhpZml2hTJyQ
   values:
     retract_length_toolchange: 2.2
@@ -78,6 +78,39 @@ variants:
   # XL 0.8
   - condition: tool.nozzle_diameter == 0.8
     id: Wgh1RN7zRpGR6OoIGUVBzQ
+    values:
+      filament_max_volumetric_speed: 8
+      filament_multitool_ramming_flow: 8
+## XL+
+- condition: printer.model == "XLP"
+  id: uquN0EdNQc+/eAkRBe53Vg
+  values:
+    retract_length_toolchange: 2.2
+    min_fan_speed: 20
+    max_fan_speed: 60
+    bridge_fan_speed: 60
+  variants:
+  # XL+ 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    id: k+ZcEN9uSZugSSdtCyB+Eg
+    values:
+      filament_max_volumetric_speed: 3
+      filament_multitool_ramming_flow: 3
+  # XL+ 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    id: y5e3y7iTR46qxViShaTCzg
+    values:
+      filament_max_volumetric_speed: 3
+      filament_multitool_ramming_flow: 3
+  # XL+ 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    id: Az0Iw7bjT0uPQXy3zCU/Dg
+    values:
+      filament_max_volumetric_speed: 4.5
+      filament_multitool_ramming_flow: 4.5
+  # XL9 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    id: RsFAge53SISMgj+C889Usg
     values:
       filament_max_volumetric_speed: 8
       filament_multitool_ramming_flow: 8

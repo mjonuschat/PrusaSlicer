@@ -1,7 +1,7 @@
 kind: tool_print
 id: '*common XL*'
 variants:
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: ZF5PygNTQPqt3LbpIDGsQA
   values:
     retract_layer_change: 1
@@ -111,7 +111,7 @@ inherits:
 - '*common XL*'
 - '*XL_toolchange_retract*'
 variants:
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: fDfkbsObRfiGwaNBMyjb+w
   values:
     bottom_solid_layers: 4
@@ -171,19 +171,14 @@ variants:
     solid_infill_extrusion_width: 0.45
     solid_infill_speed: 200
     over_bridge_speed: 50%
-    # support_material: 0
     support_material_angle: 0
-    # support_material_auto: 1
     support_material_bottom_contact_distance: 0
     support_material_bottom_interface_layers: 0
-    # support_material_buildplate_only: 0
     support_material_closing_radius: 2
     support_material_contact_distance: 0.2
     support_material_enforce_layers: 0
-    # support_material_extruder: 0
     support_material_extrusion_width: 0.4
     support_material_interface_contact_loops: 0
-    # support_material_interface_extruder: 0
     support_material_interface_layers: 3
     support_material_interface_pattern: auto
     support_material_interface_spacing: 0.2
@@ -791,14 +786,14 @@ variants:
           - name: 0.25mm SPEED @XL 0.6HF
             id: qbyre9PcR+Cj3QGfdt+YJQ
             values:
-              perimeter_speed: 180
+              perimeter_speed: 200
               external_perimeter_speed: 180
               small_perimeter_speed: 170
-              infill_speed: 190
+              infill_speed: 200
               top_solid_infill_speed: 110
               solid_infill_speed: 190
-              gap_fill_speed: 110
-              support_material_speed: 110
+              gap_fill_speed: 120
+              support_material_speed: 120
               support_material_interface_speed: 50%
               bridge_speed: 40
               external_perimeter_acceleration: 2500
@@ -839,13 +834,13 @@ variants:
           - name: 0.32mm SPEED @XL 0.6HF
             id: J+LJppiSRZSqNaUd9BJRpA
             values:
-              perimeter_speed: 140
+              perimeter_speed: 160
               external_perimeter_speed: 140
               small_perimeter_speed: 140
-              infill_speed: 145
+              infill_speed: 160
               bridge_speed: 40
-              top_solid_infill_speed: 80
-              support_material_speed: 110
+              top_solid_infill_speed: 110
+              support_material_speed: 120
               support_material_interface_speed: 50%
               external_perimeter_acceleration: 2500
               perimeter_acceleration: 3000
@@ -895,10 +890,10 @@ variants:
           - name: 0.40mm SPEED @XL 0.6HF
             id: gLoUKrO4THO2WqDfQM52mw
             values:
-              perimeter_speed: 115
+              perimeter_speed: 125
               external_perimeter_speed: 115
               small_perimeter_speed: 115
-              infill_speed: 130
+              infill_speed: 150
               solid_infill_speed: 120
               top_solid_infill_speed: 80
               support_material_speed: 110
@@ -1036,7 +1031,7 @@ variants:
               gap_fill_speed: 80
               external_perimeter_acceleration: 2500
               perimeter_acceleration: 3000
-              top_solid_infill_acceleration: 1500
+              top_solid_infill_acceleration: 2000
               solid_infill_acceleration: 3000
               top_infill_extrusion_width: 0.7
               overhang_speed_2: 20
@@ -1071,17 +1066,17 @@ variants:
           - name: 0.40mm SPEED @XL 0.8HF
             id: UBMT24VtQC2fHUqqz7/inA
             values:
-              perimeter_speed: 100
+              perimeter_speed: 120
               external_perimeter_speed: 95
               small_perimeter_speed: 95
-              infill_speed: 105
+              infill_speed: 130
               solid_infill_speed: 100
               top_solid_infill_speed: 75
               support_material_speed: 90
-              gap_fill_speed: 65
+              gap_fill_speed: 75
               external_perimeter_acceleration: 2500
               perimeter_acceleration: 3000
-              top_solid_infill_acceleration: 1500
+              top_solid_infill_acceleration: 2000
               solid_infill_acceleration: 3000
               top_infill_extrusion_width: 0.75
               over_bridge_speed: 70%
@@ -1116,17 +1111,17 @@ variants:
           - name: 0.55mm SPEED @XL 0.8HF
             id: +HutlFAWToyb3r8W3SvUlg
             values:
-              perimeter_speed: 75
+              perimeter_speed: 100
               external_perimeter_speed: 70
               small_perimeter_speed: 70
-              infill_speed: 80
+              infill_speed: 100
               solid_infill_speed: 70
               top_solid_infill_speed: 60
               support_material_speed: 80
-              gap_fill_speed: 60
+              gap_fill_speed: 65
               external_perimeter_acceleration: 2500
               perimeter_acceleration: 3000
-              top_solid_infill_acceleration: 1200
+              top_solid_infill_acceleration: 2000
 # 0.25 nozzle
     - condition: tool.nozzle_diameter == 0.25
       id: pkZjPd/1RiWK8c7TTOvrSg
@@ -1720,16 +1715,16 @@ variants:
         - name: 0.20mm SPEED @XL 0.6
           id: C6BdKH+HTE2Vc8M+Nf95qQ
           values:
-            perimeter_speed: 120
+            perimeter_speed: 150
             external_perimeter_speed: 120
             small_perimeter_speed: 120
             solid_infill_speed: 120
-            infill_speed: 140
+            infill_speed: 160
             top_solid_infill_speed: 80
-            gap_fill_speed: 90
+            gap_fill_speed: 110
             external_perimeter_acceleration: 2500
             perimeter_acceleration: 3000
-            top_solid_infill_acceleration: 1500
+            top_solid_infill_acceleration: 2000
             solid_infill_acceleration: 3000
 # 0.6n/0.25mm layer
       - condition: print.layer_height == 0.25
@@ -1802,7 +1797,7 @@ variants:
         - name: 0.32mm SPEED @XL 0.6
           id: akOGd+xkT6GFGdJjze6yAQ
           values:
-            perimeter_speed: 70
+            perimeter_speed: 95
             external_perimeter_speed: 70
             small_perimeter_speed: 70
             infill_speed: 140
@@ -1811,7 +1806,7 @@ variants:
             support_material_speed: 70
             external_perimeter_acceleration: 2500
             perimeter_acceleration: 3000
-            top_solid_infill_acceleration: 1500
+            top_solid_infill_acceleration: 2000
 
 # 0.8 nozzle
     - condition: tool.nozzle_diameter == 0.8
@@ -1885,18 +1880,18 @@ variants:
         - name: 0.32mm DETAIL @XL 0.8
           id: WGivvBOLSm++ocJltBYk8A
           values:
-            perimeter_speed: 70
+            perimeter_speed: 80
             external_perimeter_speed: 45
             small_perimeter_speed: 45
             infill_speed: 100
             solid_infill_speed: 50
-            top_solid_infill_speed: 35
+            top_solid_infill_speed: 40
             support_material_speed: 65
             bridge_speed: 22
             gap_fill_speed: 40
-            external_perimeter_acceleration: 1500
-            perimeter_acceleration: 2000
-            top_solid_infill_acceleration: 1000
+            external_perimeter_acceleration: 2000
+            perimeter_acceleration: 3000
+            top_solid_infill_acceleration: 2000
             solid_infill_acceleration: 3000
             infill_acceleration: 4000
             bridge_acceleration: 1000
@@ -1912,7 +1907,7 @@ variants:
         - name: 0.40mm QUALITY @XL 0.8
           id: aACPAi+qQj2nVTPTUQWqrQ
           values:
-            perimeter_speed: 50
+            perimeter_speed: 65
             external_perimeter_speed: 45
             small_perimeter_speed: 45
             infill_speed: 90
@@ -1921,9 +1916,9 @@ variants:
             support_material_speed: 50
             bridge_speed: 22
             gap_fill_speed: 35
-            external_perimeter_acceleration: 1500
-            perimeter_acceleration: 2000
-            top_solid_infill_acceleration: 1000
+            external_perimeter_acceleration: 2000
+            perimeter_acceleration: 3000
+            top_solid_infill_acceleration: 2000
             solid_infill_acceleration: 3000
             infill_acceleration: 4000
             bridge_acceleration: 1000
@@ -2031,7 +2026,7 @@ variants:
             # bottom_solid_min_thickness: 0.6
             # top_infill_extrusion_width: 0.55
             # overhangs: 1
-            # support_material: 1
+            # support_material: everywhere
             # support_material_extruder: 2
             # support_material_extrusion_width: 0.5
             # extrusion_width: 0.68

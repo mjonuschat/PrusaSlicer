@@ -2,6 +2,8 @@ kind: filament
 id: '*ASA*'
 inherits:
 - '*common*'
+- '*chamber_ASA*'
+- '*shrinkage_ASA*'
 features:
   $.type: ASA
 values:
@@ -54,13 +56,57 @@ values:
   pressure_advance: enabled
   cooling_slowdown_logic: consistent_surface
   cooling_perimeter_transition_distance: 10
-## C1
+## C1 INDX
 variants:
+- condition: printer.base_model == "COREONE_INDX"
+  id: IylXX1nHTY2aIg7JRHJeqg
+  values:
+    pressure_advance: automatic_calibration
+    cooling_perimeter_transition_distance: 15
+    first_layer_bed_temperature: 110
+    enable_dynamic_fan_speeds: 1
+    idle_temperature:
+    min_fan_speed: 20
+    max_fan_speed: 25
+    min_print_speed: 15
+    bridge_fan_speed: 25
+    overhang_fan_speed_0: 25
+    overhang_fan_speed_1: 0
+    overhang_fan_speed_2: 0
+    overhang_fan_speed_3: 0
+    fan_below_layer_time: 20
+    start_filament_gcode: M573 R
+    retract_length: 0.8
+    travel_max_lift: 0.6
+    filament_multitool_ramming: 1
+    filament_multitool_ramming_flow: 30
+    filament_multitool_ramming_volume: 18
+    filament_minimal_purge_on_wipe_tower: 10
+  variants:
+  # C1 INDX 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: '*ASA* @COREONEINDX 0.4'
+    id: 17GNsWO3R3KQCzXonQyWcg
+    values:
+      filament_max_volumetric_speed: 15
+      slowdown_below_layer_time: 10
+      pressure_advance_value: 0.02
+      filament_infill_max_crossing_speed: 140
+    variants:
+    # C1 INDX HF0.4
+    - condition: tool.nozzle_high_flow
+      name: '*ASA* @COREONEINDX HF0.4'
+      id: vswPMVQJQEGsF3VVeg+uMQ
+      values:
+        filament_max_volumetric_speed: 30
+        pressure_advance_value: 0.022
+        filament_infill_max_crossing_speed: 200
+        temperature: 265
+        first_layer_temperature: 265
+## C1
 - condition: printer.base_model == "COREONE"
   id: SvIZGZT2Q+W3Ko65BPn3ZQ
   values:
-    chamber_minimal_temperature: 40
-    chamber_temperature: 55
     first_layer_bed_temperature: 110
     enable_dynamic_fan_speeds: 1
     idle_temperature: 130
@@ -75,8 +121,6 @@ variants:
     filament_purge_multiplier: 100%
     fan_below_layer_time: 20
     start_filament_gcode: M142 S40 ; set heatbreak target temp
-    filament_shrinkage_compensation_xy: 0.22%
-    filament_shrinkage_compensation_z: 0.22%
   variants:
   # C1 0.25
   - condition: tool.nozzle_diameter == 0.25
@@ -181,7 +225,7 @@ variants:
         temperature: 270
         first_layer_temperature: 270
 ## XL
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: DGjrE+sFSaSt50fOCeGP7Q
   values:
     first_layer_bed_temperature: 100
@@ -288,6 +332,123 @@ variants:
     - condition: tool.nozzle_high_flow
       name: '*ASA* @XL HF0.8'
       id: G/PzLbnxRaCbJV2ztCbA2Q
+      values:
+        filament_max_volumetric_speed: 36
+        pressure_advance_value: 0.01
+        filament_infill_max_crossing_speed: 0
+        first_layer_temperature: 270
+        temperature: 270
+## XL+
+- condition: printer.model == "XLP"
+  id: CwcWjDnfRi26+HJ64ghQ6w
+  values:
+    first_layer_bed_temperature: 100
+    bed_temperature: 105
+    fan_below_layer_time: 20
+    filament_max_volumetric_speed: 15
+    filament_multitool_ramming: 1
+    filament_multitool_ramming_flow: 40
+    filament_multitool_ramming_volume: 10
+    retract_length_toolchange: 20
+    idle_temperature: 100
+    max_fan_speed: 15
+    min_fan_speed: 15
+    min_print_speed: 15
+    bridge_fan_speed: 20
+    slowdown_below_layer_time: 15
+    filament_minimal_purge_on_wipe_tower: 35
+    start_filament_gcode: M142 S40 ; set heatbreak target temp
+  variants:
+  # XL+ 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    name: '*ASA* @XL+ 0.25'
+    id: YY9t1hRyRgqNwTo0fHzg+w
+    values:
+      filament_max_volumetric_speed: 15
+      slowdown_below_layer_time: 15
+      pressure_advance_value: 0.09
+  # XL+ 0.3
+  - condition: tool.nozzle_diameter == 0.3
+    name: '*ASA* @XL+ 0.3'
+    id: cVsWeJoTQbe2EE7f6QPVRQ
+    values:
+      filament_max_volumetric_speed: 15
+      slowdown_below_layer_time: 15
+      pressure_advance_value: 0.065
+      filament_infill_max_crossing_speed: 140
+  # XL+ 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: '*ASA* @XL+ 0.4'
+    id: KVvijWLNRAKfI9nhD6Om9Q
+    values:
+      filament_max_volumetric_speed: 15
+      slowdown_below_layer_time: 10
+      pressure_advance_value: 0.05
+      filament_infill_max_crossing_speed: 140
+    variants:
+    # XL+ HF0.4
+    - condition: tool.nozzle_high_flow
+      name: '*ASA* @XL+ HF0.4'
+      id: O6N7exFXT+m0A8M8coZQKQ
+      values:
+        filament_max_volumetric_speed: 26
+        pressure_advance_value: 0.02
+        filament_infill_max_crossing_speed: 200
+        first_layer_temperature: 265
+        temperature: 265
+  # XL+ 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    name: '*ASA* @XL+ 0.5'
+    id: R5uP72RcQ9mI9P8vFdpWmg
+    values:
+      filament_max_volumetric_speed: 15
+      slowdown_below_layer_time: 13
+      pressure_advance_value: 0.018
+      filament_infill_max_crossing_speed: 140
+    variants:
+    # XL+ HF0.5
+    - condition: tool.nozzle_high_flow
+      name: '*ASA* @XL+ HF0.5'
+      id: DEkNlV3ASvyJa/zCij4xQw
+      values:
+        filament_max_volumetric_speed: 27
+        pressure_advance_value: 0.018
+        filament_infill_max_crossing_speed: 200
+        first_layer_temperature: 265
+        temperature: 265
+  # XL+ 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: '*ASA* @XL+ 0.6'
+    id: 7fQqQRutRmSUehw2FuaaOw
+    values:
+      filament_max_volumetric_speed: 15
+      slowdown_below_layer_time: 15
+      pressure_advance_value: 0.012
+      filament_infill_max_crossing_speed: 140
+    variants:
+    # XL+ HF0.6
+    - condition: tool.nozzle_high_flow
+      name: '*ASA* @XL+ HF0.6'
+      id: h9TIApzQR96YxJ1Z4BROQw
+      values:
+        filament_max_volumetric_speed: 34
+        filament_infill_max_crossing_speed: 0
+        first_layer_temperature: 265
+        temperature: 265
+  # XL+ 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: '*ASA* @XL+ 0.8'
+    id: m5AtfWS9RF6HdeGSwmGEnA
+    values:
+      filament_max_volumetric_speed: 18
+      slowdown_below_layer_time: 20
+      pressure_advance_value: 0.01
+      filament_infill_max_crossing_speed: 140
+    variants:
+    # XL+ HF0.8
+    - condition: tool.nozzle_high_flow
+      name: '*ASA* @XL+ HF0.8'
+      id: /PM3ZSZmRzSnlgsC6Od2ZA
       values:
         filament_max_volumetric_speed: 36
         pressure_advance_value: 0.01

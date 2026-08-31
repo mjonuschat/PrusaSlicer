@@ -1,6 +1,7 @@
 kind: filament
 inherits:
 - '*PET*'
+- '*chamber_PET*'
 features:
   $.type: PETG
   $.tags: [abrasive, contains_carbon_fiber]
@@ -91,7 +92,7 @@ variants:
         filament_max_volumetric_speed: 22
         pressure_advance_value: 0.021
 ## XL
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: M9CEUABiRKuf395lq90h1g
   variants:
   # XL 0.4
@@ -159,6 +160,78 @@ variants:
     - condition: tool.nozzle_high_flow
       name: '*PETCF* @XL HF0.8'
       id: m8qweUGpTpWtsWKj6Xui7w
+      values:
+        filament_max_volumetric_speed: 22
+        pressure_advance_value: 0.021
+## XL+
+- condition: printer.model == "XLP"
+  id: +sfCatxhRwitNihQJqOvzQ
+  variants:
+  # XL+ 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: '*PETCF* @XL 0.4'
+    id: Dw047F1bTW+X2fzVOkbVeA
+    values:
+      filament_max_volumetric_speed: 12
+      slowdown_below_layer_time: 7
+      pressure_advance_value: 0.053
+      filament_infill_max_crossing_speed: 110
+    variants:
+    # XL+ HF0.4
+    - condition: tool.nozzle_high_flow
+      name: '*PETCF* @XL HF0.4'
+      id: 2gsSZBLMSXqSt29PURAwbA
+      values:
+        filament_max_volumetric_speed: 12
+        pressure_advance_value: 0.047
+  # XL+ 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    name: '*PETCF* @XL 0.5'
+    id: w6B3WryETWut/1MEvW88qg
+    values:
+      filament_max_volumetric_speed: 14
+      slowdown_below_layer_time: 12
+      pressure_advance_value: 0.042
+      filament_infill_max_crossing_speed: 110
+    variants:
+    # XL+ HF0.5
+    - condition: tool.nozzle_high_flow
+      name: '*PETCF* @XL HF0.5'
+      id: 2+3rf5a8QJOYLRUeLoOW5A
+      values:
+        filament_max_volumetric_speed: 14
+        pressure_advance_value: 0.042
+        filament_infill_max_crossing_speed: 120
+  # XL+ 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: '*PETCF* @XL 0.6'
+    id: S/RUJg69QU2EQ4Qd5RvzBw
+    values:
+      filament_max_volumetric_speed: 17
+      slowdown_below_layer_time: 13
+      pressure_advance_value: 0.032
+      filament_infill_max_crossing_speed: 140
+    variants:
+    # XL+ HF0.6
+    - condition: tool.nozzle_high_flow
+      name: '*PETCF* @XL HF0.6'
+      id: PHRlXYbpS1qAnZd7yPe0GA
+      values:
+        filament_max_volumetric_speed: 17
+        pressure_advance_value: 0.033
+  # XL+ 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: '*PETCF* @XL 0.8'
+    id: +6ISRfA8TIeey/1dwqLtng
+    values:
+      filament_max_volumetric_speed: 22
+      slowdown_below_layer_time: 16
+      pressure_advance_value: 0.018
+    variants:
+    # XL+ HF0.8
+    - condition: tool.nozzle_high_flow
+      name: '*PETCF* @XL HF0.8'
+      id: H1spJURhQ8OyyLmw5mlHeA
       values:
         filament_max_volumetric_speed: 22
         pressure_advance_value: 0.021

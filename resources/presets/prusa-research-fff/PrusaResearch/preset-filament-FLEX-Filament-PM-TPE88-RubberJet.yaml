@@ -4,7 +4,7 @@ inherits:
 features:
   $.type: TPE
 name: Filament PM TPE88 RubberJet
-condition: tool.nozzle_diameter >= 0.4 and (feeder.base_model!~/.*MMU.*/ or (feeder.base_model=~/.*MMU.*/ and feeder.single_mode)) and printer.base_model != "MINI"
+condition: printer.base_model=~/(COREONE|MK4|MK3.5|MK2|XL|MK3|MK2.5)/ and tool.nozzle_diameter >= 0.4 and (feeder.base_model!~/.*MMU.*/ or (feeder.base_model=~/.*MMU.*/ and feeder.single_mode))
 id: Filament PM TPE88 RubberJet
 values:
   filament_vendor: Filament PM
@@ -23,6 +23,7 @@ values:
   bed_temperature: 0
   fan_always_on: true
   cooling: false
+  # filament_type: TPE
 ## C1
 variants:
 - condition: printer.base_model == "COREONE"
@@ -55,6 +56,8 @@ variants:
   id: m4iWO/XpRoGuQuDKGMfvHg
   values:
     retract_length_toolchange: 2.5
+    min_fan_speed: 12
+    max_fan_speed: 12
   variants:
   # XL 0.4
   - condition: tool.nozzle_diameter == 0.4

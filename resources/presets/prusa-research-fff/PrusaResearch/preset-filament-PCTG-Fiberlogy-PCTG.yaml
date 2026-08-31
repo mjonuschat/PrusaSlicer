@@ -28,3 +28,10 @@ variants:
     max_fan_speed: 12
     bridge_fan_speed: 35
     overhang_fan_speed_0: 20
+- condition: printer.model == "XLP"
+  id: HDs61gAuQbuGmDMVodv9OA
+  values:
+    min_fan_speed: 12
+    max_fan_speed: 15
+    bridge_fan_speed: 40
+    overhang_fan_speed_0: 20

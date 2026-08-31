@@ -3,8 +3,8 @@ inherits:
 - '*FLEX*'
 features:
   $.type: TPU
-name: Eolas Prints TPU93A
-condition: tool.nozzle_diameter >= 0.4 and (feeder.base_model!~/.*MMU.*/ or (feeder.base_model=~/.*MMU.*/ and feeder.single_mode)) and printer.base_model != "MINI"
+name: Eolas Prints TPU 93A
+condition: printer.base_model=~/(COREONE|MK4|MK3.5|MK2|XL|MK3|MK2.5)/ and tool.nozzle_diameter >= 0.4 and (feeder.base_model!~/.*MMU.*/ or (feeder.base_model=~/.*MMU.*/ and feeder.single_mode))
 id: Eolas Prints TPU93A
 values:
   filament_vendor: Eolas Prints
@@ -51,7 +51,7 @@ variants:
     values:
       filament_max_volumetric_speed: 8
 ## XL
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: 2O8CqWGdS+mtSXVfrzOVUw
   values:
     retract_length_toolchange: 2.5
@@ -77,6 +77,39 @@ variants:
   # XL 0.8
   - condition: tool.nozzle_diameter == 0.8
     id: tTQLMpTgSriHkR70raF/0w
+    values:
+      filament_max_volumetric_speed: 8
+      filament_multitool_ramming_flow: 8
+## XL+
+- condition: printer.model == "XLP"
+  id: DTpOEQv3TGOQBjcfQeAHaA
+  values:
+    retract_length_toolchange: 2.5
+    min_fan_speed: 40
+    max_fan_speed: 60
+    bridge_fan_speed: 70
+  variants:
+  # XL+ 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    id: AToWEArVQZ2TgSuV3dWsvQ
+    values:
+      filament_max_volumetric_speed: 2.5
+      filament_multitool_ramming_flow: 2.5
+  # XL+ 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    id: otGYewRmTFmNHfB8en/WbA
+    values:
+      filament_max_volumetric_speed: 3.5
+      filament_multitool_ramming_flow: 3.5
+  # XL+ 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    id: Aa9iZ9FkSFWtSWsyQaiYEg
+    values:
+      filament_max_volumetric_speed: 4.5
+      filament_multitool_ramming_flow: 4.5
+  # XL+ 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    id: bY7sNkFXQ/KE2cjDRZieSg
     values:
       filament_max_volumetric_speed: 8
       filament_multitool_ramming_flow: 8

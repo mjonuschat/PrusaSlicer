@@ -4,7 +4,7 @@ inherits:
 - '*sheets_PET_3dfuelpetcf*'
 name: 3D-Fuel PET-CF
 # XL/C1/MK4 family 0.6 nozzle
-condition: feeder.base_model!~/.*MMU.*/
+condition: printer.base_model=~/(COREONE|MK4|XL|)/ and tool.nozzle_diameter > 0.4 and feeder.base_model!~/.*MMU.*/
 id: 3D-Fuel PET-CF
 values:
   filament_vendor: 3D-Fuel
@@ -18,7 +18,7 @@ values:
   disable_fan_first_layers: 1
   enable_dynamic_fan_speeds: true
   full_fan_speed_layer: 3
-  min_fan_speed: 10
+  min_fan_speed: 12
   max_fan_speed: 20
   fan_always_on: false
   fan_below_layer_time: 20

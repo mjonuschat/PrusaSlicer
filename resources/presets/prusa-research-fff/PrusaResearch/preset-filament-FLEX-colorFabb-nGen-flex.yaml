@@ -4,7 +4,7 @@ inherits:
 features:
   $.type: TPU
 name: colorFabb nGen flex
-condition: tool.nozzle_diameter >= 0.4 and (feeder.base_model!~/.*MMU.*/ or (feeder.base_model=~/.*MMU.*/ and feeder.single_mode)) and printer.base_model != "MINI"
+condition: printer.base_model=~/(COREONE|MK4|MK3.5|MK2|XL|MK3|MK2.5)/ and tool.nozzle_diameter >= 0.4 and (feeder.base_model!~/.*MMU.*/ or (feeder.base_model=~/.*MMU.*/ and feeder.single_mode))
 id: colorFabb nGen flex
 values:
   filament_vendor: colorFabb
@@ -52,7 +52,7 @@ variants:
     values:
       filament_max_volumetric_speed: 9
 ## XL
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: MowYSyIJRNe+S4oRhTegzw
   values:
     retract_length_toolchange: 2.5
@@ -78,6 +78,39 @@ variants:
   # XL 0.8
   - condition: tool.nozzle_diameter == 0.8
     id: 2L+xQHnNRnuhzxZZn2izeA
+    values:
+      filament_max_volumetric_speed: 9
+      filament_multitool_ramming_flow: 9
+## XL+
+- condition: printer.model == "XLP"
+  id: NbHQoOKBSe+daNmQjmFXzA
+  values:
+    retract_length_toolchange: 2.5
+    min_fan_speed: 20
+    max_fan_speed: 20
+    bridge_fan_speed: 30
+  variants:
+  # XL+ 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    id: gIOdqYXtTUyN9Vz49OEm/w
+    values:
+      filament_max_volumetric_speed: 5
+      filament_multitool_ramming_flow: 5
+  # XL+ 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    id: HSgIrhE7RJKwzCz7bIvf+Q
+    values:
+      filament_max_volumetric_speed: 5
+      filament_multitool_ramming_flow: 5
+  # XL+ 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    id: FgSrV9ifSFOftMgg9XuBjQ
+    values:
+      filament_max_volumetric_speed: 6
+      filament_multitool_ramming_flow: 6
+  # XL+ 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    id: eBxnW/e0SFOAIN63VVErEQ
     values:
       filament_max_volumetric_speed: 9
       filament_multitool_ramming_flow: 9

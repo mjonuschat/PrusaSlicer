@@ -52,9 +52,9 @@ variants:
       filament_max_volumetric_speed: 7
   # END
   - name: '*quit*'
-## XL
     id: wMIKO5czRVCo31dwE22jaQ
-- condition: printer.base_model == "XL"
+## XL
+- condition: printer.model == "XL"
   id: oE7gJ/UaSlS+NiM7p/g1Xw
   variants:
   # XL 0.4
@@ -74,8 +74,34 @@ variants:
       filament_max_volumetric_speed: 7
   # END
   - name: '*quit*'
-## MK4
     id: IMGViVP5TdiECC+0oi4GHw
+## XL+
+- condition: printer.model == "XLP"
+  id: xxxX0bSvQmK+riPU36DmKQ
+  values:
+    min_fan_speed: 12
+    max_fan_speed: 20
+    bridge_fan_speed: 20
+  variants:
+  # XL+ 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    id: Up/PL7y6RLuySEnGdaomAw
+    values:
+      filament_max_volumetric_speed: 3
+  # XL+ 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    id: +oZOA2dbTjarg3mGmwstzA
+    values:
+      filament_max_volumetric_speed: 4.5
+  # XL+ 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    id: 1O7EZMF4Rt+TomCoZpHs+w
+    values:
+      filament_max_volumetric_speed: 7
+  # END
+  - name: '*quit*'
+## MK4
+    id: 1GYglCrHRGexsK0pKYRp8g
 - condition: printer.model=~/(MK4|MK3.9)/
   id: EvpAGzbLQO6C2sqHTcKKyg
   variants:

@@ -2,6 +2,8 @@ kind: filament
 inherits:
 - '*common*'
 - '*PC*'
+- '*chamber_PC*'
+- '*shrinkage_PCCF*'
 features:
   $.type: PC
   $.tags: [abrasive, contains_carbon_fiber]
@@ -27,8 +29,6 @@ variants:
     overhang_fan_speed_0: 20
     fan_below_layer_time: 15
     start_filament_gcode: M142 S36 ; set heatbreak target temp
-    filament_shrinkage_compensation_xy: 0%
-    filament_shrinkage_compensation_z: 0.18%
   variants:
   # C1 0.4
   - condition: tool.nozzle_diameter == 0.4
@@ -106,7 +106,7 @@ variants:
         filament_max_volumetric_speed: 18
         # filament_ramming_parameters: 250 100 42.4194 42.4194| 0.05 42.4387 0.45 42.4387 0.95 42.4387 1.45 42.4387 1.95 42.4387 2.45 42.4387 2.95 42.4387 3.45 42.4387 3.95 42.4387 4.45 42.4387 4.95 42.4387
 ## XL
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: gKfPP1cpSOeIyDzpKi1eVA
   values:
     min_fan_speed: 20
@@ -176,6 +176,81 @@ variants:
     - condition: tool.nozzle_high_flow
       name: '*PCCF* @XL HF0.8'
       id: hxVPbqdjTBWvBWLUq9Kv0A
+      values:
+        filament_max_volumetric_speed: 18
+        pressure_advance_value: 0.016
+## XL+
+- condition: printer.model == "XLP"
+  id: kuhFf5dYQiaJbM0qy+MAPg
+  values:
+    max_fan_speed: 15
+    min_fan_speed: 15
+    bridge_fan_speed: 25
+  variants:
+  # XL+ 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: '*PCCF* @XL+ 0.4'
+    id: NtSVBJP2RoCUHu+NqUMltg
+    values:
+      filament_max_volumetric_speed: 9
+      slowdown_below_layer_time: 15
+      pressure_advance_value: 0.05
+      filament_infill_max_crossing_speed: 100
+    variants:
+    # XL+ HF0.4
+    - condition: tool.nozzle_high_flow
+      name: '*PCCF* @XL+ HF0.4'
+      id: TsdyA+gMScK23DU8W5cITw
+      values:
+        filament_max_volumetric_speed: 9
+        pressure_advance_value: 0.05
+  # XL+ 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    name: '*PCCF* @XL+ 0.5'
+    id: AUeQQmmoTU6ZFQkGa0KsDw
+    values:
+      filament_max_volumetric_speed: 10
+      slowdown_below_layer_time: 15
+      pressure_advance_value: 0.035
+      filament_infill_max_crossing_speed: 100
+    variants:
+    # XL+ HF0.5
+    - condition: tool.nozzle_high_flow
+      name: '*PCCF* @XL+ HF0.5'
+      id: lFRArNNxSnyX3zyXAkJdXw
+      values:
+        filament_max_volumetric_speed: 10
+        pressure_advance_value: 0.035
+        filament_infill_max_crossing_speed: 110
+  # XL+ 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: '*PCCF* @XL+ 0.6'
+    id: nTKr3MeqT1G8/rkROkMazA
+    values:
+      filament_max_volumetric_speed: 13
+      slowdown_below_layer_time: 15
+      pressure_advance_value: 0.025
+      filament_infill_max_crossing_speed: 110
+    variants:
+    # XL+ HF0.6
+    - condition: tool.nozzle_high_flow
+      name: '*PCCF* @XL+ HF0.6'
+      id: d2V7YTr/SKuPT3kOqaSoRA
+      values:
+        filament_max_volumetric_speed: 13
+  # XL+ 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: '*PCCF* @XL+ 0.8'
+    id: IkS25fg9Tt2fv1SULjnIEw
+    values:
+      filament_max_volumetric_speed: 18
+      slowdown_below_layer_time: 20
+      pressure_advance_value: 0.016
+    variants:
+    # XL+ HF0.8
+    - condition: tool.nozzle_high_flow
+      name: '*PCCF* @XL+ HF0.8'
+      id: B62yOHx7TuW5Bsagp/SU2g
       values:
         filament_max_volumetric_speed: 18
         pressure_advance_value: 0.016

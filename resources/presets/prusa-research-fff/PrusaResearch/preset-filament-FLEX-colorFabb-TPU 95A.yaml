@@ -50,9 +50,9 @@ variants:
       filament_max_volumetric_speed: 4.5
   # END
   - name: '*quit*'
-## XL
     id: gN50+UR2S06AOA6ZGZJ5Wg
-- condition: printer.base_model == "XL"
+## XL
+- condition: printer.model == "XL"
   id: wH7qwxPnQ9C4a7C4F+E8QQ
   values:
     retract_length_toolchange: 2.5
@@ -77,8 +77,38 @@ variants:
       filament_multitool_ramming_flow: 4
   # END
   - name: '*quit*'
-## MK4
     id: yLsF6CtAS+aUZBYC5O7uyQ
+## XL+
+- condition: printer.model == "XLP"
+  id: tSaxJoHgS16TPG7tiNYq5g
+  values:
+    retract_length_toolchange: 2.5
+    min_fan_speed: 40
+    max_fan_speed: 40
+    bridge_fan_speed: 70
+  variants:
+  # XL+ 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    id: DmYVN7/YS4e08jpv5g7Cwg
+    values:
+      filament_max_volumetric_speed: 3
+      filament_multitool_ramming_flow: 3
+  # XL+ 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    id: Wg1kFHqdRuWWPOjpDArxzg
+    values:
+      filament_max_volumetric_speed: 3
+      filament_multitool_ramming_flow: 3
+  # XL+ 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    id: bJgFQlhPTFu76AwXEprm1g
+    values:
+      filament_max_volumetric_speed: 4
+      filament_multitool_ramming_flow: 4
+  # END
+  - name: '*quit*'
+## MK4
+    id: MdWNURmvQ1Gi8Ku9UeSyJw
 - condition: printer.model=~/(MK4|MK3.9)/
   id: qC/+3dkBSFe4ozjr/e+3qw
   variants:

@@ -4,7 +4,7 @@ inherits:
 features:
   $.type: TPU
 name: Forward AM Ultrafuse TPU-95A
-condition: tool.nozzle_diameter >= 0.4 and (feeder.base_model!~/.*MMU.*/ or (feeder.base_model=~/.*MMU.*/ and feeder.single_mode)) and printer.base_model != "MINI"
+condition: printer.base_model=~/(COREONE|MK4|MK3.5|MK2|XL|MK3|MK2.5)/ and tool.nozzle_diameter >= 0.4 and (feeder.base_model!~/.*MMU.*/ or (feeder.base_model=~/.*MMU.*/ and feeder.single_mode))
 id: Forward AM Ultrafuse TPU-95A
 values:
   filament_vendor: Forward AM
@@ -47,7 +47,7 @@ variants:
     values:
       filament_max_volumetric_speed: 5
 ## XL
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: h0ZyWOm+SPSk3pmMQuu/9Q
   values:
     retract_length_toolchange: 3
@@ -73,6 +73,39 @@ variants:
   # XL 0.8
   - condition: tool.nozzle_diameter == 0.8
     id: GOrfj+OORs6hT8ewo5/WcA
+    values:
+      filament_max_volumetric_speed: 5
+      filament_multitool_ramming_flow: 5
+## XL+
+- condition: printer.model == "XLP"
+  id: XLwX8ItHR4Cgs94Jf9TJTw
+  values:
+    retract_length_toolchange: 3
+    min_fan_speed: 20
+    max_fan_speed: 75
+    bridge_fan_speed: 80
+  variants:
+  # XL+ 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    id: wmrHBrfKTEiDmi6k1geqmA
+    values:
+      filament_max_volumetric_speed: 2.5
+      filament_multitool_ramming_flow: 2.5
+  # XL+ 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    id: JVmt9jhHR02pAR8Xx2oqgw
+    values:
+      filament_max_volumetric_speed: 2.5
+      filament_multitool_ramming_flow: 2.5
+  # XL+ 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    id: FqFG/7OuRqeMHrPQlKsofA
+    values:
+      filament_max_volumetric_speed: 2.5
+      filament_multitool_ramming_flow: 2.5
+  # XL+ 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    id: /rfErMaxQd2LPFWRfl6Cnw
     values:
       filament_max_volumetric_speed: 5
       filament_multitool_ramming_flow: 5

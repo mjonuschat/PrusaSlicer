@@ -70,7 +70,7 @@ variants:
       values:
         filament_max_volumetric_speed: 8
 ## XL
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: fBDzN003T2WlMfvgeR970Q
   values:
     filament_multitool_ramming_volume: 40
@@ -97,6 +97,40 @@ variants:
   # XL 0.8
   - condition: tool.nozzle_diameter == 0.8
     id: grJkWZm5R0yzWI9ZB2MELw
+    values:
+      filament_max_volumetric_speed: 8
+      filament_multitool_ramming_flow: 8
+## XL+
+- condition: printer.model == "XLP"
+  id: uPEnmNXPQfiXXXz3L7s0RA
+  values:
+    filament_multitool_ramming_volume: 40
+    retract_length_toolchange: 3
+    min_fan_speed: 45
+    max_fan_speed: 45
+    bridge_fan_speed: 70
+  variants:
+  # XL 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    id: gBXKbqUMToCD2Pxp7DNmjw
+    values:
+      filament_max_volumetric_speed: 2
+      filament_multitool_ramming_flow: 2
+  # XL 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    id: tYC2hjBgQEawfEEN/AYbrg
+    values:
+      filament_max_volumetric_speed: 2.5
+      filament_multitool_ramming_flow: 2.5
+  # XL 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    id: dN2T5pRkQR6xcxPzci7p/A
+    values:
+      filament_max_volumetric_speed: 3
+      filament_multitool_ramming_flow: 3
+  # XL 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    id: WPOm3TZDSOOtTeIO35bvpA
     values:
       filament_max_volumetric_speed: 8
       filament_multitool_ramming_flow: 8

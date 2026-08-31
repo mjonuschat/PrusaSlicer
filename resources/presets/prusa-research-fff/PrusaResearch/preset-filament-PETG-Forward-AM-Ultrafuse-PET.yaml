@@ -18,7 +18,7 @@ values:
   max_fan_speed: 100
   fan_below_layer_time: 10
 variants:
-- condition: printer.model=~/(COREONE|COREONEL|COREONEOAK|MK4S|MK3.9S)/
+- condition: printer.model=~/(COREONE|COREONEL|COREONEOAK|MK4S|MK3.9S|XLP)/
   id: HyGV+70JTu6d1KEQfwgBNw
   values:
     min_fan_speed: 55

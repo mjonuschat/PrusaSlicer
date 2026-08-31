@@ -4,7 +4,6 @@ inherits:
 features:
   $.type: TPU
 name: AmazonBasics TPU
-condition: tool.nozzle_diameter >= 0.4 and feeder.base_model!~/.*MMU.*/
 id: AmazonBasics TPU
 values:
   filament_vendor: AmazonBasics
@@ -49,7 +48,7 @@ variants:
     values:
       filament_max_volumetric_speed: 8
 ## XL
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: tcPBuKiCSfqARu3B2jbD9g
   values:
     retract_length_toolchange: 2.5
@@ -75,6 +74,39 @@ variants:
   # XL 0.8
   - condition: tool.nozzle_diameter == 0.8
     id: pAppQRFhSzavdftolRxvgA
+    values:
+      filament_max_volumetric_speed: 8
+      filament_multitool_ramming_flow: 8
+## XL+
+- condition: printer.model == "XLP"
+  id: aWN4tt3ZTqeRrG3DthoKAg
+  values:
+    retract_length_toolchange: 2.5
+    min_fan_speed: 50
+    max_fan_speed: 60
+    bridge_fan_speed: 70
+  variants:
+  # XL+ 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    id: 9OnLknpKSc6OqFGzMiAoSQ
+    values:
+      filament_max_volumetric_speed: 3.5
+      filament_multitool_ramming_flow: 3.5
+  # XL+ 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    id: XrnrXcJBT62M0WQAMd1NqQ
+    values:
+      filament_max_volumetric_speed: 3.5
+      filament_multitool_ramming_flow: 3.5
+  # XL+ 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    id: H/3+3jfwTKacM9s8saAoEA
+    values:
+      filament_max_volumetric_speed: 4.5
+      filament_multitool_ramming_flow: 4.5
+  # XL+ 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    id: 5d2n9W19Q4SXho83+AP4NA
     values:
       filament_max_volumetric_speed: 8
       filament_multitool_ramming_flow: 8

@@ -4,7 +4,7 @@ inherits:
 features:
   $.type: TPU
 name: Fiberlogy FiberFlex 30D
-condition: tool.nozzle_diameter >= 0.4 and (feeder.base_model!~/.*MMU.*/ or (feeder.base_model=~/.*MMU.*/ and feeder.single_mode)) and printer.base_model != "MINI"
+condition: printer.base_model=~/(COREONE|MK4|MK3.5|MK2|XL|MK3|MK2.5)/ and tool.nozzle_diameter >= 0.4 and (feeder.base_model!~/.*MMU.*/ or (feeder.base_model=~/.*MMU.*/ and feeder.single_mode))
 id: Fiberlogy FiberFlex 30D
 values:
   filament_vendor: Fiberlogy
@@ -51,7 +51,7 @@ variants:
     values:
       filament_max_volumetric_speed: 8
 ## XL
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: qCTXeuflRgW7t0CrGzHDSw
   values:
     retract_length_toolchange: 3
@@ -77,6 +77,39 @@ variants:
   # XL 0.8
   - condition: tool.nozzle_diameter == 0.8
     id: WxmLA703ToawM3AqcuuyFw
+    values:
+      filament_max_volumetric_speed: 8
+      filament_multitool_ramming_flow: 8
+## XL+
+- condition: printer.model == "XLP"
+  id: cBN3YVH5TvWJ/PpFXyEiUA
+  values:
+    retract_length_toolchange: 3
+    min_fan_speed: 20
+    max_fan_speed: 45
+    bridge_fan_speed: 50
+  variants:
+  # XL+ 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    id: Vc0sxHpjQi2XquSWIUj1Lg
+    values:
+      filament_max_volumetric_speed: 2.5
+      filament_multitool_ramming_flow: 2.5
+  # XL+ 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    id: /eyOSVb5T32r2NBS10UxVA
+    values:
+      filament_max_volumetric_speed: 2.5
+      filament_multitool_ramming_flow: 2.5
+  # XL+ 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    id: d5BLNUvrQEiG9c28CWsIiA
+    values:
+      filament_max_volumetric_speed: 5
+      filament_multitool_ramming_flow: 5
+  # XL+ 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    id: a/N1YtZxTDWvaWgIX2tg/g
     values:
       filament_max_volumetric_speed: 8
       filament_multitool_ramming_flow: 8

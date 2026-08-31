@@ -2,6 +2,7 @@ kind: filament
 id: '*HIPS*'
 inherits:
 - '*common*'
+- '*chamber_ABS*'
 features:
   $.type: HIPS
 values:
@@ -59,8 +60,6 @@ variants:
 - condition: printer.base_model == "COREONE"
   id: vdGWHlNDTRSNMKqgwL0R3w
   values:
-    chamber_minimal_temperature: 40
-    chamber_temperature: 0
     first_layer_bed_temperature: 110
     enable_dynamic_fan_speeds: 0
     idle_temperature: 130
@@ -174,7 +173,7 @@ variants:
         temperature: 255
         first_layer_temperature: 255
 ## XL
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: ZWR6XQnrR2SM8XU64Msgcw
   values:
     first_layer_bed_temperature: 100
@@ -277,6 +276,119 @@ variants:
     - condition: tool.nozzle_high_flow
       name: '*HIPS* @XL HF0.8'
       id: 6l2wBE22Q6KXi2ZBsg2WMw
+      values:
+        filament_max_volumetric_speed: 36
+        pressure_advance_value: 0.01
+        filament_infill_max_crossing_speed: 0
+        first_layer_temperature: 255
+        temperature: 255
+## XL+
+- condition: printer.model == "XLP"
+  id: 8rpaLCWhRF629YIKhrM4Ng
+  values:
+    first_layer_bed_temperature: 100
+    bed_temperature: 105
+    fan_below_layer_time: 30
+    filament_max_volumetric_speed: 15
+    filament_multitool_ramming: 1
+    filament_multitool_ramming_flow: 40
+    filament_multitool_ramming_volume: 5
+    retract_length_toolchange: 20
+    idle_temperature: 100
+    min_print_speed: 15
+    slowdown_below_layer_time: 20
+    filament_infill_max_speed: 0
+    max_fan_speed: 15
+    min_fan_speed: 12
+    bridge_fan_speed: 20
+    filament_minimal_purge_on_wipe_tower: 35
+  variants:
+  # XL+ 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    name: '*HIPS* @XL+ 0.25'
+    id: jYzQjnZ6R+qNGW05SpAVug
+    values:
+      filament_max_volumetric_speed: 15
+      slowdown_below_layer_time: 20
+      pressure_advance_value: 0.09
+      temperature: 240
+      first_layer_temperature: 240
+  # XL+ 0.3
+  - condition: tool.nozzle_diameter == 0.3
+    name: '*HIPS* @XL+ 0.3'
+    id: cvrfTZZKSuqa3oPMLpv0RA
+    values:
+      filament_max_volumetric_speed: 15
+      slowdown_below_layer_time: 20
+      pressure_advance_value: 0.065
+      filament_infill_max_crossing_speed: 140
+  # XL+ 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: '*HIPS* @XL+ 0.4'
+    id: YLgKcOqxQaqlvM83uxAvhg
+    values:
+      filament_max_volumetric_speed: 15
+      slowdown_below_layer_time: 20
+      pressure_advance_value: 0.05
+      filament_infill_max_crossing_speed: 140
+    variants:
+    # XL+ HF0.4
+    - condition: tool.nozzle_high_flow
+      name: '*HIPS* @XL+ HF0.4'
+      id: hzj2JjMZT0KkYPCwenQDGA
+      values:
+        filament_max_volumetric_speed: 26
+        pressure_advance_value: 0.02
+        filament_infill_max_crossing_speed: 200
+  # XL+ 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    name: '*HIPS* @XL+ 0.5'
+    id: 6lgMnNEJTEyinuzvOUm3kQ
+    values:
+      filament_max_volumetric_speed: 15
+      slowdown_below_layer_time: 20
+      pressure_advance_value: 0.018
+      filament_infill_max_crossing_speed: 140
+    variants:
+    # XL+ HF0.5
+    - condition: tool.nozzle_high_flow
+      name: '*HIPS* @XL+ HF0.5'
+      id: HA433Ja1RY2w6vqYiM9iiA
+      values:
+        filament_max_volumetric_speed: 27
+        pressure_advance_value: 0.018
+        filament_infill_max_crossing_speed: 200
+  # XL+ 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: '*HIPS* @XL+ 0.6'
+    id: luOmAnr9RoSQyPS9SJLW3Q
+    values:
+      filament_max_volumetric_speed: 15
+      slowdown_below_layer_time: 20
+      pressure_advance_value: 0.012
+      filament_infill_max_crossing_speed: 140
+    variants:
+    # XL+ HF0.6
+    - condition: tool.nozzle_high_flow
+      name: '*HIPS* @XL+ HF0.6'
+      id: GkZG65zIQxiBD4kio9v8Tg
+      values:
+        filament_max_volumetric_speed: 34
+        filament_infill_max_crossing_speed: 0
+  # XL+ 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: '*HIPS* @XL+ 0.8'
+    id: j2Qt1T0eSxOBM7El72S/0Q
+    values:
+      filament_max_volumetric_speed: 18
+      slowdown_below_layer_time: 25
+      pressure_advance_value: 0.01
+      filament_infill_max_crossing_speed: 140
+    variants:
+    # XL+ HF0.8
+    - condition: tool.nozzle_high_flow
+      name: '*HIPS* @XL+ HF0.8'
+      id: B8rrEJjXQqijPjk5yXqoMw
       values:
         filament_max_volumetric_speed: 36
         pressure_advance_value: 0.01

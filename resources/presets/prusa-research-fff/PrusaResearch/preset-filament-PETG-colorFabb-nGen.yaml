@@ -82,7 +82,7 @@ variants:
       values:
         filament_max_volumetric_speed: 22
 ## XL
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: xle1nnCjQImCYeg08hK2hw
   values:
     first_layer_bed_temperature: 70
@@ -141,6 +141,71 @@ variants:
     # XL HF0.8
     - condition: tool.nozzle_high_flow
       id: ZtdkMJlMTDKjk9Y+k75+jA
+      values:
+        filament_max_volumetric_speed: 22
+## XL+
+- condition: printer.model == "XLP"
+  id: xCqW811DRmS9ok0V04z43w
+  values:
+    first_layer_bed_temperature: 70
+    bed_temperature: 70
+    idle_temperature: 70
+    min_fan_speed: 15
+    max_fan_speed: 25
+    bridge_fan_speed: 30
+  variants:
+  # XL+ 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    id: 5zJOi6NwQ4ynUIpxSJUMng
+    values:
+      filament_max_volumetric_speed: 12
+  # XL+ 0.3
+  - condition: tool.nozzle_diameter == 0.3
+    id: SDrUEyNaQu6meLnZCEOeKA
+    values:
+      filament_max_volumetric_speed: 12
+  # XL+ 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    id: K4e+Jq9xTN6yUFOnBOTrHQ
+    values:
+      filament_max_volumetric_speed: 12
+    variants:
+    # XL+ HF0.4
+    - condition: tool.nozzle_high_flow
+      id: 7Tv9QPiXQlOP/Ky9kp89ZQ
+      values:
+        filament_max_volumetric_speed: 15
+  # XL+ 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    id: LOUPxEt2QkqWQecl7e5GAA
+    values:
+      filament_max_volumetric_speed: 14
+    variants:
+    # XL+ HF0.5
+    - condition: tool.nozzle_high_flow
+      id: QPixZfTATTyjZ2TvjsbUxA
+      values:
+        filament_max_volumetric_speed: 16
+  # XL+ 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    id: zLag2YktT/KCdq4SCvzaWQ
+    values:
+      filament_max_volumetric_speed: 17
+    variants:
+    # XL+ HF0.6
+    - condition: tool.nozzle_high_flow
+      id: QKIPV3hxTEi4lAuy5GGPhw
+      values:
+        filament_max_volumetric_speed: 18
+  # XL+ 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    id: HuzUfvdJRh2/twy/19Y2fA
+    values:
+      filament_max_volumetric_speed: 22
+    variants:
+    # XL+ HF0.8
+    - condition: tool.nozzle_high_flow
+      id: nOw7mP85SRKnLj1tnv6OJw
       values:
         filament_max_volumetric_speed: 22
 ## MK4

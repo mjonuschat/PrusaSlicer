@@ -2,6 +2,7 @@ kind: filament
 id: '*PEBA*'
 inherits:
 - '*common*'
+- '*chamber_PEBA*'
 features:
   $.type: PEBA
 values:
@@ -61,8 +62,6 @@ variants:
 - condition: printer.base_model == "COREONE"
   id: pz6qxKUcRFeCMivwhSscOw
   values:
-    chamber_minimal_temperature: 0
-    chamber_temperature: 0
     enable_dynamic_fan_speeds: 1
     bed_temperature: 85
     idle_temperature: 130
@@ -169,7 +168,7 @@ variants:
         # filament_ramming_parameters: 250 100 42.4194 42.4194| 0.05 42.4387 0.45 42.4387 0.95 42.4387 1.45 42.4387 1.95 42.4387 2.45 42.4387 2.95 42.4387 3.45 42.4387 3.95 42.4387 4.45 42.4387 4.95 42.4387
         pressure_advance_value: 0.021
 ## XL
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: jrwP922jR8mZxIKqqZfSjQ
   values:
     first_layer_bed_temperature: 80
@@ -269,6 +268,110 @@ variants:
     - condition: tool.nozzle_high_flow
       name: '*PEBA* @XL HF0.8'
       id: DsqU7hUVTUiCuyDSX5aQYw
+      values:
+        filament_max_volumetric_speed: 10
+        pressure_advance_value: 0.021
+## XL+
+- condition: printer.model == "XLP"
+  id: cmoT/a7PQz62gzDmTjszHw
+  values:
+    first_layer_bed_temperature: 80
+    bed_temperature: 80
+    fan_below_layer_time: 20
+    filament_multitool_ramming: 1
+    filament_multitool_ramming_flow: 40
+    filament_multitool_ramming_volume: 10
+    retract_length_toolchange: 20
+    idle_temperature: 70
+    min_print_speed: 15
+    slowdown_below_layer_time: 9
+    filament_infill_max_speed: 200
+    filament_minimal_purge_on_wipe_tower: 35
+    start_filament_gcode: M142 S36 ; set heatbreak target temp
+  variants:
+  # XL+ 0.25
+  - condition: tool.nozzle_diameter == 0.25
+    name: '*PEBA* @XL+ 0.25'
+    id: 2Ul5kFwyQumJPkF9YdLJ/g
+    values:
+      filament_max_volumetric_speed: 4
+      slowdown_below_layer_time: 7
+      pressure_advance_value: 0.18
+      temperature: 240
+  # XL+ 0.3
+  - condition: tool.nozzle_diameter == 0.3
+    name: '*PEBA* @XL+ 0.3'
+    id: PpW0IlLTRcKshWmzL9Sr0Q
+    values:
+      filament_max_volumetric_speed: 4
+      slowdown_below_layer_time: 9
+      pressure_advance_value: 0.1
+      filament_infill_max_crossing_speed: 100
+  # XL+ 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: '*PEBA* @XL+ 0.4'
+    id: JY6ao9W2TD+SxykEik7suw
+    values:
+      filament_max_volumetric_speed: 6.5
+      slowdown_below_layer_time: 9
+      pressure_advance_value: 0.053
+      filament_infill_max_crossing_speed: 110
+    variants:
+    # XL+ HF0.4
+    - condition: tool.nozzle_high_flow
+      name: '*PEBA* @XL+ HF0.4'
+      id: twYzB2xOT/a2ZhQ2f0rVFw
+      values:
+        filament_max_volumetric_speed: 6.5
+        pressure_advance_value: 0.047
+  # XL+ 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    name: '*PEBA* @XL+ 0.5'
+    id: dMqh/peMRLeemhEjthMxjA
+    values:
+      filament_max_volumetric_speed: 6.5
+      slowdown_below_layer_time: 14
+      pressure_advance_value: 0.042
+      filament_infill_max_crossing_speed: 110
+    variants:
+    # XL+ HF0.5
+    - condition: tool.nozzle_high_flow
+      name: '*PEBA* @XL+ HF0.5'
+      id: 0cTuaiACQxyn0FiCfhUNXw
+      values:
+        filament_max_volumetric_speed: 6.5
+        pressure_advance_value: 0.042
+        filament_infill_max_crossing_speed: 120
+  # XL+ 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: '*PEBA* @XL+ 0.6'
+    id: xxo9lBwjQEaBcToBGBLDwg
+    values:
+      filament_max_volumetric_speed: 8
+      slowdown_below_layer_time: 15
+      pressure_advance_value: 0.032
+      filament_infill_max_crossing_speed: 140
+    variants:
+    # XL+ HF0.6
+    - condition: tool.nozzle_high_flow
+      name: '*PEBA* @XL+ HF0.6'
+      id: v7HLFMJYQjmvk6AuZoVunA
+      values:
+        filament_max_volumetric_speed: 8
+        pressure_advance_value: 0.033
+  # XL+ 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: '*PEBA* @XL+ 0.8'
+    id: ft7O/OS2SayBYa37ZAEj+A
+    values:
+      filament_max_volumetric_speed: 10
+      slowdown_below_layer_time: 18
+      pressure_advance_value: 0.018
+    variants:
+    # XL HF0.8
+    - condition: tool.nozzle_high_flow
+      name: '*PEBA* @XL+ HF0.8'
+      id: V9GWebbURTCGm8+i2txLQA
       values:
         filament_max_volumetric_speed: 10
         pressure_advance_value: 0.021

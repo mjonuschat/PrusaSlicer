@@ -18,8 +18,8 @@ variants:
     max_fan_speed: 55
     bridge_fan_speed: 100
     overhang_fan_speed_0: 55
-## MK4S
-- condition: printer.model=~/(MK4S|MK3.9S)/
+## MK4S/XL+
+- condition: printer.model=~/(MK4S|MK3.9S|XLP)/
   id: PgGKAuGgTzuBNQAVlPTqxA
   values:
     min_fan_speed: 35

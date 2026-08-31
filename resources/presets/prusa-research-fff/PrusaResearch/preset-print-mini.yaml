@@ -125,9 +125,8 @@ variants:
     solid_infill_extrusion_width: 0.45
     solid_infill_speed: 140
     over_bridge_speed: 50%
-    support_material: 0
+    support_material: enforcers_only
     support_material_angle: 0
-    support_material_auto: 1
     support_material_bottom_contact_distance: 0
     support_material_bottom_interface_layers: 0
     support_material_buildplate_only: 0

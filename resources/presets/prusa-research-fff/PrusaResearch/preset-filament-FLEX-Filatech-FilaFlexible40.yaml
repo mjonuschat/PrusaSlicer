@@ -4,7 +4,7 @@ inherits:
 features:
   $.type: TPE
 name: Filatech FilaFlexible40
-condition: tool.nozzle_diameter >= 0.4 and feeder.base_model!~/.*MMU.*/
+condition: printer.base_model=~/(COREONE|MK4|MK3.5|MK2|XL|MK3|MK2.5)/ and tool.nozzle_diameter >= 0.4 and (feeder.base_model!~/.*MMU.*/ or (feeder.base_model=~/.*MMU.*/ and feeder.single_mode))
 id: Filatech FilaFlexible40
 values:
   filament_vendor: Filatech
@@ -47,7 +47,7 @@ variants:
     values:
       filament_max_volumetric_speed: 10
 ## XL
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: VnQYsXm/TxmLPNm443vLGw
   values:
     retract_length_toolchange: 2.5
@@ -73,6 +73,39 @@ variants:
   # XL 0.8
   - condition: tool.nozzle_diameter == 0.8
     id: 3XJPl9VkT8mh/19vKn+Jvg
+    values:
+      filament_max_volumetric_speed: 10
+      filament_multitool_ramming_flow: 10
+## XL+
+- condition: printer.model == "XLP"
+  id: nvQu7TsRTtGMxPRD3ZvgxA
+  values:
+    retract_length_toolchange: 2.5
+    min_fan_speed: 35
+    max_fan_speed: 40
+    bridge_fan_speed: 70
+  variants:
+  # XL+ 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    id: 9TNXJ0e9TfyyRN9lPSvG8w
+    values:
+      filament_max_volumetric_speed: 4
+      filament_multitool_ramming_flow: 4
+  # XL+ 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    id: kP/duP9nR9KAHzZERfqi5Q
+    values:
+      filament_max_volumetric_speed: 4
+      filament_multitool_ramming_flow: 4
+  # XL+ 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    id: 2I8brmK7StKAmMfiLMvkLA
+    values:
+      filament_max_volumetric_speed: 5
+      filament_multitool_ramming_flow: 5
+  # XL+ 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    id: j3aSyFvMQcWKAVpMmkK8cQ
     values:
       filament_max_volumetric_speed: 10
       filament_multitool_ramming_flow: 10

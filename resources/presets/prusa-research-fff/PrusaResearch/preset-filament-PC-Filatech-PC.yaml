@@ -12,7 +12,7 @@ values:
   filament_density: 1.2
   filament_spool_weight: 0
 variants:
-- condition: printer.model=~/(COREONE|COREONEL|COREONEOAK|MK4S|MK3.9S)/
+- condition: printer.model=~/(COREONE|COREONEL|COREONEOAK|MK4S|MK3.9S|XLP)/
   id: DIhXVi02RxeDmvnfljG2DA
   values:
     min_fan_speed: 12

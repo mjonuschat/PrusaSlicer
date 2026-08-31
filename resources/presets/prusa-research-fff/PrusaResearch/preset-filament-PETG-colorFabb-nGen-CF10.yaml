@@ -152,8 +152,8 @@ variants:
         filament_max_volumetric_speed: 10
   # END
   - name: '*quit*'
-# XL
     id: MT1QdwhBSIa1WwLMfSPmeQ
+# XL
 - condition: printer.model == "XL"
   id: BrfVwhvIQL6rlwSU3BqFHg
   values:
@@ -197,7 +197,52 @@ variants:
         filament_max_volumetric_speed: 10
   # END
   - name: '*quit*'
-# END
     id: AMjagPTDQ2OKCeodevfiXw
+# XL+
+- condition: printer.model == "XLP"
+  id: Y0YSaxWQSd+FGJNoQSpHyw
+  values:
+    min_fan_speed: 30
+    max_fan_speed: 50
+    bridge_fan_speed: 50
+    overhang_fan_speed_0: 50
+  variants:
+  # XL+ 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    id: 7u7uqqwPS6G67LUdKk/JZg
+    values:
+      filament_max_volumetric_speed: 6
+    variants:
+    # XL+ 0.4HF
+    - condition: tool.nozzle_high_flow
+      id: Q1xPJPikTomOYAihwjG7CQ
+      values:
+        filament_max_volumetric_speed: 6
+  # XL+ 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    id: VDtOrb03QOWZ+7ZYeqIu2A
+    values:
+      filament_max_volumetric_speed: 7
+    # XL+ 0.5HF
+    variants:
+    - condition: tool.nozzle_high_flow
+      id: I+03FyaPQUWG+za8XQkglA
+      values:
+        filament_max_volumetric_speed: 7
+  # XL+ 0.6      
+  - condition: tool.nozzle_diameter == 0.6
+    id: IqKMXsvXQbm6yOHX49rlqg
+    values:
+      filament_max_volumetric_speed: 10
+    # XL+ 0.6HF
+    variants:
+    - condition: tool.nozzle_high_flow
+      id: kEmFRwsTTBSgA6VT8L3zxQ
+      values:
+        filament_max_volumetric_speed: 10
+  # END
+  - name: '*quit*'
+# END
+    id: U2yhQ9VlQEmtcI/UfzAouw
 - name: '*quit*'
   id: 2p5sTrwBQ7Ku+Y87bWh9Kw

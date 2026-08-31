@@ -20,12 +20,12 @@ values:
   max_fan_speed: 55
   cooling: false
   slowdown_below_layer_time: 15
-  retract_speed: null
-  deretract_speed: null
-  retract_before_travel: null
-  retract_layer_change: null
-  retract_length: null
-  wipe: null
+  retract_speed:
+  deretract_speed:
+  retract_before_travel:
+  retract_layer_change:
+  retract_length:
+  wipe:
   travel_ramping_lift: false
   filament_notes: MBL160
   extrusion_multiplier: 1.1
@@ -65,7 +65,7 @@ variants:
     values:
       filament_max_volumetric_speed: 8
 ## XL
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: ygAadrkeReS2bly9NMzBJQ
   values:
     filament_multitool_ramming: false
@@ -100,6 +100,45 @@ variants:
   # XL 0.8
   - condition: tool.nozzle_diameter == 0.8
     id: 3UgSD6dDTxu1kZlSbcsUtw
+    values:
+      filament_max_volumetric_speed: 8
+      filament_multitool_ramming_flow: 8
+## XL+
+- condition: printer.model == "XLP"
+  id: yKsmJ8ZtTI+Jr4nRYk/3/g
+  values:
+    filament_multitool_ramming: false
+    filament_multitool_ramming_volume: 40
+    retract_length_toolchange: 6
+    idle_temperature: 70
+    filament_minimal_purge_on_wipe_tower: 35
+    first_layer_temperature: 225
+    temperature: 225
+    bridge_fan_speed: 50
+    min_fan_speed: 50
+    max_fan_speed: 50
+  variants:
+  # XL+ 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    id: CBLTJrq+QHSpyqrC4us8oQ
+    values:
+      filament_max_volumetric_speed: 2
+      filament_multitool_ramming_flow: 2
+  # XL+ 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    id: YD09z6c5TuK8mmtTZM2e3Q
+    values:
+      filament_max_volumetric_speed: 2.5
+      filament_multitool_ramming_flow: 2.5
+  # XL+ 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    id: yV7NCoHERM6zB5NLnwVOZw
+    values:
+      filament_max_volumetric_speed: 3.5
+      filament_multitool_ramming_flow: 3.5
+  # XL+ 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    id: LdHQAaFCQUi0vsZQmctfMQ
     values:
       filament_max_volumetric_speed: 8
       filament_multitool_ramming_flow: 8

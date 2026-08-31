@@ -29,7 +29,7 @@ variants:
 id: MCpL27/HRImB8Xc4J9ax+w
 kind: printer
 variants:
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: Ua5zKfZdQM2CmA/vnpbCNw
   inherits:
   - '*default_print_XL*'
@@ -87,7 +87,7 @@ variants:
     remaining_times: 1
     silent_mode: 1
     single_extruder_multi_material: 0
-    filament_change_time: 19
+    filament_change_time: 4.5
     thumbnails: [16x16/QOI, 313x173/QOI, 480x240/QOI, 380x285/PNG]
     use_firmware_retraction: 0
     use_relative_e_distances: 1
@@ -117,10 +117,10 @@ variants:
         M862.1 P[nozzle_diameter] A{(filament_abrasive[0] ? 1 : 0)} F{(nozzle_high_flow[0] ? 1 : 0)}
         ; set & wait for bed and extruder temp for MBL
         M140 S[first_layer_bed_temperature] ; set bed temp
-        M104 T0 S{((filament_notes[0]=~/.*MBL160.*/) ? 160 : (filament_notes[0]=~/.*HT_MBL10.*/) ? (first_layer_temperature[0] - 10) : (filament_type[0] == "PC" or filament_type[0] == "PA") ? (first_layer_temperature[0] - 25) : (filament_type[0] == "FLEX") ? 210 : (filament_type[0]=~/.*PET.*/) ? 175 : 170)} ; set extruder temp for bed leveling
+        M104 T0 S{((filament_notes[0]=~/.*MBL160.*/) ? 160 : (filament_notes[0]=~/.*HT_MBL10.*/) ? (first_layer_temperature[0] - 10) : (filament_type[0] == "PC" or filament_type[0] == "PA") ? (first_layer_temperature[0] - 25) : (filament_type[0]=~/(FLEX|TPU|TPE)/) ? 210 : (filament_type[0]=~/.*PET.*/) ? 175 : 170)} ; set extruder temp for bed leveling
         ; home carriage, pick tool, home all
         G28 XY
-        M109 T0 R{((filament_notes[0]=~/.*MBL160.*/) ? 160 : (filament_notes[0]=~/.*HT_MBL10.*/) ? (first_layer_temperature[0] - 10) : (filament_type[0] == "PC" or filament_type[0] == "PA") ? (first_layer_temperature[0] - 25) : (filament_type[0] == "FLEX") ? 210 : (filament_type[0]=~/.*PET.*/) ? 175 : 170)} ; wait for temp
+        M109 T0 R{((filament_notes[0]=~/.*MBL160.*/) ? 160 : (filament_notes[0]=~/.*HT_MBL10.*/) ? (first_layer_temperature[0] - 10) : (filament_type[0] == "PC" or filament_type[0] == "PA") ? (first_layer_temperature[0] - 25) : (filament_type[0]=~/(FLEX|TPU|TPE)/) ? 210 : (filament_type[0]=~/.*PET.*/) ? 175 : 170)} ; wait for temp
         M84 E ; turn off E motor
         G28 Z
 
@@ -129,7 +129,7 @@ variants:
 
         G29 G ; absorb heat
 
-        M109 T0 R{((filament_notes[0]=~/.*MBL160.*/) ? 160 : (filament_notes[0]=~/.*HT_MBL10.*/) ? (first_layer_temperature[0] - 10) : (filament_type[0] == "PC" or filament_type[0] == "PA") ? (first_layer_temperature[0] - 25) : (filament_type[0] == "FLEX") ? 210 : (filament_type[0]=~/.*PET.*/) ? 175 : 170)} ; wait for temp
+        M109 T0 R{((filament_notes[0]=~/.*MBL160.*/) ? 160 : (filament_notes[0]=~/.*HT_MBL10.*/) ? (first_layer_temperature[0] - 10) : (filament_type[0] == "PC" or filament_type[0] == "PA") ? (first_layer_temperature[0] - 25) : (filament_type[0]=~/(FLEX|TPU|TPE)/) ? 210 : (filament_type[0]=~/.*PET.*/) ? 175 : 170)} ; wait for temp
 
         ; move to the nozzle cleanup area
         G1 X{(min(((((first_layer_print_min[0] + first_layer_print_max[0]) / 2) < ((print_bed_min[0] + print_bed_max[0]) / 2)) ? (((first_layer_print_min[1] - 7) < -2) ? 70 : (min(print_bed_max[0], first_layer_print_min[0] + 32) - 32)) : (((first_layer_print_min[1] - 7) < -2) ? 260 : (min(print_bed_max[0], first_layer_print_min[0] + 32) - 32))), first_layer_print_min[0])) + 32} Y{(min((first_layer_print_min[1] - 7), first_layer_print_min[1]))} Z{5} F4800
@@ -205,7 +205,7 @@ variants:
         M217 Z{max(zhop, 2.0)} ; set toolchange z hop to 2mm, or zhop variable from slicer if higher
         ; set bed and extruder temp for MBL
         M140 S[first_layer_bed_temperature] ; set bed temp
-        M104 T{initial_tool} S{((filament_notes[initial_tool]=~/.*MBL160.*/) ? 160 : (filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool] == "FLEX") ? 210 : (filament_type[initial_tool]=~/.*PET.*/) ? 175 : 170)} ; set temp
+        M104 T{initial_tool} S{((filament_notes[initial_tool]=~/.*MBL160.*/) ? 160 : (filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool]=~/(FLEX|TPU|TPE)/) ? 210 : (filament_type[initial_tool]=~/.*PET.*/) ? 175 : 170)} ; set temp
 
         ; Home XY
         G28 XY
@@ -220,7 +220,7 @@ variants:
         ; select tool that will be used to home & MBL
         T{initial_tool} S1 L0 D0
 
-        M109 T{initial_tool} S{((filament_notes[initial_tool]=~/.*MBL160.*/) ? 160 : (filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool] == "FLEX") ? 210 : (filament_type[initial_tool]=~/.*PET.*/) ? 175 : 170)} ; wait for temp
+        M109 T{initial_tool} S{((filament_notes[initial_tool]=~/.*MBL160.*/) ? 160 : (filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool]=~/(FLEX|TPU|TPE)/) ? 210 : (filament_type[initial_tool]=~/.*PET.*/) ? 175 : 170)} ; wait for temp
 
         ; home Z with MBL tool
         M84 E ; turn off E motor
@@ -232,7 +232,7 @@ variants:
 
         G29 G ; absorb heat
 
-        M109 T{initial_tool} S{((filament_notes[initial_tool]=~/.*MBL160.*/) ? 160 : (filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool] == "FLEX") ? 210 : (filament_type[initial_tool]=~/.*PET.*/) ? 175 : 170)} ; wait for temp
+        M109 T{initial_tool} S{((filament_notes[initial_tool]=~/.*MBL160.*/) ? 160 : (filament_notes[initial_tool]=~/.*HT_MBL10.*/) ? (first_layer_temperature[initial_tool] - 10) : (filament_type[initial_tool] == "PC" or filament_type[initial_tool] == "PA") ? (first_layer_temperature[initial_tool] - 25) : (filament_type[initial_tool]=~/(FLEX|TPU|TPE)/) ? 210 : (filament_type[initial_tool]=~/.*PET.*/) ? 175 : 170)} ; wait for temp
 
         ; move to the nozzle cleanup area
         G1 X{(min(((((first_layer_print_min[0] + first_layer_print_max[0]) / 2) < ((print_bed_min[0] + print_bed_max[0]) / 2)) ? (((first_layer_print_min[1] - 7) < -2) ? 70 : (min(print_bed_max[0], first_layer_print_min[0] + 32) - 32)) : (((first_layer_print_min[1] - 7) < -2) ? 260 : (min(print_bed_max[0], first_layer_print_min[0] + 32) - 32))), first_layer_print_min[0])) + 32} Y{(min((first_layer_print_min[1] - 7), first_layer_print_min[1]))} Z{5} F{(travel_speed * 60)}

@@ -125,9 +125,8 @@ variants:
     solid_infill_speed: 80
     over_bridge_speed: 0
     # skirt_height: 3
-    support_material: 0
+    support_material: enforcers_only
     support_material_angle: 0
-    support_material_auto: 1
     support_material_bottom_contact_distance: 0
     support_material_bottom_interface_layers: 0
     support_material_buildplate_only: 0
@@ -569,158 +568,158 @@ variants:
           solid_infill_speed: 40
           support_material_speed: 35
           top_solid_infill_speed: 30
-# MMU branch
-  - name: '*MMU branch*'
-    id: HZD1relrSmWlcusO5OQE+w
-    variants:
-    - condition: feeder.base_model=~/.*MMU.*/ and ! feeder.single_mode
-      id: 09x3f0hYQmKyGPiM05Be0g
-      variants:
-      - condition: tool.nozzle_diameter == 0.4
-        id: J8Alu2ibRKaGDUxSYANUkg
-        variants:
-# 0.4n/0.20mm/MMU SOLUBLE
-        - name: 0.20mm SOLUBLE FULL @MK3 0.4
-          id: 5LxEKG+ZSByzVzAr3NJLHg
-          values:
-            layer_height: 0.2
-            bridge_speed: 30
-            external_perimeter_speed: 35
-            perimeter_speed: 40
-            solid_infill_speed: 40
-            support_material_speed: 45
-            top_solid_infill_speed: 30
-            fill_pattern: grid
-            support_material: 1
-            support_material_threshold: 80
-            support_material_bottom_interface_layers: -1
-            support_material_contact_distance: 0
-            support_material_interface_pattern: auto
-            support_material_interface_spacing: 0.1
-            support_material_synchronize_layers: 1
-            support_material_with_sheath: 1
-            support_material_xy_spacing: 40%
-            support_material_extruder: 5
-            support_material_interface_extruder: 5
-            wipe_tower_bridging: 6
-            support_material_extrusion_width: 0.45
-            top_infill_extrusion_width: 0.45
-            thick_bridges: 1
-            raft_contact_distance: 0.2
-        - name: 0.20mm SOLUBLE INTERFACE @MK3 0.4
-          id: 4fZD5GqDQr2ZDQRResM2zw
-          values:
-            layer_height: 0.2
-            bridge_speed: 30
-            external_perimeter_speed: 35
-            perimeter_speed: 40
-            solid_infill_speed: 40
-            support_material_speed: 45
-            top_solid_infill_speed: 30
-            fill_pattern: grid
-            support_material: 1
-            support_material_threshold: 80
-            support_material_bottom_interface_layers: -1
-            support_material_contact_distance: 0
-            support_material_interface_pattern: auto
-            support_material_interface_spacing: 0.1
-            support_material_synchronize_layers: 1
-            support_material_xy_spacing: 40%
-            support_material_interface_extruder: 5
-            wipe_tower_bridging: 6
-            support_material_extrusion_width: 0.45
-            top_infill_extrusion_width: 0.45
-            thick_bridges: 1
-            raft_contact_distance: 0.2
-            support_material_extruder: 0
-            support_material_interface_layers: 3
-            support_material_with_sheath: 0
-      - condition: tool.nozzle_diameter == 0.6
-        id: v/Czzvn5SdOpKgpz82ibTg
-        variants:
-# 0.6n/0.30mm/MMU SOLUBLE
-        - name: 0.30mm SOLUBLE FULL @MK3 0.6
-          id: +/t8d8RBQ5W4WJN95A9yjw
-          values:
-            layer_height: 0.3
-            top_solid_layers: 4
-            bridge_speed: 25
-            external_perimeter_speed: 35
-            perimeter_speed: 40
-            solid_infill_speed: 40
-            support_material_speed: 40
-            top_solid_infill_speed: 30
-            fill_pattern: grid
-            support_material: 1
-            support_material_threshold: 80
-            support_material_bottom_interface_layers: -1
-            support_material_contact_distance: 0
-            support_material_interface_pattern: auto
-            support_material_interface_spacing: 0.1
-            support_material_synchronize_layers: 1
-            support_material_with_sheath: 1
-            support_material_xy_spacing: 40%
-            support_material_extruder: 5
-            support_material_interface_extruder: 5
-            support_tree_branch_diameter_double_wall: 5
-            wipe_tower_bridging: 6
-            thick_bridges: 1
-            infill_speed: 70
-            infill_anchor_max: 15
-            support_tree_tip_diameter: 1.2
-            first_layer_extrusion_width: 0.65
-            support_material_extrusion_width: 0.6
-            extrusion_width: 0.65
-            infill_extrusion_width: 0.65
-            solid_infill_extrusion_width: 0.65
-            external_perimeter_extrusion_width: 0.65
-            top_infill_extrusion_width: 0.6
-            perimeter_extrusion_width: 0.65
-            bottom_solid_min_thickness: 0.6
-            top_solid_min_thickness: 0.9
-            raft_contact_distance: 0.25
-            max_print_speed: 100
-            bridge_flow_ratio: 1
-        - name: 0.30mm SOLUBLE INTERFACE @MK3 0.6
-          id: lszMqYdNQ1+BLqv3rKLkKA
-          values:
-            layer_height: 0.3
-            top_solid_layers: 4
-            bridge_speed: 25
-            external_perimeter_speed: 35
-            perimeter_speed: 40
-            solid_infill_speed: 40
-            support_material_speed: 40
-            top_solid_infill_speed: 30
-            fill_pattern: grid
-            support_material: 1
-            support_material_threshold: 80
-            support_material_bottom_interface_layers: -1
-            support_material_contact_distance: 0
-            support_material_interface_pattern: auto
-            support_material_interface_spacing: 0.1
-            support_material_synchronize_layers: 1
-            support_material_xy_spacing: 40%
-            support_material_interface_extruder: 5
-            support_tree_branch_diameter_double_wall: 5
-            wipe_tower_bridging: 6
-            thick_bridges: 1
-            infill_speed: 70
-            infill_anchor_max: 15
-            support_tree_tip_diameter: 1.2
-            first_layer_extrusion_width: 0.65
-            support_material_extrusion_width: 0.6
-            extrusion_width: 0.65
-            infill_extrusion_width: 0.65
-            solid_infill_extrusion_width: 0.65
-            external_perimeter_extrusion_width: 0.65
-            top_infill_extrusion_width: 0.6
-            perimeter_extrusion_width: 0.65
-            bottom_solid_min_thickness: 0.6
-            top_solid_min_thickness: 0.9
-            raft_contact_distance: 0.25
-            max_print_speed: 100
-            bridge_flow_ratio: 1
-            support_material_extruder: 0
-            support_material_interface_layers: 3
-            support_material_with_sheath: 0
+# # MMU branch
+  # - name: '*MMU branch*'
+    # id: HZD1relrSmWlcusO5OQE+w
+    # variants:
+    # - condition: feeder.base_model=~/.*MMU.*/ and ! feeder.single_mode
+      # id: 09x3f0hYQmKyGPiM05Be0g
+      # variants:
+      # - condition: tool.nozzle_diameter == 0.4
+        # id: J8Alu2ibRKaGDUxSYANUkg
+        # variants:
+# # 0.4n/0.20mm/MMU SOLUBLE
+        # - name: 0.20mm SOLUBLE FULL @MK3 0.4
+          # id: 5LxEKG+ZSByzVzAr3NJLHg
+          # values:
+            # layer_height: 0.2
+            # bridge_speed: 30
+            # external_perimeter_speed: 35
+            # perimeter_speed: 40
+            # solid_infill_speed: 40
+            # support_material_speed: 45
+            # top_solid_infill_speed: 30
+            # fill_pattern: grid
+            # support_material: everywhere
+            # support_material_threshold: 80
+            # support_material_bottom_interface_layers: -1
+            # support_material_contact_distance: 0
+            # support_material_interface_pattern: auto
+            # support_material_interface_spacing: 0.1
+            # support_material_synchronize_layers: 1
+            # support_material_with_sheath: 1
+            # support_material_xy_spacing: 40%
+            # support_material_extruder: 5
+            # support_material_interface_extruder: 5
+            # wipe_tower_bridging: 6
+            # support_material_extrusion_width: 0.45
+            # top_infill_extrusion_width: 0.45
+            # thick_bridges: 1
+            # raft_contact_distance: 0.2
+        # - name: 0.20mm SOLUBLE INTERFACE @MK3 0.4
+          # id: 4fZD5GqDQr2ZDQRResM2zw
+          # values:
+            # layer_height: 0.2
+            # bridge_speed: 30
+            # external_perimeter_speed: 35
+            # perimeter_speed: 40
+            # solid_infill_speed: 40
+            # support_material_speed: 45
+            # top_solid_infill_speed: 30
+            # fill_pattern: grid
+            # support_material: everywhere
+            # support_material_threshold: 80
+            # support_material_bottom_interface_layers: -1
+            # support_material_contact_distance: 0
+            # support_material_interface_pattern: auto
+            # support_material_interface_spacing: 0.1
+            # support_material_synchronize_layers: 1
+            # support_material_xy_spacing: 40%
+            # support_material_interface_extruder: 5
+            # wipe_tower_bridging: 6
+            # support_material_extrusion_width: 0.45
+            # top_infill_extrusion_width: 0.45
+            # thick_bridges: 1
+            # raft_contact_distance: 0.2
+            # support_material_extruder: 0
+            # support_material_interface_layers: 3
+            # support_material_with_sheath: 0
+      # - condition: tool.nozzle_diameter == 0.6
+        # id: v/Czzvn5SdOpKgpz82ibTg
+        # variants:
+# # 0.6n/0.30mm/MMU SOLUBLE
+        # - name: 0.30mm SOLUBLE FULL @MK3 0.6
+          # id: +/t8d8RBQ5W4WJN95A9yjw
+          # values:
+            # layer_height: 0.3
+            # top_solid_layers: 4
+            # bridge_speed: 25
+            # external_perimeter_speed: 35
+            # perimeter_speed: 40
+            # solid_infill_speed: 40
+            # support_material_speed: 40
+            # top_solid_infill_speed: 30
+            # fill_pattern: grid
+            # support_material: everywhere
+            # support_material_threshold: 80
+            # support_material_bottom_interface_layers: -1
+            # support_material_contact_distance: 0
+            # support_material_interface_pattern: auto
+            # support_material_interface_spacing: 0.1
+            # support_material_synchronize_layers: 1
+            # support_material_with_sheath: 1
+            # support_material_xy_spacing: 40%
+            # support_material_extruder: 5
+            # support_material_interface_extruder: 5
+            # support_tree_branch_diameter_double_wall: 5
+            # wipe_tower_bridging: 6
+            # thick_bridges: 1
+            # infill_speed: 70
+            # infill_anchor_max: 15
+            # support_tree_tip_diameter: 1.2
+            # first_layer_extrusion_width: 0.65
+            # support_material_extrusion_width: 0.6
+            # extrusion_width: 0.65
+            # infill_extrusion_width: 0.65
+            # solid_infill_extrusion_width: 0.65
+            # external_perimeter_extrusion_width: 0.65
+            # top_infill_extrusion_width: 0.6
+            # perimeter_extrusion_width: 0.65
+            # bottom_solid_min_thickness: 0.6
+            # top_solid_min_thickness: 0.9
+            # raft_contact_distance: 0.25
+            # max_print_speed: 100
+            # bridge_flow_ratio: 1
+        # - name: 0.30mm SOLUBLE INTERFACE @MK3 0.6
+          # id: lszMqYdNQ1+BLqv3rKLkKA
+          # values:
+            # layer_height: 0.3
+            # top_solid_layers: 4
+            # bridge_speed: 25
+            # external_perimeter_speed: 35
+            # perimeter_speed: 40
+            # solid_infill_speed: 40
+            # support_material_speed: 40
+            # top_solid_infill_speed: 30
+            # fill_pattern: grid
+            # support_material: everywhere
+            # support_material_threshold: 80
+            # support_material_bottom_interface_layers: -1
+            # support_material_contact_distance: 0
+            # support_material_interface_pattern: auto
+            # support_material_interface_spacing: 0.1
+            # support_material_synchronize_layers: 1
+            # support_material_xy_spacing: 40%
+            # support_material_interface_extruder: 5
+            # support_tree_branch_diameter_double_wall: 5
+            # wipe_tower_bridging: 6
+            # thick_bridges: 1
+            # infill_speed: 70
+            # infill_anchor_max: 15
+            # support_tree_tip_diameter: 1.2
+            # first_layer_extrusion_width: 0.65
+            # support_material_extrusion_width: 0.6
+            # extrusion_width: 0.65
+            # infill_extrusion_width: 0.65
+            # solid_infill_extrusion_width: 0.65
+            # external_perimeter_extrusion_width: 0.65
+            # top_infill_extrusion_width: 0.6
+            # perimeter_extrusion_width: 0.65
+            # bottom_solid_min_thickness: 0.6
+            # top_solid_min_thickness: 0.9
+            # raft_contact_distance: 0.25
+            # max_print_speed: 100
+            # bridge_flow_ratio: 1
+            # support_material_extruder: 0
+            # support_material_interface_layers: 3
+            # support_material_with_sheath: 0

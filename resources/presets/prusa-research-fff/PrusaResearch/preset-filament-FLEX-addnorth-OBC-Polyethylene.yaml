@@ -4,7 +4,7 @@ inherits:
 features:
   $.type: OBC
 name: addnorth OBC Polyethylene
-condition: tool.nozzle_diameter >= 0.4 and (feeder.base_model!~/.*MMU.*/ or (feeder.base_model=~/.*MMU.*/ and feeder.single_mode)) and printer.base_model != "MINI"
+condition: printer.base_model=~/(COREONE|MK4|MK3.5|MK2|XL|MK3|MK2.5)/ and tool.nozzle_diameter >= 0.4 and (feeder.base_model!~/.*MMU.*/ or (feeder.base_model=~/.*MMU.*/ and feeder.single_mode))
 id: addnorth OBC Polyethylene
 values:
   filament_vendor: addnorth
@@ -20,6 +20,7 @@ values:
   min_print_speed: 20
   slowdown_below_layer_time: 5
   retract_length: 1.5
+  # filament_type: OBC
 ## C1
 variants:
 - condition: printer.base_model == "COREONE"
@@ -50,7 +51,7 @@ variants:
     values:
       filament_max_volumetric_speed: 10
 ## XL
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: ZQLo0ufmSMiZo8utSAaKyQ
   values:
     retract_length_toolchange: 1.5
@@ -76,6 +77,39 @@ variants:
   # XL 0.8
   - condition: tool.nozzle_diameter == 0.8
     id: 0SesfVRIQheut4BYKlN6tg
+    values:
+      filament_max_volumetric_speed: 10
+      filament_multitool_ramming_flow: 10
+## XL+
+- condition: printer.model == "XLP"
+  id: yNg76GSIRrGNlCKDPmHylQ
+  values:
+    retract_length_toolchange: 1.5
+    min_fan_speed: 20
+    max_fan_speed: 20
+    bridge_fan_speed: 25
+  variants:
+  # XL+ 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    id: vxES/PvzSzGH+4iF5IrAew
+    values:
+      filament_max_volumetric_speed: 4
+      filament_multitool_ramming_flow: 4
+  # XL+ 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    id: BzEzfZILT5qOmnpoEHsm6Q
+    values:
+      filament_max_volumetric_speed: 4
+      filament_multitool_ramming_flow: 4
+  # XL+ 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    id: 5kZh0y1ESHmzYUuC3pa62w
+    values:
+      filament_max_volumetric_speed: 6
+      filament_multitool_ramming_flow: 6
+  # XL+ 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    id: ocMK7T8XQhGfQqlUxGa4HA
     values:
       filament_max_volumetric_speed: 10
       filament_multitool_ramming_flow: 10

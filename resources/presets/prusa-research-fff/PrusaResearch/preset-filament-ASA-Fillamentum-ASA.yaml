@@ -130,6 +130,8 @@ variants:
     idle_temperature: 100
     min_print_speed: 15
     slowdown_below_layer_time: 15
+    min_fan_speed: 12
+    max_fan_speed: 12
   variants:
   # XL 0.25
   - condition: tool.nozzle_diameter == 0.25

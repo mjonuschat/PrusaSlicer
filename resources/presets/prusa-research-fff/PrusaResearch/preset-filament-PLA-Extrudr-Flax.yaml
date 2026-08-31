@@ -30,8 +30,8 @@ variants:
     values:
       first_layer_temperature: 200
       temperature: 200
-## MK4S
-- condition: printer.model=~/(MK4S|MK3.9S)/
+## MK4S/XL+
+- condition: printer.model=~/(MK4S|MK3.9S|XLP)/
   id: U/7+SkFPQ0O7/HowyT5lfQ
   values:
     min_fan_speed: 30

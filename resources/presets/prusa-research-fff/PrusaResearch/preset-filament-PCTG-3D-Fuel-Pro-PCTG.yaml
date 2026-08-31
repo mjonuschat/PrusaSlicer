@@ -39,7 +39,7 @@ variants:
     id: muKmMmjNSqWF5tMzUfo/hw
     values:
       filament_infill_max_crossing_speed: 100
-- condition: printer.model=~/(MK4S|MK3.9S)/
+- condition: printer.model=~/(MK4S|MK3.9S|XLP)/
   id: jue5P76rR/yor0LKHRysdA
   values:
     min_fan_speed: 10

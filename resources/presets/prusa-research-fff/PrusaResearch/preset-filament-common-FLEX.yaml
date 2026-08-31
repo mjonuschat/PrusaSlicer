@@ -1,14 +1,14 @@
 kind: filament
-condition: printer.base_model=~/(COREONE|MK4|MK3.5|MK2|XL|MK3|MK2.5|MINI)/ and tool.nozzle_diameter >= 0.4 and feeder.base_model!~/.*MMU.*/
+condition: printer.base_model=~/(COREONE|MK4|MK3.5|MK2|XL|MK3|MK2.5|MINI)/ and tool.nozzle_diameter >= 0.4 and (feeder.base_model!~/.*MMU.*/ or (feeder.base_model=~/.*MMU.*/ and feeder.single_mode))
 id: '*FLEX*'
+inherits:
+- '*chamber_FLEX*'
 # TODO: define with respect to db types (there is no general FLEX)
 #features:
 #  $.type: 'FLEX'
 values:
   bed_temperature: 50
   bridge_fan_speed: 80
-  chamber_minimal_temperature: 0
-  chamber_temperature: 0
   cooling: 1
   disable_fan_first_layers: 3
   enable_dynamic_fan_speeds: 0
@@ -81,8 +81,6 @@ variants:
 - condition: printer.base_model == "COREONE"
   id: G7qAAvlFTYWeHkKXpcsWaQ
   values:
-    chamber_minimal_temperature: 0
-    chamber_temperature: 30
     bridge_fan_speed: 70
     max_fan_speed: 50
     idle_temperature: 150
@@ -140,7 +138,7 @@ variants:
       values:
         filament_max_volumetric_speed: 7.5
 ## XL
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: xDF1WiC9QMqGFwXh5UUXgQ
   values:
     filament_multitool_ramming: false
@@ -206,6 +204,77 @@ variants:
     - condition: tool.nozzle_high_flow
       name: '*FLEX* @XL HF0.8'
       id: ImKNv6agShSzqPr2YU1f+Q
+      values:
+        filament_max_volumetric_speed: 7.5
+## XL+
+- condition: printer.model == "XLP"
+  id: u8YLmbv3SD+16uId+0ekVA
+  values:
+    filament_multitool_ramming: false
+    filament_multitool_ramming_volume: 40
+    retract_length_toolchange: 2.5
+    idle_temperature: 70
+    filament_minimal_purge_on_wipe_tower: 35
+    travel_ramping_lift: 1
+    travel_max_lift: 1.5
+    travel_slope: 1
+    bridge_fan_speed: 70
+    max_fan_speed: 50
+  variants:
+  # XL+ 0.4
+  - condition: tool.nozzle_diameter == 0.4
+    name: '*FLEX* @XL+ 0.4'
+    id: x+wYv2WuSfO6XU1mxiJ5RQ
+    values:
+      filament_max_volumetric_speed: 2.5
+      filament_multitool_ramming_flow: 2.5
+    variants:
+    # XL+ HF0.4
+    - condition: tool.nozzle_high_flow
+      name: '*FLEX* @XL+ HF0.4'
+      id: iVIDOPUaQ3SxgDwmoQc+hw
+      values:
+        filament_max_volumetric_speed: 2.5
+  # XL+ 0.5
+  - condition: tool.nozzle_diameter == 0.5
+    name: '*FLEX* @XL+ 0.5'
+    id: rV/fjBBjQuG+LkIjnTdd/Q
+    values:
+      filament_max_volumetric_speed: 2.5
+      filament_multitool_ramming_flow: 2.5
+    variants:
+    # XL+ HF0.5
+    - condition: tool.nozzle_high_flow
+      name: '*FLEX* @XL+ HF0.5'
+      id: eoILqoA4SlGkl4n92cS19A
+      values:
+        filament_max_volumetric_speed: 2.5
+  # XL+ 0.6
+  - condition: tool.nozzle_diameter == 0.6
+    name: '*FLEX* @XL+ 0.6'
+    id: FFPN79m6QSC4TtpEzjUY5Q
+    values:
+      filament_max_volumetric_speed: 3.5
+      filament_multitool_ramming_flow: 3.5
+    variants:
+    # XL+ HF0.6
+    - condition: tool.nozzle_high_flow
+      name: '*FLEX* @XL+ HF0.6'
+      id: 71Of4jFKTuKC8Ush1zItTQ
+      values:
+        filament_max_volumetric_speed: 3.5
+  # XL+ 0.8
+  - condition: tool.nozzle_diameter == 0.8
+    name: '*FLEX* @XL+ 0.8'
+    id: j2jRuGgeRNCPicrh4Lr0tQ
+    values:
+      filament_max_volumetric_speed: 7.5
+      filament_multitool_ramming_flow: 7.5
+    variants:
+    # XL+ HF0.8
+    - condition: tool.nozzle_high_flow
+      name: '*FLEX* @XL+ HF0.8'
+      id: tUh8huVmSue+FqyL/WLSRw
       values:
         filament_max_volumetric_speed: 7.5
 ## MK4

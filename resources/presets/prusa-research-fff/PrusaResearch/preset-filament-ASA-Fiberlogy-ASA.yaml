@@ -129,6 +129,7 @@ variants:
     retract_length_toolchange: 20
     idle_temperature: 100
     min_print_speed: 15
+    min_fan_speed: 12
     slowdown_below_layer_time: 15
   variants:
   # XL 0.25

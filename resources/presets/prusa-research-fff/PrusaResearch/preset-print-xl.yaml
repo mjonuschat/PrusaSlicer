@@ -57,7 +57,7 @@ inherits:
 match_mode: all_matches
 variants:
 ## XL
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: vsqSBMFOTK6R5f3DKv9q+A
   values:
     default_material: Prusament PLA
@@ -123,9 +123,8 @@ variants:
     solid_infill_extrusion_width: 0.45
     solid_infill_speed: 200
     over_bridge_speed: 50%
-    support_material: 0
+    support_material: enforcers_only
     support_material_angle: 0
-    support_material_auto: 1
     support_material_bottom_contact_distance: 0
     support_material_bottom_interface_layers: 0
     support_material_buildplate_only: 0
@@ -388,7 +387,7 @@ variants:
 id: '*XL_common_retract*'
 kind: print
 variants:
-- condition: printer.base_model == "XL"
+- condition: printer.model == "XL"
   id: I2s/aT3cStWWxqjIf+i3VQ
   values:
     retract_layer_change: 1
@@ -426,7 +425,7 @@ variants:
 # id: guDEBXa+Sd6qYNjYOHM6EA
 # kind: print
 # variants:
-# - condition: printer.base_model == "XL" and printer.tool_count > 1
+# - condition: printer.model == "XL" and printer.tool_count > 1
   # id: KAd0g8xwQWmOM4JGqhmbKg
   # variants:
 # # XL 0.4
@@ -437,14 +436,14 @@ variants:
       # id: A5JdOmvnQsejRFPEUtxldA
       # values:
         # layer_height: 0.20
-        # support_material: true
+        # support_material: everywhere
         # support_material_extruder: 2
         # support_material_interface_extruder: 2
     # - name: 0.20mm SOLUBLE/BREAKAWAY INTERFACE
       # id: KHOj504ARt+NcmYCuSXvvA
       # values:
         # layer_height: 0.20
-        # support_material: true
+        # support_material: everywhere
         # support_material_extruder: 0
         # support_material_interface_layers: 3
         # support_material_with_sheath: false
@@ -456,14 +455,14 @@ variants:
       # id: Nbpw1298TQGXQRU2IKqMZA
       # values:
         # layer_height: 0.25
-        # support_material: 1
+        # support_material: everywhere
         # support_material_extruder: 2
         # support_material_interface_extruder: 2
     # - name: 0.25mm SOLUBLE/BREAKAWAY INTERFACE
       # id: gHhVM0XAT86IS1EoaUoVMw
       # values:
         # layer_height: 0.25
-        # support_material: true
+        # support_material: everywhere
         # support_material_extruder: 0
         # support_material_interface_layers: 3
         # support_material_with_sheath: false

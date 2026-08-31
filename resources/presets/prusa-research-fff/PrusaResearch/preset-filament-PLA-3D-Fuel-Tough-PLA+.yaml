@@ -19,7 +19,7 @@ variants:
     min_fan_speed: 70
     overhang_fan_speed_2: 85
   ## MK4S
-- condition: printer.model=~/(MK4S|MK3.9S)/
+- condition: printer.model=~/(MK4S|MK3.9S|XLP)/
   id: m5/tXezPS1aGA22FYqeJgw
   values:
     min_fan_speed: 70

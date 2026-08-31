@@ -21,7 +21,7 @@ values:
   min_print_speed: 20
   filament_cost: 29.99
 variants:
-- condition: printer.model=~/(COREONE|COREONEL|COREONEOAK|MK4S|MK3.9S)/
+- condition: printer.model=~/(COREONE|COREONEL|COREONEOAK|MK4S|MK3.9S|XLP)/
   id: WWtct6sUTk2TiL7w5+qhzA
   values:
     min_fan_speed: 12

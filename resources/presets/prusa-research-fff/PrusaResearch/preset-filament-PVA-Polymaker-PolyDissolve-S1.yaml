@@ -34,3 +34,9 @@ variants:
     bridge_fan_speed: 30
     chamber_temperature: 0
     chamber_minimal_temperature: 0
+- condition: printer.model == "XLP"
+  id: PN1WuNfxSbysltTskb0jZw
+  values:
+    min_fan_speed: 25
+    max_fan_speed: 25
+    bridge_fan_speed: 30

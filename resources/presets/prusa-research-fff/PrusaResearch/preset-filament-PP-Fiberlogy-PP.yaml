@@ -28,7 +28,7 @@ variants:
     max_fan_speed: 20
     fan_below_layer_time: 30
     fan_always_on: false
-- condition: printer.model=~/(MK4S|MK3.9S)/
+- condition: printer.model=~/(MK4S|MK3.9S|XLP)/
   id: 5fKZfKOtSYeCU/uI/GVGKw
   values:
     bridge_fan_speed: 50
