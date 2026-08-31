@@ -609,7 +609,13 @@ std::set<Step> handle_special_cases(
             }
         }
     }
-    return result;
+
+    std::set<Step> propagated;
+    for (const Step& step : result) {
+        const std::vector<Step> dependent_steps{propagate(step)};
+        propagated.insert(dependent_steps.begin(), dependent_steps.end());
+    }
+    return propagated;
 }
 
 PrintAndObjectSteps diff_to_invalidated_steps(
