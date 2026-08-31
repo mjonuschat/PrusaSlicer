@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2022 Tomáš Mészáros @tamasmeszaros
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #ifndef OPENVDBUTILSLEGACY_HPP
 #define OPENVDBUTILSLEGACY_HPP
 

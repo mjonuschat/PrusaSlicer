@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2021 Vojtěch Bubník @bubnikv, David Kocík @kocikdav
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #ifndef slic3r_BlacklistedLibraryCheck_hpp_
 #define slic3r_BlacklistedLibraryCheck_hpp_
 

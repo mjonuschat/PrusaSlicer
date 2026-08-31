@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2018 Vojtěch Král @vojtechkral
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #ifndef slic3r_Channel_hpp_
 #define slic3r_Channel_hpp_
 

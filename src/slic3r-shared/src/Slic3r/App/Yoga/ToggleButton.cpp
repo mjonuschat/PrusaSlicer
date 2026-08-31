@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2018 - 2025 Oleksandra Iushchenko @YuSanka, Nikita Vanku @Zaraka
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #include "Slic3r/App/Yoga/ToggleButton.hpp"
 
 #include "Slic3r/App/Yoga/Tooltip.hpp"

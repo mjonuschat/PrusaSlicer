@@ -1,12 +1,3 @@
-///|/ Copyright (c) Prusa Research 2016 - 2022 Lukáš Hejl @hejllukas, Vojtěch Bubník @bubnikv
-///|/ Copyright (c) Slic3r 2013 - 2016 Alessandro Ranellucci @alranel
-///|/
-///|/ ported from lib/Slic3r/SVG.pm:
-///|/ Copyright (c) Prusa Research 2018 Vojtěch Bubník @bubnikv
-///|/ Copyright (c) Slic3r 2011 - 2014 Alessandro Ranellucci @alranel
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #ifndef slic3r_SVG_hpp_
 #define slic3r_SVG_hpp_
 

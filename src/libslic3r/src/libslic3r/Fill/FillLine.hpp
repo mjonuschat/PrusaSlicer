@@ -1,8 +1,3 @@
-///|/ Copyright (c) Prusa Research 2016 - 2021 Vojtěch Bubník @bubnikv
-///|/ Copyright (c) Slic3r 2016 Alessandro Ranellucci @alranel
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #ifndef slic3r_FillLine_hpp_
 #define slic3r_FillLine_hpp_
 

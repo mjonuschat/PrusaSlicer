@@ -1,8 +1,4 @@
 #pragma once
-///|/ Copyright (c) Prusa Research 2021 - 2022 Vojtěch Bubník @bubnikv, Filip Sykala @Jony01
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 
 #include "Slic3r/Domain/Point.hpp"
 #include "Slic3r/Domain/Polygon.hpp"

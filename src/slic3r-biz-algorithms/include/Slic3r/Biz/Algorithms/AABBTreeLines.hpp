@@ -1,8 +1,4 @@
 #pragma once
-///|/ Copyright (c) Prusa Research 2022 - 2023 Pavel Mikuš @Godrak
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 
 #include "Point.hpp"
 #include "Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp"

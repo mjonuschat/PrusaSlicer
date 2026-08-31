@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2025
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #pragma once
 #include <optional>
 #include "Slic3r/App/Scene/IGizmo.hpp" // IToolGizmo, forward-declaration of Slic3r::App::Yoga::Dialog

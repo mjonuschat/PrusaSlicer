@@ -1,23 +1,3 @@
-///|/ Copyright (c) Prusa Research 2016 - 2023 Vojtěch Bubník @bubnikv, Enrico Turri @enricoturri1966, Lukáš Matěna @lukasmatena, David Kocík @kocikdav, Tomáš Mészáros @tamasmeszaros, Vojtěch Král @vojtechkral, Oleksandra Iushchenko @YuSanka
-///|/ Copyright (c) 2018 fredizzimo @fredizzimo
-///|/ Copyright (c) Slic3r 2013 - 2016 Alessandro Ranellucci @alranel
-///|/ Copyright (c) 2015 Maksim Derbasov @ntfshard
-///|/
-///|/ ported from lib/Slic3r/Config.pm:
-///|/ Copyright (c) Prusa Research 2016 - 2022 Vojtěch Bubník @bubnikv
-///|/ Copyright (c) 2017 Joseph Lenox @lordofhyphens
-///|/ Copyright (c) Slic3r 2011 - 2016 Alessandro Ranellucci @alranel
-///|/ Copyright (c) 2015 Alexander Rössler @machinekoder
-///|/ Copyright (c) 2012 Henrik Brix Andersen @henrikbrixandersen
-///|/ Copyright (c) 2012 Mark Hindess
-///|/ Copyright (c) 2012 Josh McCullough
-///|/ Copyright (c) 2011 - 2012 Michael Moon
-///|/ Copyright (c) 2012 Simon George
-///|/ Copyright (c) 2012 Johannes Reinhardt
-///|/ Copyright (c) 2011 Clarence Risher
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #include "Config.hpp"
 
 #include <boost/algorithm/string/classification.hpp>

@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2023 Pavel Mikuš @Godrak, Oleksandra Iushchenko @YuSanka, Vojtěch Bubník @bubnikv
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #include "libslic3r/ExtrusionRole.hpp"
 #include "libslic3r/I18N_private.hpp"
 

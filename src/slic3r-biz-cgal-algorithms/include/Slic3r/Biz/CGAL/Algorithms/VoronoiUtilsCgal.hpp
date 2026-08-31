@@ -1,8 +1,4 @@
 #pragma once
-///|/ Copyright (c) Prusa Research 2022 Lukáš Hejl @hejllukas, Vojtěch Bubník @bubnikv
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 
 #include <boost/polygon/polygon.hpp>
 #include <iterator>

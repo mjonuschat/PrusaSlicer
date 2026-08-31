@@ -1,8 +1,3 @@
-///|/ Copyright (c) Prusa Research 2017 - 2019 Lukáš Matěna @lukasmatena, Vojtěch Bubník @bubnikv
-///|/ Copyright (c) 2019 Thomas Moore
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 // Measure extents of the planned extrusions.
 // To be used for collision reporting.
 

@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2025 Nikita Vanku @Zaraka
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>

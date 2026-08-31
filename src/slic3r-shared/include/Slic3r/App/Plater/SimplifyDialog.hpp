@@ -1,8 +1,4 @@
 #pragma once
-///|/ Copyright (c) Prusa Research 2025 Oleksandra Iushchenko @YuSanka
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #pragma once
 
 #include "Slic3r/App/Plater/GizmoWindow.hpp"

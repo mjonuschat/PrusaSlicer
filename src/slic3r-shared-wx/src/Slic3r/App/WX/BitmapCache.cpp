@@ -1,8 +1,3 @@
-///|/ Copyright (c) Prusa Research 2018 - 2022 Lukáš Matěna @lukasmatena, Oleksandra Iushchenko @YuSanka, Tomáš Mészáros @tamasmeszaros, Enrico Turri @enricoturri1966, Vojtěch Bubník @bubnikv, Vojtěch Král @vojtechkral
-///|/ Copyright (c) 2021 Scott Mudge @ScottMudge
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #include "Slic3r/App/WX/BitmapCache.hpp"
 #include "Slic3r/App/WX/StringConversions.hpp"
 #include "Slic3r/App/WX/MacUtils.hpp"

@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2020 - 2021 Lukáš Matěna @lukasmatena, Tomáš Mészáros @tamasmeszaros
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #ifndef MARCHINGSQUARES_HPP
 #define MARCHINGSQUARES_HPP
 

@@ -1,8 +1,4 @@
-///|/ Copyright (c) Prusa Research 2021 - 2023 Lukáš Matěna @lukasmatena, Pavel Mikuš @Godrak,
 ///Vojtěch Bubník @bubnikv, Filip Sykala @Jony01
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #include <boost/multiprecision/integer.hpp>
 #include <cassert>
 #include <cinttypes>

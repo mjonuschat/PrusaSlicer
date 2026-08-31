@@ -1,8 +1,3 @@
-///|/ Copyright (c) Prusa Research 2023 Lukáš Matěna @lukasmatena, Enrico Turri @enricoturri1966
-///|/ Copyright (c) BambuStudio 2023 manch1n @manch1n
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #include "ConflictChecker.hpp"
 
 #include <oneapi/tbb/blocked_range.h>

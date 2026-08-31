@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2018 - 2023 Oleksandra Iushchenko @YuSanka, Pavel Mikuš @Godrak, Vojtěch Bubník @bubnikv, Roman Beránek @zavorka, Lukáš Matěna @lukasmatena, Enrico Turri @enricoturri1966
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/PrintBase.hpp"
 #include "Slic3r/Biz/Algorithms/Model.hpp"

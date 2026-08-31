@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2026 Filip Sykala @Jony01
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 
 #include "Slic3r/App/Plater/SvgGizmo.hpp"
 #include <Slic3r/App/Plater/SvgDialog.hpp>

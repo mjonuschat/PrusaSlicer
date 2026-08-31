@@ -1,13 +1,3 @@
-///|/ Copyright (c) Prusa Research 2017 - 2022 Vojtěch Bubník @bubnikv
-///|/ Copyright (c) Slic3r 2016 Alessandro Ranellucci @alranel
-///|/
-///|/ ported from lib/Slic3r/GCode/CoolingBuffer.pm:
-///|/ Copyright (c) Prusa Research 2016 - 2017 Vojtěch Bubník @bubnikv
-///|/ Copyright (c) Slic3r 2013 - 2016 Alessandro Ranellucci @alranel
-///|/ Copyright (c) 2016 Chow Loong Jin @hyperair
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #ifndef slic3r_CoolingBuffer_hpp_
 #define slic3r_CoolingBuffer_hpp_
 

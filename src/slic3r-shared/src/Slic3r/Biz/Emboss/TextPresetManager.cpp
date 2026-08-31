@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2022 Filip Sykala @Jony01
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #include "Slic3r/Biz/Emboss/TextPresetManager.hpp"
 #include "Slic3r/Biz/CerealUtils.hpp"
 #include "Slic3r/Biz/I18N/I18N.hpp"

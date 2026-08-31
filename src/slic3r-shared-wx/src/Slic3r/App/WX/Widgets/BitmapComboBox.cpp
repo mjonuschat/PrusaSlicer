@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2021 - 2022 Oleksandra Iushchenko @YuSanka
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #include "Slic3r/App/WX/Widgets/BitmapComboBox.hpp"
 #include "Slic3r/App/WX/WidgetsConfig.hpp"
 

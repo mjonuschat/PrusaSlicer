@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2019 - 2023 Tomáš Mészáros @tamasmeszaros, Vojtěch Bubník @bubnikv, Filip Sykala @Jony01, Lukáš Matěna @lukasmatena
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #include "Slic3r/Exception.hpp"
 #include "Slic3r/Biz/CGAL/Algorithms/MeshBoolean.hpp"
 #include "Slic3r/Biz/Algorithms/TriangleMesh.hpp"

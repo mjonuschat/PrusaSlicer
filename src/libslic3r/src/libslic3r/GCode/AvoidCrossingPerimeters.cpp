@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2020 - 2022 Vojtěch Bubník @bubnikv, Lukáš Hejl @hejllukas
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #include <boost/range/adaptor/reversed.hpp>
 #include <boost/container_hash/hash.hpp>
 #include <boost/iterator/reverse_iterator.hpp>

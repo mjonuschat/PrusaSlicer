@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2022 - 2023 Vojtěch Bubník @bubnikv, Filip Sykala @Jony01
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #include "Slic3r/Biz/CGAL/Algorithms/CutSurface.hpp"
 #include "Slic3r/Biz/Algorithms/AABBTreeIndirect.hpp"
 #include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp"

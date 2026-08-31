@@ -1,13 +1,3 @@
-///|/ Copyright (c) Prusa Research 2017 - 2023 Lukáš Matěna @lukasmatena, Pavel Mikuš @Godrak, Vojtěch Bubník @bubnikv
-///|/ Copyright (c) Slic3r 2016 Alessandro Ranellucci @alranel
-///|/
-///|/ ported from lib/Slic3r/GCode/CoolingBuffer.pm:
-///|/ Copyright (c) Prusa Research 2016 - 2017 Vojtěch Bubník @bubnikv
-///|/ Copyright (c) Slic3r 2013 - 2016 Alessandro Ranellucci @alranel
-///|/ Copyright (c) 2016 Chow Loong Jin @hyperair
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <Slic3r/Log.hpp>

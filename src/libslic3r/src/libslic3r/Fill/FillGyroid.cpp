@@ -1,8 +1,3 @@
-///|/ Copyright (c) Prusa Research 2018 - 2021 Vojtěch Bubník @bubnikv, Lukáš Matěna @lukasmatena, Enrico Turri @enricoturri1966
-///|/ Copyright (c) SuperSlicer 2018 - 2019 Remi Durand @supermerill
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #include <cmath>
 #include <algorithm>
 #include <vector>

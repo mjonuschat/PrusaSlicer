@@ -1,25 +1,3 @@
-///|/ Copyright (c) Prusa Research 2016 - 2023 Lukáš Matěna @lukasmatena, Vojtěch Bubník @bubnikv, Enrico Turri @enricoturri1966, Pavel Mikuš @Godrak, Oleksandra Iushchenko @YuSanka, Lukáš Hejl @hejllukas, Filip Sykala @Jony01, David Kocík @kocikdav
-///|/ Copyright (c) SuperSlicer 2023 Remi Durand @supermerill
-///|/ Copyright (c) 2021 Justin Schuh @jschuh
-///|/ Copyright (c) 2020 Paul Arden @ardenpm
-///|/ Copyright (c) 2020 sckunkle
-///|/ Copyright (c) 2020 Kyle Maas @KyleMaas
-///|/ Copyright (c) 2019 Thomas Moore
-///|/ Copyright (c) 2019 Bryan Smith
-///|/ Copyright (c) Slic3r 2015 - 2016 Alessandro Ranellucci @alranel
-///|/ Copyright (c) 2016 Chow Loong Jin @hyperair
-///|/ Copyright (c) 2015 Maksim Derbasov @ntfshard
-///|/ Copyright (c) 2015 Vicious-one @Vicious-one
-///|/ Copyright (c) 2015 Luís Andrade
-///|/
-///|/ ported from lib/Slic3r/GCode.pm:
-///|/ Copyright (c) Slic3r 2011 - 2015 Alessandro Ranellucci @alranel
-///|/ Copyright (c) 2013 Robert Giseburt
-///|/ Copyright (c) 2012 Mark Hindess
-///|/ Copyright (c) 2012 Henrik Brix Andersen @henrikbrixandersen
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #include "Slic3r/Biz/GCodeReader/Utils.hpp"
 #include "Slic3r/Biz/libpgcode/Utils.hpp"
 #include "Slic3r/Domain/enum_bitmask.hpp"

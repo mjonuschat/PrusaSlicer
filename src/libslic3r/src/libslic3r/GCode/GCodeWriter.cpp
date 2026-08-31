@@ -1,16 +1,3 @@
-///|/ Copyright (c) Prusa Research 2016 - 2023 Vojtěch Bubník @bubnikv, Lukáš Matěna @lukasmatena, Lukáš Hejl @hejllukas, Oleksandra Iushchenko @YuSanka
-///|/ Copyright (c) 2021 Raphael Sobik
-///|/ Copyright (c) 2021 Martin Budden
-///|/ Copyright (c) 2020 Paul Arden @ardenpm
-///|/ Copyright (c) 2016 Joseph Lenox @lordofhyphens
-///|/ Copyright (c) 2016 Chow Loong Jin @hyperair
-///|/ Copyright (c) Slic3r 2014 - 2015 Alessandro Ranellucci @alranel
-///|/ Copyright (c) 2015 Maksim Derbasov @ntfshard
-///|/ Copyright (c) 2015 Maciej Dębski
-///|/ Copyright (c) 2015 Alexander Rössler @machinekoder
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #include "GCodeWriter.hpp"
 
 #include <algorithm>

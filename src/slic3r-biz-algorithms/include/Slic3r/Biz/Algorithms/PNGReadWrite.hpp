@@ -1,8 +1,3 @@
-///|/ Copyright (c) 2023 Robert Schiele @schiele
-///|/ Copyright (c) Prusa Research 2020 - 2021 Vojtěch Bubník @bubnikv, Tomáš Mészáros @tamasmeszaros
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #ifndef PNGREAD_HPP
 #define PNGREAD_HPP
 

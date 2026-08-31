@@ -1,12 +1,3 @@
-///|/ Copyright (c) Prusa Research 2016 - 2020 Vojtěch Bubník @bubnikv
-///|/ Copyright (c) Slic3r 2016 Alessandro Ranellucci @alranel
-///|/
-///|/ ported from lib/Slic3r/Fill/Honeycomb.pm:
-///|/ Copyright (c) Prusa Research 2016 Vojtěch Bubník @bubnikv
-///|/ Copyright (c) Slic3r 2012 - 2015 Alessandro Ranellucci @alranel
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #ifndef slic3r_FillHoneycomb_hpp_
 #define slic3r_FillHoneycomb_hpp_
 

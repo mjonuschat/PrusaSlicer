@@ -1,8 +1,3 @@
-///|/ Copyright (c) Prusa Research 2018 - 2026 Oleksandra Iushchenko @YuSanka, Enrico Turri @enricoturri1966, Vojtěch Bubník @bubnikv, David Kocík @kocikdav, Lukáš Matěna @lukasmatena, Tomáš Mészáros @tamasmeszaros, Vojtěch Král @vojtechkral
-///|/ Copyright (c) 2020 Benjamin Greiner
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #include "Slic3r/App/WX/WindowMetrics.hpp"
 
 #include "Slic3r/Biz/Algorithms/StringUtils.hpp"

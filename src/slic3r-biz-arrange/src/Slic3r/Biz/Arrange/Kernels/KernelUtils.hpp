@@ -1,9 +1,5 @@
 #pragma once
 
-///|/ Copyright (c) Prusa Research 2023 Tomáš Mészáros @tamasmeszaros
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 
 #include "Slic3r/Biz/Arrange/ArrangeItem.hpp"
 #include "Slic3r/Biz/Arrange/PackingContext.hpp"

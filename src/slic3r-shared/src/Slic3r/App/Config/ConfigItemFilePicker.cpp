@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2026 Oleksandra Iushchenko @Zaraka
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #include "Slic3r/App/Config/ConfigItemFilePicker.hpp"
 #include "Slic3r/App/Yoga/InputText.hpp"
 #include "Slic3r/App/Yoga/Validator.hpp"

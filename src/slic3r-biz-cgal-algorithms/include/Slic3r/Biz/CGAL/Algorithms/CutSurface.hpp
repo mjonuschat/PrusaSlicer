@@ -1,8 +1,4 @@
 #pragma once
-///|/ Copyright (c) Prusa Research 2022 Filip Sykala @Jony01
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 
 #include <admesh/stl.h> // indexed_triangle_set
 #include <vector>

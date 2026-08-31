@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2025 Filip Sykala @Jony01
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #pragma once
 
 #include "Slic3r/App/Plater/TranslationDialog.hpp"

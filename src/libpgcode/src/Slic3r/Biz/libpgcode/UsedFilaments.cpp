@@ -1,8 +1,3 @@
-///|/ Copyright (c) Prusa Research 2016 - 2023 Oleksandra Iushchenko @YuSanka, Vojtech Bubník @bubnikv, Filip Sykala @Jony01, David Kocík @kocikdav, Enrico Turri @enricoturri1966, Tomáš Mészáros @tamasmeszaros, Lukáš Matena @lukasmatena, Vojtech Král @vojtechkral
-///|/ Copyright (c) 2019 Sijmen Schoon
-///|/
-///|/ libpgcode library is released under the terms of the AGPLv3 or higher
-///|/
 
 #include "UsedFilaments.hpp"
 #include "ProcessorImpl.hpp"

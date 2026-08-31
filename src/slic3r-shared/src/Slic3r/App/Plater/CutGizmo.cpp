@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2025 Oleksandra Iushchenko @YuSanka
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 
 #include "Slic3r/App/Plater/CutGizmo.hpp"
 

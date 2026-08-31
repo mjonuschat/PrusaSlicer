@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2019 Vojtěch Bubník @bubnikv
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 // clonable_ptr: a smart pointer with a usage similar to unique_ptr, with the exception, that
 // the copy constructor / copy assignment operator work by calling the ->clone() method.
 

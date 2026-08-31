@@ -1,10 +1,3 @@
-///|/ Copyright (c) Prusa Research 2020 - 2021 Vojtěch Bubník @bubnikv
-///|/
-///|/ ported from src/libslic3r/PNGRead.cpp:
-///|/ Copyright (c) Prusa Research 2020 Vojtěch Bubník @bubnikv, Tomáš Mészáros @tamasmeszaros
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #include "Slic3r/Biz/Algorithms/PNGReadWrite.hpp"
 
 #include <png.h>

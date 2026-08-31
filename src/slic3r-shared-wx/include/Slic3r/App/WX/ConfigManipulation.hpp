@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2019 - 2021 Oleksandra Iushchenko @YuSanka, Vojtěch Bubník @bubnikv
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #pragma once
 
 //	 Class inherited from AbstractConfigManipulation to show warnings using wxWidgets

@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2024
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 #include "Slic3r/App/WX/MacOSNativeMenuBar.hpp"
 
 #ifdef USE_NATIVE_MENU

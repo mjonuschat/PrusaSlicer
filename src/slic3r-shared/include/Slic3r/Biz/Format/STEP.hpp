@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2022 Tomáš Mészáros @tamasmeszaros
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 // Original implementation of STEP format import created by Bambulab.
 // https://github.com/bambulab/BambuStudio
 // Forked off commit 1555904, modified by Prusa Research.

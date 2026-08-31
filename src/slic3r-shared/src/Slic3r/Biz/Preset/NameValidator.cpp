@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2020 - 2026 Oleksandra Iushchenko @YuSanka, David Kocík @kocikdav, Enrico Turri @enricoturri1966, Vojtěch Bubník @bubnikv
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 
 #include "Slic3r/Biz/Preset/NameValidator.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"

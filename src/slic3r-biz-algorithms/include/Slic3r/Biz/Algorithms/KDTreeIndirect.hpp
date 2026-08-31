@@ -1,7 +1,3 @@
-///|/ Copyright (c) Prusa Research 2019 - 2022 Pavel Mikuš @Godrak, Tomáš Mészáros @tamasmeszaros, Vojtěch Bubník @bubnikv, Lukáš Matěna @lukasmatena
-///|/
-///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
-///|/
 // KD tree built upon external data set, referencing the external data by integer indices.
 
 #pragma once
