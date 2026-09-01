@@ -1,6 +1,28 @@
 # Prusa Slicer Plugin API
 
-This is WIP draft + description of sort of current implementation.
+This is first version of Slice Plugin API, providing minimal operations to create new objects in Slicer project. 
+This document should provide basic information on how plugin works in Prusa Slicer and how to create one.
+
+## Getting started
+
+To quickly create a hello world plugin, the Prusa Slicer CLI provides `plugin init` subcommand, so you can do 
+something like this in your terminal:
+
+```bash
+cd <your_plugin_workspace>
+/Applications/PrusaSlicer.app/Contents/MacOS/PrusaSlicer plugin init com.example.my-plugin 
+```
+
+Note: the snippet above is from macos and PrusaSlicer installed as ` /Applications/PrusaSlicer.app`, you may need
+to provide path to you installation `PrusaSlicer` executable.
+
+This command above will start interactive CLI wizard asking info about your new plugin and will create single lua file
+with hello world like plugin in `com.example.my-plugin`. The info you entered can be changed in `manifest.json` file. 
+Tip: for license field you can use Tab key to complete (or list known license identifiers).
+
+To run the plugin in PrusaSlicer you will need to symlink (or copy) the `com.example.my-plugin` 
+to `<config_dir>/lua/com.example.my-plugin` and run Plugins -> Rescan menu item command in Prusa Slicer. 
+
 
 ## Plugin anatomy
 
@@ -105,263 +127,28 @@ There are two main restrictions to be aware of:
 
 ## Plugin API
 
-All Slicer API is located in `api` module
+Plugin API reference is located [here](https://prusa.io/ps-plugins/)
 
-### Type `project.plugin`
+## Plugin distribution
 
-#### Functions
+At the moment plugins can be distributed as signed zip files. The plugin author needs to generate her public and private 
+RSA keys to create the plugin distribution zip. There is `PrusaSlicer plugin keygen` utility (or you can use `openssl` 
+CLI tools). Generating keys is one-time action, you don't need to do again for another plugin bundle. You will need to 
+distribute your *public* key named as `<author>.pem`, where `<author>` is value of `author` field in `manifest.json` file.
+The *public key* file distribution is again a one-time action.
 
-
-##### `api.make_cube`
-
-Create cube mesh with given dimensions
-
-```lua
-local width = 10 -- [mm]
-local height = 10
-local depth = 100
-
-local mesh = api.make_cube(width, height, depth)
-```
-
-##### `api.make_sphere`
-
-Create sphere mesh with given parameters
-
-```lua
-local radius = 30              -- [mm]
-local angular_granularity = 15 -- [deg] optional, default = 1
-
-local mesh = make_sphere(radius, angular_granularity)
-```
-
-
-##### `api.make_cylinder`
-
-Create cylinder mesh with given parameters
-
-```lua
-local radius = 30              -- [mm]
-local height = 50              -- [mm]
-local angular_granularity = 15 -- [deg] optional, default = 1
-
-local mesh = make_cylinder(radius, height, angular_granularity)
-```
-
-
-##### `api.make_cone`
-
-Create cone mesh with given parameters
-
-```lua
-local radius = 30              -- [mm]
-local height = 50              -- [mm]
-local angular_granularity = 15 -- [deg] optional, default = 1
-
-local mesh = make_cone(radius, height, angular_granularity)
-```
-
-
-##### `api.make_tetrahedron`
-
-Create tetrahedron mesh with given parameters
-
-```lua
-local size = 10 -- [mm]
-
-local mesh = make_tetrahedron(size)
-```
-
-
-##### `api.make_prism`
-
-Create prism mesh with given parameters
-
-```lua
-local width  = 10 -- [mm]
-local length = 20
-local height = 30
-
-local mesh = make_prism(width, length, height)
-```
-
-
-##### `api.make_frustum`
-
-Create frustum mesh with given parameters
-
-```lua
-local radius = 30              -- [mm]
-local height = 50              -- [mm]
-local angular_granularity = 15 -- [deg] optional, default = 1
-
-local mesh = make_frustum(radius, height, fa)
-```
-
-
-##### `api.make_frustum_dowel`
-
-Create frustum_dowel mesh with given parameters
-
-```lua
-local radius           = 10 -- [mm]
-local double height    = 30 -- [mm]
-local int sector_count = 6  -- [count]
-
-local mesh = make_frustum_dowel(radius, height, sector_count)
-```
-
-
-##### `api.make_pyramid`
-
-Create pyramid mesh with given parameters
-
-```lua
-local base   = 10 -- [mm]
-local height = 10
-
-local mesh = make_pyramid(base, height)
-```
-
-
-##### `api.make_snap`
-
-Create snap mesh with given parameters
-
-```lua
-local radius           = 10  -- [mm]
-local height           = 20  -- [mm]
-local space_proportion = 0.1 -- [ratio] optional, default 0.25
-local bulge_proportion = 0.1 -- [ratio] optional, default 0.125
-
-local mesh = make_snap(radius, height, space_proportion, bulge_proportion)
-```
-
-
-##### `api.make_torus`
-
-Create torus mesh with given parameters
-
-```lua
-local r  = 123 -- [mm] main radius
-local t  = 123 -- [mm] secondary radius
-local ra = 123 -- [deg] optional, default 1
-local ta = 123 -- [deg] optional, default 1
-
-local mesh = make_torus(r, t, ra, ta)
-```
-
-##### `api.emboss_svg`
-
-Emboss given svg (path)
-
-```lua
-local depth = 10 -- depth [mm]
-local mesh = api.emboss_svg("drawing.svg", depth)
-
--- mesh: Mesh
+Following command generates for you private key (the one to **keep secret**) in file `the.author.private.pem`, 
+and public key (the one to *distribute*) in file `the.author.public.pem`:
 
 ```
-
-##### `api.emboss_text`
-
-Emboss given text
-
-```lua
-local mesh = api.emboss_text { 
-  font=api.get_default_font(), 
-  text="Hello world", 
-  depth=1.0,          -- emboss depth [mm]
-  line_height=12.0,   -- single text line height [mm] (default 10.0)  
-}
-
--- mesh: Mesh
-
+<path to you installation>/PrusaSlicer plugin keygen -P the.author.private.pem -p the.author.public.pem
 ```
 
-#### Classes
-
-##### Class `Mesh`
-
-A triangle mesh 
-
-###### Method `Mesh:bounds()`
-
-Gets bounding box of the mesh.
-
-```lua
-local bb = mesh:bounds()
--- bb: BoundingBox
-```
-
-##### Class `BoundingBox`
-
-Read-only properties:
-- `min_x`, `max_x` : double
-- `min_y`, `max_y` : double
-- `min_z`, `max_z` : double
-
+Finally, to create sign zip file to distribute the plugin to users, you can run following command (assuming the files 
+are named same as in the example commands above):
 
 ```
-local bb = mesh:bounds()
-local mesh = api.make_cube(bb.max_x - bb.min_x, bb.max_y - bb.min_y,  bb.max_z - bb.min_z),
+<path to you installation>/PrusaSlicer plugin sign -P the.author.private.pem com.example.my-plugin
 ```
 
-##### Enum `VolumeType`
-
-Constants:
-- `VolumeType.Solid`
-- `VolumeType.Negative`
-- `VolumeType.Modifier`
-- `VolumeType.SupportBlocker`
-- `VolumeType.SupportEnforcer`
-- `VolumeType.Invalid`
-
-##### Class `ProjectApi`
-
-This is main entry point to the loaded project, the plugin is executed upon. 
-
-An instance of this class is exposed as `api.project`.
-
-###### Method `ProjectApi:add_object`
-
-Adds object into the scene.
-
-The method accepts single table argument with following structure:
-- `mesh` (Mesh, required) First solid part geometry
-- `other_volumes` (array, optional) List of other volumes to add, each item in that list can have the following keys:
-  - `mesh` (Mesh, required) Volume geometry
-  - `type` (VolumeType, required) Type of the volume
-  - `translate` (table, optional) Translation of the volume with respect to the origin of object, keys `x`, `y`, or `z` 
-    are expected (all optional).  
-  - `rotate` (table, optional) Rotation of the volume with respect to the origin of object around given axis in degrees, keys `x`, `y`, or `z`
-    are expected (all optional).
-  - `params` (table, optional) Preset overrides for given object, a table with keys matching preset item name 
-    (e.g. `perimeter_speed`) and value of appropriate type.
-
-Example:
-
-```lua
-local base_mesh = api.emboss_svg("drawing.svg", 10)
-local bb = base_mesh:bounds() 
-local obj = api.project:add_object{
-  mesh=base_mesh,
-  other_volumes={
-    {
-      type=VolumeType.Modifier,
-      mesh=api.make_cube(
-        bb.max_x - bb.min_x, 
-        bb.max_y - bb.min_y, 
-        bb.max_z - bb.min_z
-      ),
-      translate={
-        x=bb.min_x, y=bb.min_y, z=bb.min_z
-      },
-      params={
-        perimeter_speed=40
-      }
-    }
-  }
-}
-
-```
+The output of this command is `com.example.my-plugin.zip` file to distribute.
