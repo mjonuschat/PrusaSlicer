@@ -304,8 +304,10 @@ bool Translations::set_best_translation_for_language(const std::string& language
     }
     if (!language_info)
         language_info = get_language_short_info("en");
-
-    ASSERT(language_info != nullptr);
+    if (!language_info) {
+        SPDLOG_WARN("No translation directories found. Using built-in English.");
+        language_info = &m_language_short_info_fallback;
+    }
     // System locale may not be available and that should not be needed
     // if (!is_available_locale(language_info))
     //     return false;

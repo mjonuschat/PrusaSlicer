@@ -65,6 +65,7 @@ private:
     LanguageShortInfo*              m_language_short_info_active    { nullptr };
     LanguageShortInfo*              m_language_short_info_system    { nullptr };
     LanguageShortInfo*              m_language_short_info_best      { nullptr };
+    LanguageShortInfo               m_language_short_info_fallback  { "en", "en", "English", "en", "en", "" };
 
     boost::locale::generator        m_locale_generator;
 };
