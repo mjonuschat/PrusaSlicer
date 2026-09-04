@@ -11,3 +11,6 @@ string(APPEND CMAKE_CXX_FLAGS_INIT " /FS")
 # concurrent link jobs to a small pool; compiles still run at full parallelism.
 set_property(GLOBAL PROPERTY JOB_POOLS link_pool=2)
 set(CMAKE_JOB_POOL_LINK link_pool CACHE STRING "" FORCE)
+
+# Deps never need their own test/benchmark binaries built.
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)

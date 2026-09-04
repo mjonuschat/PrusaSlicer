@@ -8,3 +8,6 @@
 # actual build shape instead of teaching the linker to find a library
 # CI never links against.
 set(CMAKE_DISABLE_FIND_PACKAGE_ICU ON CACHE BOOL "" FORCE)
+
+# Deps never need their own test/benchmark binaries built.
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
