@@ -1,0 +1,15 @@
+diff --git a/deps/+matdb/matdb.cmake b/deps/+matdb/matdb.cmake
+index abb06f7eef..5433f6acdb 100644
+--- a/deps/+matdb/matdb.cmake
++++ b/deps/+matdb/matdb.cmake
+@@ -4,7 +4,9 @@ set(_matdb_download_dir ${${PROJECT_NAME}_DEP_DOWNLOAD_DIR}/matdb)
+ set(_matdb_install_dir ${${PROJECT_NAME}_DEP_INSTALL_PREFIX}/share/matdb)
+ 
+ ExternalProject_Add(dep_matdb
+-    URL https://slicer-assets.prusa3d.com/matdb.zip
++    URL https://slicer-assets.prusa3d.com/versions/4210fcca63a43cd879fc830133cf2b415aa333d150fc5f0e179b9524332172bd/matdb.zip
++    URL_HASH SHA256=4210fcca63a43cd879fc830133cf2b415aa333d150fc5f0e179b9524332172bd
++
+     DOWNLOAD_DIR ${_matdb_download_dir}
+ 
+     CONFIGURE_COMMAND ""
