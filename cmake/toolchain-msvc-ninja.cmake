@@ -14,3 +14,17 @@ set(CMAKE_JOB_POOL_LINK link_pool CACHE STRING "" FORCE)
 
 # Deps never need their own test/benchmark binaries built.
 set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+
+# Eigen's blas/lapack subdirectories are added unconditionally (not gated
+# by BUILD_TESTING) and always run check_language(Fortran). CI's own
+# workflow installs Strawberry Perl for OpenSSL's Perl-based build script,
+# and its bundled gfortran/MinGW ld.exe gets found by that probe; it then
+# fails a full enable_language(Fortran) check against this MSVC toolchain,
+# which is a hard CMake error (not the soft NOTFOUND check_language()
+# normally gives). CMake's own CheckLanguage module skips its probe
+# entirely whenever CMAKE_Fortran_COMPILER is already a defined cache
+# variable, regardless of value, so setting it to empty here (not a bogus
+# path, which would still be truthy) makes Eigen's own
+# if(CMAKE_Fortran_COMPILER) check correctly see "no compiler" and skip
+# enable_language(Fortran) without ever probing for one.
+set(CMAKE_Fortran_COMPILER "" CACHE FILEPATH "" FORCE)
