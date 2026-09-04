@@ -1,0 +1,71 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - boss
+      - foundation
+      - release/*
+    paths:
+      - "deps/**"
+      - "src/**"
+      - "**/CMakeLists.txt"
+      - "version.inc"
+      - "resources/**"
+      - ".github/workflows/*.yml"
+      - "build.cmake"
+      - "CMakePresets.json"
+      - "cmake/**"
+      - ".flatpak/**"
+
+  pull_request:
+    branches:
+      - boss
+      - foundation
+      - release/*
+    paths:
+      - "deps/**"
+      - "src/**"
+      - "**/CMakeLists.txt"
+      - "version.inc"
+      - "resources/**"
+      - ".github/workflows/*.yml"
+      - "build.cmake"
+      - "CMakePresets.json"
+      - "cmake/**"
+      - ".flatpak/**"
+
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build_linux:
+    name: Build on Linux
+    uses: mjonuschat/prusaslicer-ci/.github/workflows/build_linux.yml@main
+    secrets: inherit
+
+  build_macos:
+    name: Build on MacOS
+    uses: mjonuschat/prusaslicer-ci/.github/workflows/build_macos.yml@main
+    secrets: inherit
+
+  build_windows:
+    name: Build on Windows
+    uses: mjonuschat/prusaslicer-ci/.github/workflows/build_windows.yml@main
+    secrets: inherit
+
+  publish:
+    name: Publish Release
+    uses: mjonuschat/prusaslicer-ci/.github/workflows/release.yml@main
+    needs:
+      - build_linux
+      - build_macos
+      - build_windows
+    secrets: inherit
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
