@@ -77,7 +77,8 @@ void LabelObjects::init(const SpanOfConstPtrs<PrintObject>& objects, Domain::Lab
     int unique_id = 0;
     for (const auto& [model_object, print_instances] : model_object_to_print_instances) {
         const Domain::ModelObjectPtrs& model_objects = model_object->get_model()->objects;
-        int object_id = int(std::find(model_objects.begin(), model_objects.end(), model_object) - model_objects.begin());
+        int object_id = int(std::find_if(model_objects.begin(), model_objects.end(),
+            [&model_object](const Domain::ModelObject* o) { return o->id() == model_object->id(); }) - model_objects.begin());
         for (const PrintInstance* const pi : print_instances) {
             bool object_has_more_instances = print_instances.size() > 1u;
             int instance_id = int(pi->model_instance_index);
