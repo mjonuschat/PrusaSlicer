@@ -451,3 +451,26 @@ TEST_CASE("Octoprint object labels stay unique for objects sharing a model name"
 
     REQUIRE(object_labels.size() == 2);
 }
+
+TEST_CASE("Firmware object labels stay unique for objects sharing a model name", "[Multi]")
+{
+    TestConfig config{1};
+    config.print.items.opt("gcode_label_objects").set(Domain::LabelObjectsStyle::Firmware);
+    config.printer.items.opt("gcode_flavor").set(Domain::GCodeFlavor::gcfMarlinLegacy);
+    config.print.items.opt("skirts").set(0);
+
+    const std::string gcode{slice_two_duplicate_named_cubes(config)};
+
+    std::vector<std::string> object_names;
+    GCodeReader parser;
+    parser.parse_buffer(gcode, [&object_names](GCodeReader& self, const GCodeReader::GCodeLine& line)
+    {
+        std::string_view raw{line.raw()};
+        static constexpr std::string_view marker{"M486 A"};
+        if (boost::starts_with(raw, marker))
+            object_names.emplace_back(raw.substr(marker.size()));
+    });
+
+    REQUIRE(object_names.size() == 2);
+    REQUIRE(object_names[0] != object_names[1]);
+}
