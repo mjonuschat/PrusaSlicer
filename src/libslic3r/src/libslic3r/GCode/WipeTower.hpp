@@ -30,7 +30,11 @@ struct LoadMoveXAdvancedResult
 
 // Computes the end X position and constrained X speed (mm/s) for a move
 // that must both load loading_dist mm of filament at loading_speed mm/s
-// and travel in X towards farthest_x, capped at max_x_speed.
+// and travel in X towards farthest_x, capped at max_x_speed. Returns
+// std::nullopt when loading_dist or loading_speed is zero: the time such a
+// move "must take" is then either zero or infinite, and no synchronized
+// speed can be computed. The caller should fall back to a plain travel
+// in that case.
 std::optional<LoadMoveXAdvancedResult> compute_load_move_x_advanced(
     float current_x, float farthest_x, float loading_dist, float loading_speed, float max_x_speed);
 
