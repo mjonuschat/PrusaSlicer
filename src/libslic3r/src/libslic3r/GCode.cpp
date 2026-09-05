@@ -3255,16 +3255,16 @@ std::string GCodeGenerator::extrude_perimeters(
     for (const GCode::ExtrusionOrder::Perimeter &perimeter : perimeters) {
         double speed{-1};
         // Apply the small perimeter speed.
-        if (perimeter.extrusion_entity->length() <= SMALL_PERIMETER_LENGTH)
+        if (perimeter.extrusion_entity->length() <= SMALL_PERIMETER_LENGTH) {
+            const bool is_external = perimeter.extrusion_entity->role().is_external_perimeter();
+            const FlowRole flow_role = is_external ? FlowRole::frExternalPerimeter : FlowRole::frPerimeter;
             speed = region
                         .extruder_config_value<Domain::FloatOrPercentage>(
-                            "small_perimeter_speed",
-                            FlowRole::frExternalPerimeter
+                            is_external ? "small_external_perimeter_speed" : "small_perimeter_speed",
+                            flow_role
                         )
-                        .get_abs_value(region.extruder_config_value<double>(
-                            "perimeter_speed",
-                            FlowRole::frExternalPerimeter
-                        ));
+                        .float_value();
+        }
         gcode += this->extrude_smooth_path(
             perimeter.smooth_path,
             perimeter.extrusion_entity->is_loop(),

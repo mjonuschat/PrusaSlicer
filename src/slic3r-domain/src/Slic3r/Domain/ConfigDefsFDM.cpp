@@ -3623,6 +3623,23 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(FloatOrPercentage{15.});
     def->ratio_over = "perimeter_speed";
 
+    def = defs.add("small_external_perimeter_speed", typeid(FloatOrPercentage));
+    def->location = Print;
+    def->overrides_in = Locations{ Tool, Object, Volume };
+    def->label = L("Small external perimeters");
+    def->option_group = ConfigItemDef::OptionGroup::Print_Speed_MainStructure;
+    def->category = ConfigItemDef::Category::Hidden;
+    def->order = 2;
+    def->gui_type = ConfigItemDef::GUIType::unit_or_percentage;
+    def->tooltip = L("This setting affects the speed of small external perimeters (having radius "
+                   "<= 6.5mm, usually holes). If expressed as percentage (for example: 80%) it "
+                   "will be calculated on the external perimeter speed setting. Note that 0 means "
+                   "that the \"Small perimeters\" value will be used.");
+    def->units = {L("mm/s"), L("%")};
+    def->min = 0;
+    def->init_fn = init_with(FloatOrPercentage{0.});
+    def->ratio_over = "external_perimeter_speed";
+
     def = defs.add("solid_infill_below_area", typeid(double));
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume };
