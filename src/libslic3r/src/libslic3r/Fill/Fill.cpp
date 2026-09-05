@@ -22,6 +22,7 @@
 #include "libslic3r/Surface.hpp"
 // for Arachne based infills
 #include "libslic3r/PerimeterGenerator.hpp"
+#include "libslic3r/Fill/Fill.hpp"
 #include "libslic3r/Fill/FillBase.hpp"
 #include "libslic3r/Fill/FillRectilinear.hpp"
 #include "libslic3r/Fill/FillLightning.hpp"
@@ -53,88 +54,6 @@ class Generator;
 }  // namespace FillLightning
 
 //static constexpr const float NarrowInfillAreaThresholdMM = 3.f;
-
-struct SurfaceFillParams
-{
-	// Zero based extruder ID.
-    unsigned int 	extruder = 0;
-	// Infill pattern, adjusted for the density etc.
-    Domain::InfillPattern  	pattern = Domain::InfillPattern(0);
-
-    // FillBase
-    // in unscaled coordinates
-    double    	spacing = 0.;
-    // infill / perimeter overlap, in unscaled coordinates
-//    double    	overlap = 0.;
-    // Angle as provided by the region config, in radians.
-    float       	angle = 0.f;
-    // Is bridging used for this fill? Bridging parameters may be used even if this->flow.bridge() is not set.
-    bool 			bridge;
-    // Non-negative for a bridge.
-    float 			bridge_angle = 0.f;
-
-    // FillParams
-    float       	density = 0.f;
-    // Don't adjust spacing to fill the space evenly.
-//    bool        	dont_adjust = false;
-    // Length of the infill anchor along the perimeter line.
-    // 1000mm is roughly the maximum length line that fits into a 32bit coord_t.
-    float 			anchor_length     = 1000.f;
-    float 			anchor_length_max = 1000.f;
-
-    // width, height of extrusion, nozzle diameter, is bridge
-    // For the output, for fill generator.
-    Flow 			flow;
-
-	// For the output
-	ExtrusionRole	extrusion_role{ ExtrusionRole::None };
-
-	// Various print settings?
-
-	// Index of this entry in a linear vector.
-    size_t 			idx = 0;
-
-
-	bool operator<(const SurfaceFillParams &rhs) const {
-#define RETURN_COMPARE_NON_EQUAL(KEY) if (this->KEY < rhs.KEY) return true; if (this->KEY > rhs.KEY) return false;
-#define RETURN_COMPARE_NON_EQUAL_TYPED(TYPE, KEY) if (TYPE(this->KEY) < TYPE(rhs.KEY)) return true; if (TYPE(this->KEY) > TYPE(rhs.KEY)) return false;
-
-		// Sort first by decreasing bridging angle, so that the bridges are processed with priority when trimming one layer by the other.
-		if (this->bridge_angle > rhs.bridge_angle) return true;
-		if (this->bridge_angle < rhs.bridge_angle) return false;
-
-		RETURN_COMPARE_NON_EQUAL(extruder);
-		RETURN_COMPARE_NON_EQUAL_TYPED(unsigned, pattern);
-		RETURN_COMPARE_NON_EQUAL(spacing);
-//		RETURN_COMPARE_NON_EQUAL(overlap);
-		RETURN_COMPARE_NON_EQUAL(angle);
-		RETURN_COMPARE_NON_EQUAL(density);
-//		RETURN_COMPARE_NON_EQUAL_TYPED(unsigned, dont_adjust);
-		RETURN_COMPARE_NON_EQUAL(anchor_length);
-		RETURN_COMPARE_NON_EQUAL(anchor_length_max);
-		RETURN_COMPARE_NON_EQUAL(flow.width());
-		RETURN_COMPARE_NON_EQUAL(flow.height());
-		RETURN_COMPARE_NON_EQUAL(flow.nozzle_diameter());
-		RETURN_COMPARE_NON_EQUAL_TYPED(unsigned, bridge);
-		return this->extrusion_role.lower(rhs.extrusion_role);
-	}
-
-	bool operator==(const SurfaceFillParams &rhs) const {
-		return  this->extruder 			== rhs.extruder 		&&
-				this->pattern 			== rhs.pattern 			&&
-				this->spacing 			== rhs.spacing 			&&
-//				this->overlap 			== rhs.overlap 			&&
-				this->angle   			== rhs.angle   			&&
-				this->bridge   			== rhs.bridge   		&&
-//				this->bridge_angle 		== rhs.bridge_angle		&&
-				this->density   		== rhs.density   		&&
-//				this->dont_adjust   	== rhs.dont_adjust 		&&
-				this->anchor_length  	== rhs.anchor_length    &&
-				this->anchor_length_max == rhs.anchor_length_max &&
-				this->flow 				== rhs.flow 			&&
-				this->extrusion_role	== rhs.extrusion_role;
-	}
-};
 
 struct SurfaceFill {
 	SurfaceFill(const SurfaceFillParams& params) : region_id(size_t(-1)), surface(stCount, ExPolygon()), params(params) {}
@@ -200,6 +119,20 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
                 }
 		        params.bridge_angle = float(surface.bridge_angle);
 		        params.angle 		= float(deg2rad(region_config.get<double>("fill_angle")));
+
+		        params.role_speed = 0.f;
+		        if (params.extrusion_role == ExtrusionRole::BridgeInfill)
+		            params.role_speed = float(region.extruder_config_value<double>("bridge_speed", extrusion_role));
+		        else if (params.extrusion_role == ExtrusionRole::InternalInfill)
+		            params.role_speed = float(region.extruder_config_value<double>("infill_speed", extrusion_role));
+		        else if (params.extrusion_role == ExtrusionRole::InfillOverBridge) {
+		            const float solid_infill_speed = float(region.extruder_config_value<Domain::FloatOrPercentage>("solid_infill_speed", extrusion_role).float_value());
+		            const float over_bridge_speed = float(region.extruder_config_value<Domain::FloatOrPercentage>("over_bridge_speed", extrusion_role).float_value());
+		            params.role_speed = over_bridge_speed > 0.f ? over_bridge_speed : solid_infill_speed;
+		        } else if (params.extrusion_role == ExtrusionRole::SolidInfill)
+		            params.role_speed = float(region.extruder_config_value<Domain::FloatOrPercentage>("solid_infill_speed", extrusion_role).float_value());
+		        else if (params.extrusion_role == ExtrusionRole::TopSolidInfill)
+		            params.role_speed = float(region.extruder_config_value<Domain::FloatOrPercentage>("top_solid_infill_speed", extrusion_role).float_value());
 
 		        // Calculate the actual flow we'll be using for this infill.
 		        params.bridge = is_bridge || Fill::use_bridge_flow(params.pattern);

@@ -61,7 +61,10 @@ struct SurfaceFillParams
         RETURN_COMPARE_NON_EQUAL(flow.height());
         RETURN_COMPARE_NON_EQUAL(flow.nozzle_diameter());
         RETURN_COMPARE_NON_EQUAL_TYPED(unsigned, bridge);
-        return this->extrusion_role.lower(rhs.extrusion_role);
+        if (this->extrusion_role.lower(rhs.extrusion_role)) return true;
+        if (rhs.extrusion_role.lower(this->extrusion_role)) return false;
+        RETURN_COMPARE_NON_EQUAL(role_speed);
+        return false;
 
 #undef RETURN_COMPARE_NON_EQUAL
 #undef RETURN_COMPARE_NON_EQUAL_TYPED
@@ -77,7 +80,8 @@ struct SurfaceFillParams
                 this->anchor_length  	== rhs.anchor_length    &&
                 this->anchor_length_max == rhs.anchor_length_max &&
                 this->flow 				== rhs.flow 			&&
-                this->extrusion_role	== rhs.extrusion_role;
+                this->extrusion_role	== rhs.extrusion_role	&&
+                this->role_speed        == rhs.role_speed;
     }
 };
 
