@@ -671,3 +671,25 @@ TEST_CASE_METHOD(FullConfigFDMFixture, "Vase mode layer overrides every slot", "
     CHECK(full_config.get<bool>("spiral_vase"));
     CHECK(full_config.get<std::vector<int>>("perimeters") == std::vector<int>{1, 1, 1});
 }
+
+TEST_CASE_METHOD(
+    FullConfigFDMFixture,
+    "small_external_perimeter_speed resolves against external_perimeter_speed",
+    "[FDMConfig]")
+{
+    config_pack.print.items.opt("perimeter_speed").set(60.0);
+    config_pack.print.items.opt("external_perimeter_speed").set(FloatOrPercentage{30.0});
+    config_pack.print.items.opt("small_perimeter_speed").set(FloatOrPercentage{Percentage{80}});
+
+    auto full_config{std::make_shared<const FullConfigFDM>(config_pack, extruder_candidates, hw_config)};
+    ConfigView view{full_config, {}};
+    view.finalize();
+
+    auto small_perimeter{view.get<std::vector<FloatOrPercentage>>("small_perimeter_speed")};
+    auto small_external_perimeter{view.get<std::vector<FloatOrPercentage>>("small_external_perimeter_speed")};
+
+    REQUIRE(!small_perimeter[0].is_percentage());
+    REQUIRE(!small_external_perimeter[0].is_percentage());
+    CHECK(small_perimeter[0].float_value() == Catch::Approx(48.));
+    CHECK(small_external_perimeter[0].float_value() == Catch::Approx(24.));
+}
