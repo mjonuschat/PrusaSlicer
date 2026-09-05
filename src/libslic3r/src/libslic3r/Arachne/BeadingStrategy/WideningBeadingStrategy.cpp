@@ -1,4 +1,5 @@
 //Copyright (c) 2022 Ultimaker B.V.
+//Copyright (c) OrcaSlicer 2026 Alexander @akshimassar
 //CuraEngine is released under the terms of the AGPLv3 or higher.
 
 #include "WideningBeadingStrategy.hpp"
@@ -26,7 +27,7 @@ std::string WideningBeadingStrategy::toString() const
 
 WideningBeadingStrategy::Beading WideningBeadingStrategy::compute(coord_t thickness, coord_t bead_count) const
 {
-    if (thickness < optimal_width) {
+    if (thickness < getTransitionThickness(1)) {
         Beading ret;
         ret.total_thickness = thickness;
         if (thickness >= min_input_width) {
