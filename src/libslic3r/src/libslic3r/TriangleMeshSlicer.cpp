@@ -2447,9 +2447,7 @@ Polygons project_mesh(
     std::vector<float>    zs { slab_min, slab_max };
     slice_mesh_slabs(mesh, zs, trafo, &top, &bottom, throw_on_cancel);
 
-    // We typically perform a union operation on a lot of overlapping polygons, which can be slow in some cases.
-    // To address this, we use parallel reduction, which can be significantly faster in such cases.
-    return union_(union_parallel_reduce(top.front()), union_parallel_reduce(bottom.back()));
+    return union_(top.front(), bottom.back());
 }
 
 TriMesh::IndexedTriangleSetCut
