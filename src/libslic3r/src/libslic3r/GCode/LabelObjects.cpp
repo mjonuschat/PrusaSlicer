@@ -106,12 +106,14 @@ void LabelObjects::init(const SpanOfConstPtrs<PrintObject>& objects, Domain::Lab
             // Now compose the name of the object and define whether indexing is 0 or 1-based.
             if (m_label_objects_style == Domain::LabelObjectsStyle::Octoprint) {
                 // use zero-based indexing for objects and instances, as we always have done
-                name += " id:" + std::to_string(object_id) + " copy " + std::to_string(instance_id); 
+                name += " id:" + std::to_string(object_id) + " copy " + std::to_string(instance_id);
             }
             else if (m_label_objects_style == Domain::LabelObjectsStyle::Firmware) {
                 // use one-based indexing for objects and instances so indices match what we see in PrusaSlicer.
                 ++object_id;
                 ++instance_id;
+
+                name += "_" + std::to_string(object_id);
 
                 if (object_has_more_instances)
                     name += " (Instance " + std::to_string(instance_id) + ")";
