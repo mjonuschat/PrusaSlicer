@@ -58,6 +58,9 @@ static void limit_x_speed_within_duration(float& x_distance, float& x_speed, flo
 std::optional<LoadMoveXAdvancedResult> compute_load_move_x_advanced(
     float current_x, float farthest_x, float loading_dist, float loading_speed, float max_x_speed)
 {
+    if (loading_dist == 0.f || loading_speed == 0.f)
+        return std::nullopt;
+
     float time = std::abs(loading_dist / loading_speed);
     float x_distance = std::abs(farthest_x - current_x);
     float x_speed = x_distance / time;
@@ -306,8 +309,9 @@ public:
 // Loads filament while also moving towards given points in x-axis (x feedrate is limited by cutting the distance short if necessary)
     WipeTowerWriter& load_move_x_advanced(float farthest_x, float loading_dist, float loading_speed, float max_x_speed = 50.f)
     {
-        auto result = *compute_load_move_x_advanced(x(), farthest_x, loading_dist, loading_speed, max_x_speed);
-        return extrude_explicit(result.end_x, y(), loading_dist, result.x_speed * 60.f, false, false);
+        if (auto result = compute_load_move_x_advanced(x(), farthest_x, loading_dist, loading_speed, max_x_speed))
+            return extrude_explicit(result->end_x, y(), loading_dist, result->x_speed * 60.f, false, false);
+        return travel(farthest_x, y(), max_x_speed * 60.f);
     }
 
     // Loads filament while also moving towards given point in x-axis. Unlike the previous function, this one respects
