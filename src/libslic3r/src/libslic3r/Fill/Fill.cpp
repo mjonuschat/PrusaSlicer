@@ -81,7 +81,13 @@ bool SurfaceFillParams::operator<(const SurfaceFillParams &rhs) const {
 	RETURN_COMPARE_NON_EQUAL(flow.height());
 	RETURN_COMPARE_NON_EQUAL(flow.nozzle_diameter());
 	RETURN_COMPARE_NON_EQUAL_TYPED(unsigned, bridge);
-	return this->extrusion_role.lower(rhs.extrusion_role);
+	if (this->extrusion_role.lower(rhs.extrusion_role)) return true;
+	if (rhs.extrusion_role.lower(this->extrusion_role)) return false;
+	RETURN_COMPARE_NON_EQUAL(role_speed);
+	return false;
+
+#undef RETURN_COMPARE_NON_EQUAL
+#undef RETURN_COMPARE_NON_EQUAL_TYPED
 }
 
 bool SurfaceFillParams::operator==(const SurfaceFillParams &rhs) const {
@@ -95,7 +101,8 @@ bool SurfaceFillParams::operator==(const SurfaceFillParams &rhs) const {
 			this->anchor_length  	== rhs.anchor_length    &&
 			this->anchor_length_max == rhs.anchor_length_max &&
 			this->flow 				== rhs.flow 			&&
-			this->extrusion_role	== rhs.extrusion_role;
+			this->extrusion_role	== rhs.extrusion_role	&&
+			this->role_speed        == rhs.role_speed;
 }
 
 struct SurfaceFill {
@@ -194,6 +201,20 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
                 }
 		        params.bridge_angle = float(surface.bridge_angle);
 		        params.angle 		= float(deg2rad(region_config.get<double>("fill_angle")));
+
+		        params.role_speed = 0.f;
+		        if (params.extrusion_role == ExtrusionRole::BridgeInfill)
+		            params.role_speed = float(region.extruder_config_value<double>("bridge_speed", extrusion_role));
+		        else if (params.extrusion_role == ExtrusionRole::InternalInfill)
+		            params.role_speed = float(region.extruder_config_value<double>("infill_speed", extrusion_role));
+		        else if (params.extrusion_role == ExtrusionRole::InfillOverBridge) {
+		            const float solid_infill_speed = float(region.extruder_config_value<Domain::FloatOrPercentage>("solid_infill_speed", extrusion_role).float_value());
+		            const float over_bridge_speed = float(region.extruder_config_value<Domain::FloatOrPercentage>("over_bridge_speed", extrusion_role).float_value());
+		            params.role_speed = over_bridge_speed > 0.f ? over_bridge_speed : solid_infill_speed;
+		        } else if (params.extrusion_role == ExtrusionRole::SolidInfill)
+		            params.role_speed = float(region.extruder_config_value<Domain::FloatOrPercentage>("solid_infill_speed", extrusion_role).float_value());
+		        else if (params.extrusion_role == ExtrusionRole::TopSolidInfill)
+		            params.role_speed = float(region.extruder_config_value<Domain::FloatOrPercentage>("top_solid_infill_speed", extrusion_role).float_value());
 
 		        // Calculate the actual flow we'll be using for this infill.
 		        params.bridge = is_bridge || (params.boss_pattern
