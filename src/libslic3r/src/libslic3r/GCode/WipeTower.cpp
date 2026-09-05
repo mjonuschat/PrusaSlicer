@@ -45,7 +45,28 @@ static float length_to_volume(float length, float line_width, float layer_height
 	return std::max(0.f, length * layer_height * (line_width - layer_height * (1.f - float(M_PI) / 4.f)));
 }
 
+// Slows x_speed down to max_x_speed if needed, shortening x_distance to
+// still fit within the fixed duration "time".
+static void limit_x_speed_within_duration(float& x_distance, float& x_speed, float time, float max_x_speed)
+{
+    if (x_speed > max_x_speed) {
+        x_distance = max_x_speed * time;
+        x_speed = max_x_speed;
+    }
+}
 
+std::optional<LoadMoveXAdvancedResult> compute_load_move_x_advanced(
+    float current_x, float farthest_x, float loading_dist, float loading_speed, float max_x_speed)
+{
+    float time = std::abs(loading_dist / loading_speed);
+    float x_distance = std::abs(farthest_x - current_x);
+    float x_speed = x_distance / time;
+
+    limit_x_speed_within_duration(x_distance, x_speed, time, max_x_speed);
+
+    float end_point = current_x + (farthest_x > current_x ? 1.f : -1.f) * x_distance;
+    return LoadMoveXAdvancedResult{end_point, x_speed};
+}
 
 
 class WipeTowerWriter
@@ -285,18 +306,8 @@ public:
 // Loads filament while also moving towards given points in x-axis (x feedrate is limited by cutting the distance short if necessary)
     WipeTowerWriter& load_move_x_advanced(float farthest_x, float loading_dist, float loading_speed, float max_x_speed = 50.f)
     {
-        float time = std::abs(loading_dist / loading_speed); // time that the move must take
-        float x_distance = std::abs(farthest_x - x());       // max x-distance that we can travel
-        float x_speed = x_distance / time;                   // x-speed to do it in that time
-
-        if (x_speed > max_x_speed) {
-            // Necessary x_speed is too high - we must shorten the distance to achieve max_x_speed and still respect the time.
-            x_distance = max_x_speed * time;
-            x_speed = max_x_speed;
-        }
-
-        float end_point = x() + (farthest_x > x() ? 1.f : -1.f) * x_distance;
-        return extrude_explicit(end_point, y(), loading_dist, x_speed * 60.f, false, false);
+        auto result = *compute_load_move_x_advanced(x(), farthest_x, loading_dist, loading_speed, max_x_speed);
+        return extrude_explicit(result.end_x, y(), loading_dist, result.x_speed * 60.f, false, false);
     }
 
     // Loads filament while also moving towards given point in x-axis. Unlike the previous function, this one respects
