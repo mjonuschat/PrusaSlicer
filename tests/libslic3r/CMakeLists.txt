@@ -45,6 +45,7 @@ add_executable(${_TEST_NAME}_tests
     ../data/prusaparts.hpp
     test_model_utils.cpp
     test_custom_parameters_handling.cpp
+    test_wipe_tower.cpp
 	)
 
 if (TARGET OpenVDB::openvdb)

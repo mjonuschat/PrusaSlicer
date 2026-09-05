@@ -7,6 +7,7 @@
 #include <utility>
 #include <algorithm>
 #include <limits>
+#include <optional>
 #include <vector>
 #include <cstddef>
 
@@ -20,6 +21,18 @@ namespace Slic3r
 class WipeTowerWriter;
 class PrintConfigView;
 class PrintRegionConfigView;
+
+struct LoadMoveXAdvancedResult
+{
+    float end_x;
+    float x_speed;
+};
+
+// Computes the end X position and constrained X speed (mm/s) for a move
+// that must both load loading_dist mm of filament at loading_speed mm/s
+// and travel in X towards farthest_x, capped at max_x_speed.
+std::optional<LoadMoveXAdvancedResult> compute_load_move_x_advanced(
+    float current_x, float farthest_x, float loading_dist, float loading_speed, float max_x_speed);
 
 class WipeTower
 {
