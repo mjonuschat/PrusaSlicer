@@ -900,3 +900,32 @@ TEST_CASE_METHOD(
         {}
     );
 }
+
+SCENARIO("Print: A sloping hole does not erode the top solid shell", "[Print]") {
+    GIVEN("A block with a sloping hole, sliced hollow, with ensure_vertical_shell_thickness "
+          "disabled and eight top solid layers") {
+        const int top_solid_layers = 8;
+        TestConfig config;
+        config.print.items.opt("fill_density").set(Percentage{0});
+        config.print.items.opt("ensure_vertical_shell_thickness")
+            .set(Domain::EnsureVerticalShellThickness::Disabled);
+        config.print.items.opt("top_solid_layers").set(top_solid_layers);
+        config.print.items.opt("layer_height").set(0.2);
+        config.print.items.opt("first_layer_height").set(FloatOrPercentage{0.2});
+
+        Slic3r::Print print;
+        Slic3r::Test::init_and_process_print({TestMesh::sloping_hole}, print, config);
+        const PrintObject &object = *print.objects().front();
+
+        THEN("the layers below the top surface are solid over their whole area") {
+            const int top_layer = int(object.layer_count()) - 1;
+            double sparse_area_mm2 = 0.;
+            for (int i = top_layer - top_solid_layers + 1; i < top_layer; ++i)
+                for (const LayerRegion *region : object.get_layer(i)->regions())
+                    for (const Surface &surface : region->fill_surfaces())
+                        if (surface.surface_type == stInternal)
+                            sparse_area_mm2 += surface.area() * sqr(SCALING_FACTOR);
+            REQUIRE(sparse_area_mm2 < 5.);
+        }
+    }
+}
