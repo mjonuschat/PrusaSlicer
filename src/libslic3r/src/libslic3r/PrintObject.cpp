@@ -2789,7 +2789,7 @@ void PrintObject::discover_horizontal_shells()
                                                    opening(new_internal_solid, margin, margin + ClipperSafetyOffset, jtMiter, 5));
                         // Trim the regularized region by the original region.
                         if (!too_narrow.empty())
-                            new_internal_solid = solid = diff(new_internal_solid, too_narrow);
+                            new_internal_solid = diff(new_internal_solid, too_narrow);
                     }
 
                     // make sure the new internal solid is wide enough, as it might get collapsed
