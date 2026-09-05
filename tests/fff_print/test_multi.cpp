@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <numeric>
+#include <set>
 #include <sstream>
 
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
@@ -383,6 +384,20 @@ std::string slice_two_cubes_with_different_extruders(const TestConfig& config)
     return slice_model(model, config);
 }
 
+std::string slice_two_duplicate_named_cubes(const TestConfig& config)
+{
+    Domain::Model model;
+    for (int object_index = 0; object_index < 2; ++object_index) {
+        Domain::ModelObject* object = model.add_object();
+        object->name                = "duplicate_name.stl";
+        Domain::ModelVolume* volume = add_volume(object, Test::mesh(Test::TestMesh::cube_20x20x20));
+        translate(*volume, object_index * 40., 0., 0.);
+        object->add_instance();
+        ensure_on_bed(*object);
+    }
+    return slice_model(model, config);
+}
+
 } // namespace
 
 TEST_CASE(
@@ -414,4 +429,25 @@ TEST_CASE(
             tool_change.position_at_tool_change.y() == tool_change.previous_layer_last_extrusion.y()
         );
     }
+}
+
+TEST_CASE("Octoprint object labels stay unique for objects sharing a model name", "[Multi]")
+{
+    TestConfig config{1};
+    config.print.items.opt("gcode_label_objects").set(Domain::LabelObjectsStyle::Octoprint);
+    config.print.items.opt("skirts").set(0);
+
+    const std::string gcode{slice_two_duplicate_named_cubes(config)};
+
+    std::set<std::string> object_labels;
+    GCodeReader parser;
+    parser.parse_buffer(gcode, [&object_labels](GCodeReader& self, const GCodeReader::GCodeLine& line)
+    {
+        std::string_view comment{line.comment()};
+        static constexpr std::string_view marker{" printing object "};
+        if (boost::starts_with(comment, marker))
+            object_labels.emplace(comment.substr(marker.size()));
+    });
+
+    REQUIRE(object_labels.size() == 2);
 }
