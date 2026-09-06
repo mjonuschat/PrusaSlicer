@@ -30,7 +30,7 @@ struct Settings
 				false, // Wipes
 				false, // Retractions
 				false, // Unretractions
-				false, // Seams
+				true,  // Seams
 				false, // ToolChanges
 				false, // ColorChanges
 				false, // PausePrints
