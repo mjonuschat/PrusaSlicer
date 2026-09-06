@@ -197,6 +197,8 @@ add_library(slic3r-domain STATIC
     src/Slic3r/Domain/MacroOverrides.cpp
 )
 
+boss_target_sources(slic3r-domain)
+
 target_include_directories(slic3r-domain PUBLIC include)
 target_include_directories(slic3r-domain PRIVATE src)
 
