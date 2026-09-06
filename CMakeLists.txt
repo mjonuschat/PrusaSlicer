@@ -44,6 +44,12 @@ endif()
 if (NOT EMSCRIPTEN)
     option(SLIC3R_ENABLE_FORMAT_STEP "Support STEP loading (requires OpenCASCADE)" ON)
     option(SLIC3R_BUILD_TESTS "Build unit tests" ON)
+    option(BOSS_BUILD_FIXTURE_TESTS
+        "Compile BOSS's fixture-composition test cases. Only valid when BOSS_FEATURES_DIR \
+also points at src/boss/include/boss/test-fixtures -- otherwise these tests fail to \
+compile against the real, empty composition. Off by default; on only in the dedicated \
+local verification pass that builds against the fixture composition."
+        OFF)
     option(SLIC3R_GUI "Compile PrusaSlicer with GUI components (OpenGL, wxWidgets)" ON)
     option(SLIC3R_OPENGL_ES "Use OpenGL ES" OFF)
     if (SLIC3R_GUI)
