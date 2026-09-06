@@ -1,4 +1,5 @@
 
+src/boss/include/boss/foundation/BossFillRegistry.hpp
 src/libslic3r/include/libslic3r/SlicingStatus.hpp
 src/libslic3r/src/libslic3r/EdgeGrid.cpp
 src/libslic3r/src/libslic3r/ExtrusionRole.cpp
