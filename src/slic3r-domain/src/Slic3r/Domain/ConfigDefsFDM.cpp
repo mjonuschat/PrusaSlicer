@@ -8,6 +8,9 @@
 #include "boost/algorithm/string.hpp"
 #include "boost/format.hpp"
 
+#include "boss/generated/BossFdmFeatures.hpp"
+#include "boss/generated/BossFills.hpp"
+
 namespace Slic3r::Domain {
 
 // Implementation of FDM configs is done in this file.
@@ -5045,6 +5048,8 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->tooltip = L("Name or ID of tool print preset to use as default when this print preset is selected.");
     def->init_fn = init_with("");
 
+    Slic3r::Boss::BossFdmFeatures::register_config(defs);
+    Slic3r::Boss::BossFills::register_config(defs);
 }
 
 } // namespace Slic3r::Domain

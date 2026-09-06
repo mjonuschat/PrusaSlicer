@@ -157,6 +157,7 @@ const std::map<std::string, std::vector<Step>> invalidated_by{
     {"before_layer_gcode", steps({propagate(psGCodeExport)})},
     {"between_objects_gcode", steps({propagate(psGCodeExport)})},
     {"binary_gcode", steps({propagate(psGCodeExport)})},
+    {"boss_fill_pattern", steps({propagate(posPrepareInfill)})},
     {"bottom_fill_pattern", steps({propagate(posInfill)})},
     {"bottom_solid_layers", steps({propagate(posPrepareInfill)})},
     {"bottom_solid_min_thickness", steps({propagate(posPrepareInfill)})},

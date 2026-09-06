@@ -22,6 +22,9 @@
 #include "libslic3r/Surface.hpp"
 // for Arachne based infills
 #include "libslic3r/PerimeterGenerator.hpp"
+#include "boss/generated/BossFillPatternKey.hpp"
+#include "boss/generated/BossFills.hpp"
+#include "libslic3r/Fill/Fill.hpp"
 #include "libslic3r/Fill/FillBase.hpp"
 #include "libslic3r/Fill/FillRectilinear.hpp"
 #include "libslic3r/Fill/FillLightning.hpp"
@@ -54,96 +57,44 @@ class Generator;
 
 //static constexpr const float NarrowInfillAreaThresholdMM = 3.f;
 
-struct SurfaceFillParams
-{
-	// Zero based extruder ID.
-    unsigned int 	extruder = 0;
-	// Infill pattern, adjusted for the density etc.
-    Domain::InfillPattern  	pattern = Domain::InfillPattern(0);
-
-    // FillBase
-    // in unscaled coordinates
-    double    	spacing = 0.;
-    // infill / perimeter overlap, in unscaled coordinates
-//    double    	overlap = 0.;
-    // Angle as provided by the region config, in radians.
-    float       	angle = 0.f;
-    // Is bridging used for this fill? Bridging parameters may be used even if this->flow.bridge() is not set.
-    bool 			bridge;
-    // Non-negative for a bridge.
-    float 			bridge_angle = 0.f;
-
-    // FillParams
-    float       	density = 0.f;
-    // Don't adjust spacing to fill the space evenly.
-//    bool        	dont_adjust = false;
-    // Length of the infill anchor along the perimeter line.
-    // 1000mm is roughly the maximum length line that fits into a 32bit coord_t.
-    float 			anchor_length     = 1000.f;
-    float 			anchor_length_max = 1000.f;
-
-    // width, height of extrusion, nozzle diameter, is bridge
-    // For the output, for fill generator.
-    Flow 			flow;
-
-	// For the output
-	ExtrusionRole	extrusion_role{ ExtrusionRole::None };
-
-	// Various print settings?
-
-	// Index of this entry in a linear vector.
-    size_t 			idx = 0;
-
-
-	bool operator<(const SurfaceFillParams &rhs) const {
+bool SurfaceFillParams::operator<(const SurfaceFillParams &rhs) const {
 #define RETURN_COMPARE_NON_EQUAL(KEY) if (this->KEY < rhs.KEY) return true; if (this->KEY > rhs.KEY) return false;
 #define RETURN_COMPARE_NON_EQUAL_TYPED(TYPE, KEY) if (TYPE(this->KEY) < TYPE(rhs.KEY)) return true; if (TYPE(this->KEY) > TYPE(rhs.KEY)) return false;
 
-		// Sort first by decreasing bridging angle, so that the bridges are processed with priority when trimming one layer by the other.
-		if (this->bridge_angle > rhs.bridge_angle) return true; 
-		if (this->bridge_angle < rhs.bridge_angle) return false;
+	// Sort first by decreasing bridging angle, so that the bridges are processed with priority when trimming one layer by the other.
+	if (this->bridge_angle > rhs.bridge_angle) return true;
+	if (this->bridge_angle < rhs.bridge_angle) return false;
 
-		RETURN_COMPARE_NON_EQUAL(extruder);
-		RETURN_COMPARE_NON_EQUAL_TYPED(unsigned, pattern);
-		RETURN_COMPARE_NON_EQUAL(spacing);
-//		RETURN_COMPARE_NON_EQUAL(overlap);
-		RETURN_COMPARE_NON_EQUAL(angle);
-		RETURN_COMPARE_NON_EQUAL(density);
-//		RETURN_COMPARE_NON_EQUAL_TYPED(unsigned, dont_adjust);
-		RETURN_COMPARE_NON_EQUAL(anchor_length);
-		RETURN_COMPARE_NON_EQUAL(anchor_length_max);
-		RETURN_COMPARE_NON_EQUAL(flow.width());
-		RETURN_COMPARE_NON_EQUAL(flow.height());
-		RETURN_COMPARE_NON_EQUAL(flow.nozzle_diameter());
-		RETURN_COMPARE_NON_EQUAL_TYPED(unsigned, bridge);
-		return this->extrusion_role.lower(rhs.extrusion_role);
-	}
+	RETURN_COMPARE_NON_EQUAL(extruder);
+	RETURN_COMPARE_NON_EQUAL_TYPED(unsigned, pattern);
+	if (this->boss_pattern.has_value() != rhs.boss_pattern.has_value()) return this->boss_pattern.has_value();
+	if (this->boss_pattern.has_value() && rhs.boss_pattern.has_value() && *this->boss_pattern != *rhs.boss_pattern)
+		return *this->boss_pattern < *rhs.boss_pattern;
+	RETURN_COMPARE_NON_EQUAL(spacing);
+	RETURN_COMPARE_NON_EQUAL(angle);
+	RETURN_COMPARE_NON_EQUAL(density);
+	RETURN_COMPARE_NON_EQUAL(anchor_length);
+	RETURN_COMPARE_NON_EQUAL(anchor_length_max);
+	RETURN_COMPARE_NON_EQUAL(flow.width());
+	RETURN_COMPARE_NON_EQUAL(flow.height());
+	RETURN_COMPARE_NON_EQUAL(flow.nozzle_diameter());
+	RETURN_COMPARE_NON_EQUAL_TYPED(unsigned, bridge);
+	return this->extrusion_role.lower(rhs.extrusion_role);
+}
 
-	bool operator==(const SurfaceFillParams &rhs) const {
-		return  this->extruder 			== rhs.extruder 		&&
-				this->pattern 			== rhs.pattern 			&&
-				this->spacing 			== rhs.spacing 			&&
-//				this->overlap 			== rhs.overlap 			&&
-				this->angle   			== rhs.angle   			&&
-				this->bridge   			== rhs.bridge   		&&
-//				this->bridge_angle 		== rhs.bridge_angle		&&
-				this->density   		== rhs.density   		&&
-//				this->dont_adjust   	== rhs.dont_adjust 		&&
-				this->anchor_length  	== rhs.anchor_length    &&
-				this->anchor_length_max == rhs.anchor_length_max &&
-				this->flow 				== rhs.flow 			&&
-				this->extrusion_role	== rhs.extrusion_role;
-	}
-};
-
-struct SurfaceFill {
-	SurfaceFill(const SurfaceFillParams& params) : region_id(size_t(-1)), surface(stCount, ExPolygon()), params(params) {}
-
-	size_t 				region_id;
-	Surface 			surface;
-	ExPolygons       	expolygons;
-	SurfaceFillParams	params;
-};
+bool SurfaceFillParams::operator==(const SurfaceFillParams &rhs) const {
+	return  this->extruder 			== rhs.extruder 		&&
+			this->pattern 			== rhs.pattern 			&&
+			this->boss_pattern      == rhs.boss_pattern       &&
+			this->spacing 			== rhs.spacing 			&&
+			this->angle   			== rhs.angle   			&&
+			this->bridge   			== rhs.bridge   		&&
+			this->density   		== rhs.density   		&&
+			this->anchor_length  	== rhs.anchor_length    &&
+			this->anchor_length_max == rhs.anchor_length_max &&
+			this->flow 				== rhs.flow 			&&
+			this->extrusion_role	== rhs.extrusion_role;
+}
 
 static inline bool fill_type_monotonic(Domain::InfillPattern pattern)
 {
@@ -172,6 +123,15 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 		        bool     is_bridge 	    = layer.id() > 0 && surface.is_bridge();
 		        params.extruder 	 = layerm.region().extruder(extrusion_role);
 		        params.pattern 		 = layerm.region().extruder_config_value<Domain::InfillPattern>("fill_pattern", extrusion_role);
+		        // The registry adds boss_fill_pattern only when a fill feature is compiled in,
+		        // and ConfigView::get<T>() asserts on a missing key.
+		        if (Slic3r::Boss::BossFills::has_any_features) {
+		            const Domain::Boss::FillPatternKey boss_key =
+		                layerm.region().extruder_config_value<Domain::Boss::FillPatternKey>("boss_fill_pattern", extrusion_role);
+		            params.boss_pattern = Slic3r::Boss::BossFills::id_for_key(boss_key);
+		            assert((boss_key == Domain::Boss::FillPatternKey::None || params.boss_pattern.has_value())
+		                && "boss_fill_pattern resolved to a known enum value with no matching feature in this build's registry");
+		        }
 		        params.density       = float(region.extruder_config_value<Domain::Percentage>("fill_density", FlowRole::frInfill).value);
 
 		        if (surface.is_solid()) {
@@ -182,6 +142,10 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 		                fill_type_monotonic(region_config.get<Domain::InfillPattern>("top_fill_pattern")) ? Domain::InfillPattern::ipMonotonic : Domain::InfillPattern::ipRectilinear;
 		        } else if (params.density <= 0)
 		            continue;
+
+		        // BOSS fill patterns are sparse-only, so a forced solid pattern always wins.
+		        if (surface.is_solid())
+		            params.boss_pattern.reset();
 
 		        if (is_bridge) {
 		            params.extrusion_role = ExtrusionRole::BridgeInfill;
@@ -202,7 +166,9 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 		        params.angle 		= float(deg2rad(region_config.get<double>("fill_angle")));
 
 		        // Calculate the actual flow we'll be using for this infill.
-		        params.bridge = is_bridge || Fill::use_bridge_flow(params.pattern);
+		        params.bridge = is_bridge || (params.boss_pattern
+		            ? Slic3r::Boss::BossFills::use_bridge_flow(*params.boss_pattern)
+		            : Fill::use_bridge_flow(params.pattern));
 				params.flow   = params.bridge ?
 					// Always enable thick bridges for internal bridges.
 					layerm.bridging_flow(extrusion_role, surface.is_bridge() && ! surface.is_external()) :
@@ -351,6 +317,7 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
                     fill.surface.surface_type == stInternalSolid
                     || fill.surface.surface_type == stSolidOverBridge) {
                 fill.params.pattern = Domain::InfillPattern::ipEnsuring;
+                fill.params.boss_pattern.reset();
             }
     }
 
@@ -494,7 +461,13 @@ void Layer::make_fills(FillAdaptive::Octree* adaptive_fill_octree, FillAdaptive:
         LayerRegion &layerm = *m_regions[surface_fill.region_id];
 
         // Create the filler object.
-        std::unique_ptr<Fill> f = std::unique_ptr<Fill>(Fill::new_from_type(surface_fill.params.pattern));
+        std::unique_ptr<Fill> f;
+        if (surface_fill.params.boss_pattern) {
+            f = Slic3r::Boss::BossFills::create(*surface_fill.params.boss_pattern);
+            assert(f && "boss_pattern was valid at config-parse time but missing from this build's registry");
+        } else {
+            f.reset(Fill::new_from_type(surface_fill.params.pattern));
+        }
         f->set_bounding_box(bbox);
 		// Layer ID is used for orienting the infill in alternating directions.
 		// Layer::id() returns layer ID including raft layers, subtract them to make the infill direction independent
@@ -505,10 +478,12 @@ void Layer::make_fills(FillAdaptive::Octree* adaptive_fill_octree, FillAdaptive:
         f->adapt_fill_octree   = (surface_fill.params.pattern == Domain::InfillPattern::ipSupportCubic) ? support_fill_octree : adaptive_fill_octree;
         f->region_config = layerm.region().config();
 
-        if (surface_fill.params.pattern == Domain::InfillPattern::ipLightning)
+        // fill_pattern and boss_fill_pattern are independent options, so params.pattern can still
+        // name a native type while f is a BOSS-dispatched Fill. The casts below assume otherwise.
+        if (! surface_fill.params.boss_pattern && surface_fill.params.pattern == Domain::InfillPattern::ipLightning)
             dynamic_cast<FillLightning::Filler*>(f.get())->generator = lightning_generator;
 
-        if (surface_fill.params.pattern == Domain::InfillPattern::ipEnsuring) {
+        if (! surface_fill.params.boss_pattern && surface_fill.params.pattern == Domain::InfillPattern::ipEnsuring) {
             auto *fill_ensuring = dynamic_cast<FillEnsuring *>(f.get());
             assert(fill_ensuring != nullptr);
             fill_ensuring->print_region_config = m_regions[surface_fill.region_id]->region().config();
@@ -539,7 +514,9 @@ void Layer::make_fills(FillAdaptive::Octree* adaptive_fill_octree, FillAdaptive:
         params.anchor_length              = surface_fill.params.anchor_length;
         params.anchor_length_max          = surface_fill.params.anchor_length_max;
         params.resolution                 = resolution;
-        params.use_arachne                = (perimeter_generator == Domain::PerimeterGeneratorType::Arachne && surface_fill.params.pattern == Domain::InfillPattern::ipConcentric) || surface_fill.params.pattern == Domain::InfillPattern::ipEnsuring;
+        params.use_arachne                = ! surface_fill.params.boss_pattern
+            && ((perimeter_generator == Domain::PerimeterGeneratorType::Arachne && surface_fill.params.pattern == Domain::InfillPattern::ipConcentric)
+                || surface_fill.params.pattern == Domain::InfillPattern::ipEnsuring);
         params.layer_height               = layerm.layer()->height;
         params.prefer_clockwise_movements = this->object()->print()->config().get<bool>("prefer_clockwise_movements");
         FlowRole flow_role{
@@ -669,37 +646,48 @@ Polylines Layer::generate_sparse_infill_polylines_for_anchoring(FillAdaptive::Oc
 			continue;
 		}
 
-        switch (surface_fill.params.pattern) {
-        case Domain::InfillPattern::ipCount: continue; break;
-        case Domain::InfillPattern::ipSupportBase: continue; break;
-        case Domain::InfillPattern::ipEnsuring: continue; break;
-        case Domain::InfillPattern::ipLightning:
-		case Domain::InfillPattern::ipAdaptiveCubic:
-        case Domain::InfillPattern::ipSupportCubic:
-        case Domain::InfillPattern::ipRectilinear:
-        case Domain::InfillPattern::ipMonotonic:
-        case Domain::InfillPattern::ipMonotonicLines:
-        case Domain::InfillPattern::ipAlignedRectilinear:
-        case Domain::InfillPattern::ipGrid:
-        case Domain::InfillPattern::ipTriangles:
-        case Domain::InfillPattern::ipStars:
-        case Domain::InfillPattern::ipCubic:
-        case Domain::InfillPattern::ipLine:
-        case Domain::InfillPattern::ipConcentric:
-        case Domain::InfillPattern::ipHoneycomb:
-        case Domain::InfillPattern::ip3DHoneycomb:
-        case Domain::InfillPattern::ipGyroid:
-        case Domain::InfillPattern::ipHilbertCurve:
-        case Domain::InfillPattern::ipArchimedeanChords:
-        case Domain::InfillPattern::ipOctagramSpiral:
-        case Domain::InfillPattern::ipZigZag: break;
+        if (surface_fill.params.boss_pattern) {
+            if (! Slic3r::Boss::BossFills::anchoring_eligible(*surface_fill.params.boss_pattern))
+                continue;
+        } else {
+            switch (surface_fill.params.pattern) {
+            case Domain::InfillPattern::ipCount: continue; break;
+            case Domain::InfillPattern::ipSupportBase: continue; break;
+            case Domain::InfillPattern::ipEnsuring: continue; break;
+            case Domain::InfillPattern::ipLightning:
+            case Domain::InfillPattern::ipAdaptiveCubic:
+            case Domain::InfillPattern::ipSupportCubic:
+            case Domain::InfillPattern::ipRectilinear:
+            case Domain::InfillPattern::ipMonotonic:
+            case Domain::InfillPattern::ipMonotonicLines:
+            case Domain::InfillPattern::ipAlignedRectilinear:
+            case Domain::InfillPattern::ipGrid:
+            case Domain::InfillPattern::ipTriangles:
+            case Domain::InfillPattern::ipStars:
+            case Domain::InfillPattern::ipCubic:
+            case Domain::InfillPattern::ipLine:
+            case Domain::InfillPattern::ipConcentric:
+            case Domain::InfillPattern::ipHoneycomb:
+            case Domain::InfillPattern::ip3DHoneycomb:
+            case Domain::InfillPattern::ipGyroid:
+            case Domain::InfillPattern::ipHilbertCurve:
+            case Domain::InfillPattern::ipArchimedeanChords:
+            case Domain::InfillPattern::ipOctagramSpiral:
+            case Domain::InfillPattern::ipZigZag: break;
+            }
         }
 
 
         LayerRegion &layerm = *m_regions[surface_fill.region_id];
 
         // Create the filler object.
-        std::unique_ptr<Fill> f = std::unique_ptr<Fill>(Fill::new_from_type(surface_fill.params.pattern));
+        std::unique_ptr<Fill> f;
+        if (surface_fill.params.boss_pattern) {
+            f = Slic3r::Boss::BossFills::create(*surface_fill.params.boss_pattern);
+            assert(f && "boss_pattern was valid at config-parse time but missing from this build's registry");
+        } else {
+            f.reset(Fill::new_from_type(surface_fill.params.pattern));
+        }
         f->set_bounding_box(bbox);
         f->layer_id = this->id() - this->object()->get_layer(0)->id(); // We need to subtract raft layers.
         f->z        = this->print_z;
@@ -707,7 +695,7 @@ Polylines Layer::generate_sparse_infill_polylines_for_anchoring(FillAdaptive::Oc
         f->adapt_fill_octree   = (surface_fill.params.pattern == Domain::InfillPattern::ipSupportCubic) ? support_fill_octree : adaptive_fill_octree;
         f->region_config = layerm.region().config();
 
-        if (surface_fill.params.pattern == Domain::InfillPattern::ipLightning)
+        if (! surface_fill.params.boss_pattern && surface_fill.params.pattern == Domain::InfillPattern::ipLightning)
             dynamic_cast<FillLightning::Filler *>(f.get())->generator = lightning_generator;
 
         // calculate flow spacing for infill pattern generation
