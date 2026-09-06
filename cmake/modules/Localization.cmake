@@ -4,6 +4,7 @@ set(L10N_DIR "${SLIC3R_RESOURCES_DIR}/localization")
 add_custom_target(gettext_make_pot
     COMMAND xgettext
         --keyword=L
+        --keyword=BossL
         --keyword=_L
         --keyword=_u8L
         --keyword=L_CONTEXT:1,2c
