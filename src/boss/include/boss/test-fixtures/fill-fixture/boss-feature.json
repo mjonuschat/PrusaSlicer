@@ -1,0 +1,14 @@
+{
+  "name": "boss-test-fill-fixture",
+  "id": 900102,
+  "key": "boss-test-fill-fixture",
+  "trait": "Slic3r::Boss::Test::FillFixtureFeature",
+  "header": "boss/test-fixtures/fill-fixture/FillFixtureFeature.hpp",
+  "label": "BOSS test fill fixture",
+  "components": {
+    "libslic3r": {
+      "capabilities": ["fill"],
+      "sources": ["libslic3r/src/libslic3r/Fill/boss/test_fixtures/FillTestFixture.cpp"]
+    }
+  }
+}
