@@ -297,4 +297,9 @@ add_subdirectory(src)
 
 if(SLIC3R_BUILD_TESTS)
     add_subdirectory(tests)
+    add_test(
+        NAME boss_generator_tests
+        COMMAND "${Python3_EXECUTABLE}" -m unittest discover -s "${CMAKE_SOURCE_DIR}/cmake/boss/tests" -p "test_*.py" -v
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    )
 endif()
