@@ -446,6 +446,8 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCE_LIST_SLA})
 
 target_compile_definitions(libslic3r PUBLIC -DUSE_TBB -DTBB_USE_CAPTURED_EXCEPTION=0)
 
+boss_target_sources(libslic3r)
+
 target_include_directories(libslic3r PUBLIC include)
 target_include_directories(libslic3r PRIVATE src)
 

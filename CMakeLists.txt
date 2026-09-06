@@ -289,6 +289,10 @@ include(GlobalDependencies)
 include(CheckAndPrintSummary)
 
 add_subdirectory(bundled_deps)
+
+include(cmake/boss/GenerateBossFeatures.cmake)
+boss_generate_features()
+
 add_subdirectory(src)
 
 if(SLIC3R_BUILD_TESTS)
