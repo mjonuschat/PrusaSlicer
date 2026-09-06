@@ -45,12 +45,14 @@ add_executable(${_TEST_NAME}_tests
     ../data/prusaparts.hpp
     test_model_utils.cpp
     test_custom_parameters_handling.cpp
+    test_boss_fill_dispatch.cpp
+    test_boss_fill_registry.cpp
 	)
 
 if (TARGET OpenVDB::openvdb)
     target_sources(${_TEST_NAME}_tests PRIVATE test_hollowing.cpp)
 endif()
-    
+
 target_link_libraries(${_TEST_NAME}_tests test_common libslic3r slic3r-shared)
 set_property(TARGET ${_TEST_NAME}_tests PROPERTY FOLDER "tests")
 

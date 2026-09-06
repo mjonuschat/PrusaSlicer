@@ -1,4 +1,5 @@
 
+src/boss/include/boss/foundation/BossFillRegistry.hpp
 src/libslic3r/src/libslic3r/EdgeGrid.cpp
 src/libslic3r/src/libslic3r/GCode.cpp
 src/libslic3r/src/libslic3r/GCode/PostProcessor.cpp
