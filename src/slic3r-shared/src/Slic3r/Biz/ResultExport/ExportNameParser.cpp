@@ -104,6 +104,19 @@ ExportNameData parse_fdm_export_name(
     const auto& ccc     = project_interactor.preset_interactor().selected_config_container_context();
     const auto* cc      = project.find_config_container(ccc.config_container_id);
     ASSERT(cc != nullptr);
+
+    {
+        const auto& all_beds = cc->bed_instances();
+        const auto it = std::find_if(all_beds.begin(), all_beds.end(),
+            [bed_instance](const std::unique_ptr<Domain::BedInstance>& b) { return b.get() == bed_instance; });
+        if (it != all_beds.end()) {
+            std::string bed_number = std::to_string(std::distance(all_beds.begin(), it) + 1);
+            static constexpr size_t n_zero = 2;
+            bed_number = std::string(n_zero - std::min(n_zero, bed_number.length()), '0') + bed_number;
+            parser.set("bed_number", bed_number);
+        }
+    }
+
     const auto& selected_preset = cc->selected_preset();
     const auto& hw_config_id    = selected_preset.hw_config.id;
     const auto& printer_id      = selected_preset.printer.id;
