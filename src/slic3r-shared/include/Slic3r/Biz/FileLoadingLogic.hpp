@@ -117,6 +117,7 @@ ImportToSceneResult add_imported_files_to_scene(
     std::vector<ImportedFileData> data,
     Scene::SceneInteractor& scene_interactor,
     const Domain::Vec2d& bed_center,
+    double init_z_rotate_degrees,
     const ImportOptions& options = {}
 );
 
