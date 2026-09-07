@@ -13,6 +13,8 @@
   },
   "config_options": [
     {"key": "boss_test_fixture_flag", "invalidates": ["psGCodeExport"],
-     "store": {"home": "extrude_config", "field": "boss_test_fixture_flag", "kind": "scalar_bool"}}
+     "store": {"home": "extrude_config", "field": "boss_test_fixture_flag", "kind": "scalar_bool"}},
+    {"key": "boss_test_fixture_purge", "invalidates": ["psWipeTower"],
+     "store": {"home": "wipe_tower", "field": "boss_test_fixture_purge", "kind": "scalar_bool"}}
   ]
 }

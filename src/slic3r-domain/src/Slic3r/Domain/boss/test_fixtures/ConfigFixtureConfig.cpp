@@ -18,6 +18,15 @@ void ConfigFixtureFeature::register_config(Domain::ConfigDefinitions& defs)
     def->location = FDMConfigLocation::Printer;
     def->category = ConfigItemDef::Category::Hidden;
     def->init_fn  = init_with(false);
+
+    // Category::Hidden: never shown even if a Settings GUI is built later.
+    // This option has no real-world meaning -- it exists only so a test
+    // can assert it was actually registered by the real
+    // fdm_config_init_fn() call site, not simulated.
+    def = defs.add("boss_test_fixture_purge", typeid(bool));
+    def->location = FDMConfigLocation::Printer;
+    def->category = ConfigItemDef::Category::Hidden;
+    def->init_fn  = init_with(false);
 }
 
 } // namespace Slic3r::Boss::Test

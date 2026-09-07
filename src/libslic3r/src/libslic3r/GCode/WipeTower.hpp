@@ -15,6 +15,8 @@
 #include "Slic3r/Domain/GCodeFlavor.hpp"
 #include "Slic3r/Domain/Types.hpp"
 
+#include "boss/generated/BossWipeTowerOverrides.hpp"
+
 namespace Slic3r
 {
 
@@ -25,6 +27,10 @@ class PrintRegionConfigView;
 class WipeTower
 {
 public:
+    // BOSS-owned generated overrides. First member, so it constructs before any
+    // member that reads an override value.
+    Slic3r::Boss::BossWipeTowerOverrides boss;
+
     static const std::string never_skip_tag() { return "_GCODE_WIPE_TOWER_NEVER_SKIP_TAG"; }
     // Marks a travel that the G-code generator replaces by a travel with the print retraction and Z-hop.
     static const std::string print_travel_tag() { return "_GCODE_WIPE_TOWER_PRINT_TRAVEL_TAG"; }
