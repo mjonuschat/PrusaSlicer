@@ -61,6 +61,7 @@ GCodeWriterConfig::GCodeWriterConfig(const PrintConfigView& print_config)
     filament_density         = print_config.get<std::vector<double>>("filament_density");
     filament_cost            = print_config.get<std::vector<double>>("filament_cost");
     extrusion_multiplier     = print_config.get<std::vector<double>>("extrusion_multiplier");
+    prime_length_at_start    = print_config.get<std::vector<double>>("prime_length_at_start");
     retract_before_wipe = print_config.get<std::vector<Domain::Percentage>>("retract_before_wipe");
     retract_length      = print_config.get<std::vector<double>>("retract_length");
     retract_speed       = print_config.get<std::vector<double>>("retract_speed");

@@ -28,6 +28,7 @@ struct GCodeWriterConfig
     std::vector<double> filament_density{};
     std::vector<double> filament_cost{};
     std::vector<double> extrusion_multiplier{};
+    std::vector<double> prime_length_at_start{};
     std::vector<Domain::Percentage> retract_before_wipe{};
     std::vector<double> retract_length{};
     std::vector<double> retract_speed{};
