@@ -226,5 +226,21 @@ class OverrideStructEmitTests(unittest.TestCase):
             self.assertIn('filament_max_speed{config.get<std::vector<double>>("filament_max_speed")}', impl)
 
 
+class FullGenerateTests(unittest.TestCase):
+    def test_generate_composes_invalidation_and_storage(self):
+        with tempfile.TemporaryDirectory() as src, tempfile.TemporaryDirectory() as out:
+            write_manifest(Path(src), "alpha", config_options=[
+                {"key": "filament_max_speed", "invalidates": ["psWipeTower", "psSkirtBrim"],
+                 "store": {"home": "extrude_config", "field": "filament_max_speed",
+                           "kind": "per_extruder_double"}}])
+            self.assertEqual(gbf.generate(Path(src), Path(out)), 0)
+            inval = (Path(out) / "libslic3r" / "BossStepInvalidations.cpp").read_text()
+            hdr = (Path(out) / "include" / "boss" / "generated" / "BossExtrudeConfigOverrides.hpp").read_text()
+            keys = (Path(out) / "slic3r-domain" / "BossConfigOptionKeys.cpp").read_text()
+            self.assertIn('{"filament_max_speed", steps(', inval)
+            self.assertIn("std::vector<double> filament_max_speed{};", hdr)
+            self.assertIn('"filament_max_speed"', keys)
+
+
 if __name__ == "__main__":
     unittest.main()
