@@ -22,6 +22,8 @@
 
 #include <unordered_set>
 
+//#define GEOMETRY_DEBUG_OUT
+
 using namespace Slic3r;
 using namespace Slic3r::Biz;
 using Slic3r::Biz::Algorithms::SVG::SVG;
@@ -598,10 +600,12 @@ TEST_CASE("Convex polygon intersection on two squares touching one vertex", "[Ge
     Polygon B = A;
     B.translate(10 / SCALING_FACTOR, 10 / SCALING_FACTOR);
 
+#ifdef GEOMETRY_DEBUG_OUT
     SVG svg{std::string("one_vertex_touch") + ".svg"};
     svg.draw(A, "blue");
     svg.draw(B, "green");
     svg.Close();
+#endif
 
     bool is_inters = Geometry::convex_polygons_intersect(A, B);
 
