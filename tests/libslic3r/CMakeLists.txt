@@ -48,6 +48,7 @@ add_executable(${_TEST_NAME}_tests
     test_boss_fill_dispatch.cpp
     test_boss_fill_registry.cpp
     test_boss_step_invalidation_merge.cpp
+    test_boss_registration_invariant.cpp
 	)
 
 if (TARGET OpenVDB::openvdb)
