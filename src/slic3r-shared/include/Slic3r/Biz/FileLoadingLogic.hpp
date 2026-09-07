@@ -52,7 +52,8 @@ ImportToSceneResult import_files_and_add_to_scene(
     int tool_count,
     Scene::SceneInteractor& scene_interactor,
     const Domain::Vec2d& bed_center,
-    IMessageDialogProvider* dialog_provider
+    IMessageDialogProvider* dialog_provider,
+    double init_z_rotate_degrees
 );
 
 /**
