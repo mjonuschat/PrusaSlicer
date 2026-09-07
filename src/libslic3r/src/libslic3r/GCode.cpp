@@ -3538,7 +3538,8 @@ std::string GCodeGenerator::_extrude(
     }
 
     // calculate extrusion length per distance unit
-    double e_per_mm = m_writer.extruder()->e_per_mm3() * path_attr.mm3_per_mm;
+    double e_per_mm = m_writer.extruder()->e_per_mm3() * path_attr.mm3_per_mm *
+        config.boss.print_extrusion_multiplier;
     if (m_writer.extrusion_axis().empty())
         // gcfNoExtrusion
         e_per_mm = 0;
