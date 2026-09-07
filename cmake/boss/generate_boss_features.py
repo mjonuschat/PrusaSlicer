@@ -16,8 +16,20 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 REQUIRED_MANIFEST_KEYS = {"name", "id", "key", "trait", "header", "components"}
-OPTIONAL_MANIFEST_KEYS = {"vendored", "label"}
+OPTIONAL_MANIFEST_KEYS = {"vendored", "label", "config_options"}
 NAME_PATTERN_CHARS = set("abcdefghijklmnopqrstuvwxyz0123456789-")
+# Config option keys are snake_case, unlike the kebab-case feature name/key.
+CONFIG_OPTION_KEY_CHARS = set("abcdefghijklmnopqrstuvwxyz0123456789_")
+
+# The steps propagate() handles in StepsInvalidation.cpp. An `invalidates`
+# value outside this set emits propagate(<x>) that either fails to compile or
+# hits propagate()'s `default: PANIC`. Keep equal to propagate()'s cases.
+STEP_NAMES = {
+    "psWipeTower", "psAlertWhenSupportsNeeded", "psSkirtBrim", "psGCodeExport",
+    "posSlice", "posPerimeters", "posPrepareInfill", "posInfill", "posIroning",
+    "posSupportSpotsSearch", "posSupportMaterial", "posEstimateCurledExtrusions",
+    "posCalculateOverhangingPerimeters",
+}
 CPP_IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 # A lexically valid identifier can still be a reserved word -- "class" or
 # "namespace" as a trait basename or derived enum member name would parse
@@ -94,6 +106,7 @@ class Manifest:
     label: str
     components: dict[str, dict]
     vendored: list[dict] = field(default_factory=list)
+    config_options: list[dict] = field(default_factory=list)
 
 
 def validate_manifest(path: Path, data: dict) -> Manifest:
@@ -241,6 +254,39 @@ def validate_manifest(path: Path, data: dict) -> Manifest:
                 f"path with no leading '/' and no '..' component"
             )
 
+    config_options = data.get("config_options", [])
+    if not isinstance(config_options, list):
+        raise ManifestError(f"{path}: 'config_options' must be a list if present")
+    for entry in config_options:
+        if not isinstance(entry, dict):
+            raise ManifestError(f"{path}: each 'config_options' entry must be an object")
+        if entry.keys() - {"key", "invalidates", "store"}:
+            raise ManifestError(
+                f"{path}: config_options entry has unknown key(s): "
+                f"{sorted(entry.keys() - {'key', 'invalidates', 'store'})}"
+            )
+        opt_key = entry.get("key")
+        if not isinstance(opt_key, str) or not opt_key or set(opt_key) - CONFIG_OPTION_KEY_CHARS:
+            raise ManifestError(
+                f"{path}: config_options 'key' must be a snake_case string, got {opt_key!r}"
+            )
+        if "invalidates" not in entry:
+            raise ManifestError(f"{path}: config_options entry {opt_key!r} must declare 'invalidates'")
+        invalidates = entry["invalidates"]
+        if not isinstance(invalidates, list):
+            raise ManifestError(f"{path}: config_options entry {opt_key!r} 'invalidates' must be a list")
+        for step in invalidates:
+            if not isinstance(step, str):
+                raise ManifestError(
+                    f"{path}: config_options entry {opt_key!r} invalidates entry {step!r} "
+                    f"is not a string -- must be a step name"
+                )
+            if step not in STEP_NAMES:
+                raise ManifestError(
+                    f"{path}: config_options entry {opt_key!r} invalidates unknown step {step!r} "
+                    f"-- known steps are {sorted(STEP_NAMES)}"
+                )
+
     return Manifest(
         path=path,
         name=name,
@@ -251,6 +297,7 @@ def validate_manifest(path: Path, data: dict) -> Manifest:
         label=label,
         components=components,
         vendored=vendored,
+        config_options=config_options,
     )
 
 
@@ -270,6 +317,7 @@ def check_global_uniqueness(manifests: list[Manifest]) -> None:
     seen_names: dict[str, Path] = {}
     seen_ids: dict[int, Path] = {}
     seen_keys: dict[str, Path] = {}
+    seen_option_keys: dict[str, Path] = {}
     for m in manifests:
         if m.name in seen_names:
             raise ManifestError(
@@ -283,6 +331,13 @@ def check_global_uniqueness(manifests: list[Manifest]) -> None:
             raise ManifestError(
                 f"{m.path}: duplicate serialization key {m.key!r} (also declared in {seen_keys[m.key]})"
             )
+        for opt in m.config_options:
+            if opt["key"] in seen_option_keys:
+                raise ManifestError(
+                    f"{m.path}: duplicate config option key {opt['key']!r} "
+                    f"(also declared in {seen_option_keys[opt['key']]})"
+                )
+            seen_option_keys[opt["key"]] = m.path
         seen_names[m.name] = m.path
         seen_ids[m.id] = m.path
         seen_keys[m.key] = m.path
