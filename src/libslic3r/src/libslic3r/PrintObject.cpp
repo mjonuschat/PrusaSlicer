@@ -6,6 +6,7 @@
 #include <cmath>
 #include <functional>
 #include <map>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -29,6 +30,8 @@
 #include "Slic3r/Domain/BoundingBox.hpp"
 #include "Slic3r/Domain/TriangleSelector.hpp"
 #include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp"
+#include "boss/features/flowsnake/FlowsnakeFeature.hpp"
+#include "boss/generated/BossFills.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/GCode/ExtrusionProcessor.hpp"
@@ -1604,6 +1607,11 @@ template<typename T> void debug_draw(std::string name, const T& a, const T& b, c
 }
 #endif
 
+double boss_flowsnake_bridging_angle_addition(Domain::InfillPattern pattern)
+{
+    return pattern == Domain::InfillPattern(Slic3r::Boss::FlowsnakeFeature::id) ? (1.0 / 6.0) * PI : 0.0;
+}
+
 // This method applies bridge flow to the first internal solid layer above sparse infill.
 void PrintObject::bridge_over_infill()
 {
@@ -2002,6 +2010,7 @@ void PrintObject::bridge_over_infill()
         case Domain::InfillPattern::ipOctagramSpiral: bridging_angle += (1.0 / 16.0) * PI; break;
         default: break;
         }
+        bridging_angle += boss_flowsnake_bridging_angle_addition(dominant_pattern);
 
         return bridging_angle;
     };
