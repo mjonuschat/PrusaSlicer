@@ -54,6 +54,11 @@ function(boss_target_sources target_name)
         target_sources(${target_name} PRIVATE ${${_sources_var}})
     endif ()
 
+    set(_generated_var "BOSS_${_target_upper}_GENERATED_SOURCES")
+    if (DEFINED ${_generated_var} AND NOT "${${_generated_var}}" STREQUAL "")
+        target_sources(${target_name} PRIVATE ${${_generated_var}})
+    endif ()
+
     # PUBLIC, not PRIVATE: the shared generated headers and the BOSS
     # include root src/boss/include (for "boss/foundation/..." and
     # "boss/features/..." headers) must reach any target that links
