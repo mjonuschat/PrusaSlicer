@@ -961,7 +961,7 @@ void WipeTower::toolchange_Unload(
 	float remaining = xr - xl ;							// keeps track of distance to the next turnaround
 	float e_done = 0;									// measures E move done from each segment   
 
-    const bool do_ramming = m_semm || m_filpar[m_current_tool].multitool_ramming;
+    const bool do_ramming = (m_semm || m_filpar[m_current_tool].multitool_ramming) && !boss.disable_filament_ramming;
     const int ramming_temperature_delta = m_filpar[m_current_tool].ramming_temperature_delta;
 
     if (do_ramming) {
@@ -1050,7 +1050,7 @@ void WipeTower::toolchange_Unload(
     }
 
     const int& number_of_cooling_moves = m_filpar[m_current_tool].cooling_moves;
-    const bool cooling_will_happen = m_semm && number_of_cooling_moves > 0;
+    const bool cooling_will_happen = m_semm && number_of_cooling_moves > 0 && !boss.disable_cooling_moves;
     bool change_temp_later = false;
 
     // Wipe tower should only change temperature with single extruder MM. Otherwise, all temperatures should
