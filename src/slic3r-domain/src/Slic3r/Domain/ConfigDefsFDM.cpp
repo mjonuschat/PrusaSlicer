@@ -8,6 +8,12 @@
 #include "boost/algorithm/string.hpp"
 #include "boost/format.hpp"
 
+#include <algorithm>
+#include <iterator>
+#include <set>
+
+#include "boss/foundation/BossRegistrationInvariant.hpp"
+#include "boss/generated/BossConfigOptionKeys.hpp"
 #include "boss/generated/BossFdmFeatures.hpp"
 #include "boss/generated/BossFills.hpp"
 
@@ -5048,8 +5054,28 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->tooltip = L("Name or ID of tool print preset to use as default when this print preset is selected.");
     def->init_fn = init_with("");
 
+    auto key_names = [](const ConfigDefinitions& d) {
+        std::set<std::string> names;
+        for (const ConfigItemDef& def : d.defs()) {
+            names.insert(def.name);
+        }
+        return names;
+    };
+
+    const std::set<std::string> before_boss = key_names(defs);
     Slic3r::Boss::BossFdmFeatures::register_config(defs);
     Slic3r::Boss::BossFills::register_config(defs);
+    const std::set<std::string> after_boss = key_names(defs);
+
+    std::set<std::string> registered;
+    std::set_difference(
+        after_boss.begin(), after_boss.end(), before_boss.begin(), before_boss.end(),
+        std::inserter(registered, registered.end())
+    );
+
+    Slic3r::Boss::assert_boss_registration_matches_manifest(
+        registered, Slic3r::Boss::boss_config_option_keys()
+    );
 }
 
 } // namespace Slic3r::Domain
