@@ -4171,7 +4171,9 @@ std::string GCodeGenerator::set_extruder(
 
     // We inform the writer about what is happening, but we may not use the resulting gcode.
     std::string toolchange_command = m_writer.toolchange(extruder_id, toolchange_return_position);
-    if (! custom_gcode_changes_tool(toolchange_gcode_parsed, m_writer.toolchange_prefix(), extruder_id))
+    if (config.get<bool>("autoemit_toolchange_commands")
+        && ! custom_gcode_changes_tool(toolchange_gcode_parsed, m_writer.toolchange_prefix(),
+                                        extruder_id))
         gcode += toolchange_command;
     else {
         // user provided his own toolchange gcode, no need to do anything
