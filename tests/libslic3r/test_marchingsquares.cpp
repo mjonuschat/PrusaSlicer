@@ -17,6 +17,8 @@
 #include <libslic3r/SlicesToTriangleMesh.hpp>
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 
+//#define MARCHINGSQUARES_DEBUG_OUT
+
 using namespace Slic3r;
 using namespace Slic3r::Biz;
 using Algorithms::SVG::SVG;
@@ -97,18 +99,22 @@ static void test_expolys(Rst &&             rst,
                          const std::string &name = "test")
 {
     for (const ExPolygon &expoly : ref) rst.draw(expoly);
-    
+
+#ifdef MARCHINGSQUARES_DEBUG_OUT
     std::fstream out(name + ".png", std::ios::out);
     out << rst.encode(sla::PNGRasterEncoder{});
     out.close();
-    
+#endif
+
     ExPolygons extracted = sla::raster_to_polygons(rst, window);
-    
+
+#ifdef MARCHINGSQUARES_DEBUG_OUT
     SVG svg(name + ".svg");
     svg.draw(extracted);
     svg.draw(ref, "green");
     svg.Close();
-    
+#endif
+
     double max_rel_err = 0.1;
     sla::PixelDim pxd = rst.pixel_dimensions();
     double max_abs_err = area(pxd) * scaled(1.) * scaled(1.);
@@ -193,16 +199,20 @@ TEST_CASE("4x4 raster with one ring", "[MarchingSquares]") {
     
     rst.draw(square(1., {2500000, 2500000}));
     
+#ifdef MARCHINGSQUARES_DEBUG_OUT
     std::fstream out("4x4.png", std::ios::out);
     out << rst.encode(sla::PNGRasterEncoder{});
     out.close();
-    
+#endif
+
     ExPolygons extracted = sla::raster_to_polygons(rst);
-    
+
+#ifdef MARCHINGSQUARES_DEBUG_OUT
     SVG svg("4x4.svg");
     svg.draw(extracted);
     svg.Close();
-    
+#endif
+
     REQUIRE(extracted.size() == 1);
 }
 
@@ -224,19 +234,23 @@ TEST_CASE("4x4 raster with two rings", "[MarchingSquares]") {
         rst.draw(square(1., {1500000, 1500000}));
         rst.draw(square(1., {1500000, 2500000}));
         
+#ifdef MARCHINGSQUARES_DEBUG_OUT
         std::fstream out("4x4_ac.png", std::ios::out);
         out << rst.encode(sla::PNGRasterEncoder{});
         out.close();
-        
+#endif
+
         ExPolygons extracted = sla::raster_to_polygons(rst);
-        
+
+#ifdef MARCHINGSQUARES_DEBUG_OUT
         SVG svg("4x4_ac.svg");
         svg.draw(extracted);
         svg.Close();
-        
+#endif
+
         REQUIRE(extracted.size() == 2);
     }
-    
+
     SECTION("Ambiguous case with 'bd' square") {
         
         // Draw a triangle from individual pixels
@@ -248,16 +262,20 @@ TEST_CASE("4x4 raster with two rings", "[MarchingSquares]") {
         rst.draw(square(1., {1500000, 3500000}));
         rst.draw(square(1., {2500000, 3500000}));
         
+#ifdef MARCHINGSQUARES_DEBUG_OUT
         std::fstream out("4x4_bd.png", std::ios::out);
         out << rst.encode(sla::PNGRasterEncoder{});
         out.close();
-        
+#endif
+
         ExPolygons extracted = sla::raster_to_polygons(rst);
-        
+
+#ifdef MARCHINGSQUARES_DEBUG_OUT
         SVG svg("4x4_bd.svg");
         svg.draw(extracted);
         svg.Close();
-        
+#endif
+
         REQUIRE(extracted.size() == 2);
     }
 }
@@ -373,7 +391,9 @@ static void recreate_object_from_rasters(const std::string &objname, float lh) {
     
     indexed_triangle_set out = slices_to_mesh(layers, bb.min.z(), double(lh), double(lh));
 
+#ifdef MARCHINGSQUARES_DEBUG_OUT
     its_write_obj(out, "out_from_rasters.obj");
+#endif
 }
 
 TEST_CASE("Recreate object from rasters", "[SL1Import]") {
