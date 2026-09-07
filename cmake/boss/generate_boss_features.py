@@ -365,6 +365,50 @@ CAPABILITY_REGISTRIES = {
 
 ENUM_MEMBER_SUFFIX = "Feature"
 
+# Keys a foundation registry registers on its own, gated on the same predicate
+# as that registration. BossFillRegistry registers boss_fill_pattern only when
+# its pack is non-empty (`if constexpr (sizeof...(Features) == 0) return;`,
+# BossFillRegistry.hpp), so emit it only when the fill capability has >= 1 feature.
+REGISTRY_OWNED_INVALIDATIONS = {
+    "fill": {"key": "boss_fill_pattern", "invalidates": ["posPrepareInfill"]},
+}
+
+
+def boss_owned_keys(manifests: list[Manifest]) -> list[str]:
+    keys = {opt["key"] for m in manifests for opt in m.config_options}
+    for capability, owned in REGISTRY_OWNED_INVALIDATIONS.items():
+        if features_for_capability(manifests, capability):
+            keys.add(owned["key"])
+    return sorted(keys)
+
+
+def _boss_invalidation_entries(manifests: list[Manifest]) -> list[tuple[str, list[str]]]:
+    entries: dict[str, list[str]] = {}
+    for m in manifests:
+        for opt in m.config_options:
+            entries[opt["key"]] = opt["invalidates"]
+    for capability, owned in REGISTRY_OWNED_INVALIDATIONS.items():
+        if features_for_capability(manifests, capability):
+            entries[owned["key"]] = owned["invalidates"]
+    return sorted(entries.items())
+
+
+REGISTRY_OWNED_KEYS = {owned["key"] for owned in REGISTRY_OWNED_INVALIDATIONS.values()}
+
+
+def check_reserved_keys(manifests: list[Manifest]) -> None:
+    # A feature manifest must not declare a config key a foundation registry
+    # owns (for example boss_fill_pattern). Otherwise the entry would be
+    # silently overwritten by the registry-owned metadata and could collide
+    # during registration.
+    for m in manifests:
+        for opt in m.config_options:
+            if opt["key"] in REGISTRY_OWNED_KEYS:
+                raise ManifestError(
+                    f"{m.path}: config option key {opt['key']!r} is reserved by a foundation "
+                    f"registry and cannot be declared by a feature manifest"
+                )
+
 
 def features_for_capability(manifests: list[Manifest], capability: str) -> list[Manifest]:
     matching = [
@@ -505,6 +549,71 @@ def emit_fill_pattern_key(manifests: list[Manifest], include_dir: Path) -> Path:
     return header_path
 
 
+def emit_step_invalidations(manifests: list[Manifest], output_dir: Path) -> Path:
+    lines = [
+        "// GENERATED FILE -- do not edit. Produced by cmake/boss/generate_boss_features.py.",
+        "#include <map>",
+        "#include <string>",
+        "#include <vector>",
+        '#include "libslic3r/StepsInvalidation.hpp"',
+        "",
+        "namespace Slic3r::SlicingSync {",
+        "std::map<std::string, std::vector<Step>> boss_step_invalidations()",
+        "{",
+        "    return {",
+    ]
+    for key, invalidates in _boss_invalidation_entries(manifests):
+        propagations = ", ".join(f"propagate({step})" for step in sorted(invalidates))
+        lines.append(f'        {{"{key}", steps({{{propagations}}})}},')
+    lines += ["    };", "}", "} // namespace Slic3r::SlicingSync", ""]
+
+    target_dir = output_dir / "libslic3r"
+    target_dir.mkdir(parents=True, exist_ok=True)
+    impl_path = target_dir / "BossStepInvalidations.cpp"
+    impl_path.write_text("\n".join(lines), encoding="utf-8")
+    return impl_path
+
+
+def emit_config_option_keys(manifests: list[Manifest], output_dir: Path) -> Path:
+    keys = boss_owned_keys(manifests)
+
+    header_dir = output_dir / "include" / "boss" / "generated"
+    header_dir.mkdir(parents=True, exist_ok=True)
+    header = [
+        "// GENERATED FILE -- do not edit. Produced by cmake/boss/generate_boss_features.py.",
+        "#pragma once",
+        "#include <set>",
+        "#include <string>",
+        "",
+        "namespace Slic3r::Boss {",
+        "const std::set<std::string>& boss_config_option_keys();",
+        "} // namespace Slic3r::Boss",
+        "",
+    ]
+    (header_dir / "BossConfigOptionKeys.hpp").write_text("\n".join(header), encoding="utf-8")
+
+    impl = [
+        "// GENERATED FILE -- do not edit. Produced by cmake/boss/generate_boss_features.py.",
+        "#include <set>",
+        "#include <string>",
+        '#include "boss/generated/BossConfigOptionKeys.hpp"',
+        "",
+        "namespace Slic3r::Boss {",
+        "const std::set<std::string>& boss_config_option_keys()",
+        "{",
+        "    static const std::set<std::string> keys{",
+    ]
+    for key in keys:
+        impl.append(f'        "{key}",')
+    impl += ["    };", "    return keys;", "}", "} // namespace Slic3r::Boss", ""]
+
+    target_dir = output_dir / "slic3r-domain"
+    target_dir.mkdir(parents=True, exist_ok=True)
+    impl_path = target_dir / "BossConfigOptionKeys.cpp"
+    impl_path.write_text("\n".join(impl), encoding="utf-8")
+    return impl_path
+
+
 def emit_sources_cmake(manifests: list[Manifest], target: str, output_dir: Path) -> Path:
     # Manifests declare sources relative to CMAKE_SOURCE_DIR/src/ (the repo's
     # top-level src/ directory), e.g. "slic3r-domain/src/Slic3r/Domain/boss/
@@ -537,6 +646,7 @@ def generate(features_dir: Path, output_dir: Path) -> int:
         check_global_uniqueness(manifests)
         check_known_capabilities(manifests)
         check_capability_targets(manifests)
+        check_reserved_keys(manifests)
     except ManifestError as exc:
         print(f"boss feature generation failed: {exc}", file=sys.stderr)
         return 1
@@ -546,6 +656,8 @@ def generate(features_dir: Path, output_dir: Path) -> int:
         for capability in CAPABILITY_REGISTRIES:
             emit_composition_header(capability, manifests, include_dir)
         emit_fill_pattern_key(manifests, include_dir)
+        emit_step_invalidations(manifests, output_dir)
+        emit_config_option_keys(manifests, output_dir)
     except ManifestError as exc:
         print(f"boss feature generation failed: {exc}", file=sys.stderr)
         return 1

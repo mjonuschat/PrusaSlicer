@@ -1,4 +1,5 @@
 # cmake/boss/tests/test_codegen.py
+import json
 import sys
 import tempfile
 import unittest
@@ -138,6 +139,52 @@ class GenerateEndToEndTests(unittest.TestCase):
             )
             rc = gbf.generate(Path(features_tmp), Path(out_tmp))
             self.assertEqual(rc, 1)
+
+
+class StepInvalidationEmitTests(unittest.TestCase):
+    def _parse(self, src, name, **overrides):
+        path = write_manifest(Path(src), name, **overrides)
+        return gbf.validate_manifest(path, json.loads(path.read_text()))
+
+    def test_empty_feature_set_emits_empty_map(self):
+        with tempfile.TemporaryDirectory() as out:
+            gbf.emit_step_invalidations([], Path(out))
+            text = (Path(out) / "libslic3r" / "BossStepInvalidations.cpp").read_text()
+            self.assertIn("boss_step_invalidations()", text)
+            self.assertIn('#include "libslic3r/StepsInvalidation.hpp"', text)
+            self.assertNotIn("propagate(", text)
+
+    def test_config_option_emits_entry(self):
+        with tempfile.TemporaryDirectory() as src, tempfile.TemporaryDirectory() as out:
+            m = self._parse(src, "alpha", config_options=[
+                {"key": "filament_max_speed", "invalidates": ["psWipeTower", "psSkirtBrim"]}])
+            gbf.emit_step_invalidations([m], Path(out))
+            text = (Path(out) / "libslic3r" / "BossStepInvalidations.cpp").read_text()
+            self.assertIn('{"filament_max_speed", steps({propagate(psSkirtBrim), propagate(psWipeTower)})}', text)
+
+    def test_fill_feature_gates_boss_fill_pattern(self):
+        with tempfile.TemporaryDirectory() as src:
+            fill = self._parse(src, "crosshatch", id=10001, key="crosshatch",
+                               components={"libslic3r": {"capabilities": ["fill"], "sources": []}})
+            self.assertIn("boss_fill_pattern", gbf.boss_owned_keys([fill]))
+            self.assertNotIn("boss_fill_pattern", gbf.boss_owned_keys([]))
+
+    def test_config_option_keys_header_and_impl(self):
+        with tempfile.TemporaryDirectory() as src, tempfile.TemporaryDirectory() as out:
+            m = self._parse(src, "alpha", config_options=[
+                {"key": "filament_max_speed", "invalidates": []}])
+            gbf.emit_config_option_keys([m], Path(out))
+            impl = (Path(out) / "slic3r-domain" / "BossConfigOptionKeys.cpp").read_text()
+            hdr = (Path(out) / "include" / "boss" / "generated" / "BossConfigOptionKeys.hpp").read_text()
+            self.assertIn('"filament_max_speed"', impl)
+            self.assertIn("boss_config_option_keys();", hdr)
+
+    def test_registry_owned_key_in_manifest_is_rejected(self):
+        with tempfile.TemporaryDirectory() as src:
+            m = self._parse(src, "alpha", config_options=[
+                {"key": "boss_fill_pattern", "invalidates": ["posPrepareInfill"]}])
+            with self.assertRaises(gbf.ManifestError):
+                gbf.check_reserved_keys([m])
 
 
 if __name__ == "__main__":
