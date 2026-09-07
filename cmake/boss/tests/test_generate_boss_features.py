@@ -295,5 +295,60 @@ class GlobalUniquenessTests(unittest.TestCase):
             gbf.check_global_uniqueness(manifests)  # must not raise
 
 
+class ConfigOptionsTests(unittest.TestCase):
+    def _one(self, tmp, options):
+        path = write_manifest(Path(tmp), "alpha", config_options=options)
+        return path, json.loads(path.read_text(encoding="utf-8"))
+
+    def test_valid_config_options_parse(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path, data = self._one(tmp, [
+                {"key": "filament_max_speed", "invalidates": ["psWipeTower", "psSkirtBrim"]},
+            ])
+            manifest = gbf.validate_manifest(path, data)
+            self.assertEqual(manifest.config_options[0]["key"], "filament_max_speed")
+
+    def test_empty_invalidates_is_allowed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path, data = self._one(tmp, [{"key": "some_option", "invalidates": []}])
+            manifest = gbf.validate_manifest(path, data)
+            self.assertEqual(manifest.config_options[0]["invalidates"], [])
+
+    def test_unknown_step_name_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path, data = self._one(tmp, [{"key": "some_option", "invalidates": ["psNotAStep"]}])
+            with self.assertRaises(gbf.ManifestError):
+                gbf.validate_manifest(path, data)
+
+    def test_missing_invalidates_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path, data = self._one(tmp, [{"key": "some_option"}])
+            with self.assertRaises(gbf.ManifestError):
+                gbf.validate_manifest(path, data)
+
+    def test_config_option_key_with_hyphen_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path, data = self._one(tmp, [{"key": "not-snake", "invalidates": []}])
+            with self.assertRaises(gbf.ManifestError):
+                gbf.validate_manifest(path, data)
+
+    def test_non_string_step_in_invalidates_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path, data = self._one(tmp, [{"key": "some_option", "invalidates": [{}]}])
+            with self.assertRaises(gbf.ManifestError):
+                gbf.validate_manifest(path, data)
+
+    def test_duplicate_config_option_key_across_manifests_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            features_dir = Path(tmp)
+            write_manifest(features_dir, "alpha", id=1, key="alpha",
+                           config_options=[{"key": "shared_opt", "invalidates": []}])
+            write_manifest(features_dir, "beta", id=2, key="beta",
+                           config_options=[{"key": "shared_opt", "invalidates": []}])
+            manifests = gbf.discover_manifests(features_dir)
+            with self.assertRaises(gbf.ManifestError):
+                gbf.check_global_uniqueness(manifests)
+
+
 if __name__ == "__main__":
     unittest.main()
