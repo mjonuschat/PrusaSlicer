@@ -3,6 +3,7 @@
 #include "Slic3r/Domain/Config.hpp"
 #include "Slic3r/Domain/ConfigDefsFDM.hpp"
 #include "Slic3r/Domain/GCodeFlavor.hpp"
+#include "boss/generated/BossExtrudeConfigOverrides.hpp"
 
 namespace Slic3r::Biz::Slicing {
 struct ExtrudeConfig
@@ -87,6 +88,8 @@ struct ExtrudeConfig
     bool only_retract_when_crossing_perimeters{};
     bool avoid_crossing_perimeters{};
     bool avoid_crossing_curled_overhangs{};
+
+    Slic3r::Boss::BossExtrudeConfigOverrides boss;
 };
 
 } // namespace Slic3r::Biz::Slicing

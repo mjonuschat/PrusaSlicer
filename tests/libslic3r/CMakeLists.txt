@@ -58,7 +58,8 @@ endif()
 if (BOSS_BUILD_FIXTURE_TESTS)
     target_sources(${_TEST_NAME}_tests PRIVATE
         test_boss_config_fixture.cpp
-        test_boss_invalidation_fixture.cpp)
+        test_boss_invalidation_fixture.cpp
+        test_boss_extrude_overrides_fixture.cpp)
 endif ()
 
 target_link_libraries(${_TEST_NAME}_tests test_common libslic3r slic3r-shared)
