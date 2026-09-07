@@ -1,0 +1,17 @@
+{
+  "name": "z-rotate",
+  "id": 10003,
+  "key": "z-rotate",
+  "trait": "Slic3r::Boss::ZRotateFeature",
+  "header": "boss/features/z-rotate/ZRotateFeature.hpp",
+  "label": "Z-rotate on import",
+  "components": {
+    "slic3r-domain": {
+      "capabilities": ["fdm_config"],
+      "sources": ["slic3r-domain/src/Slic3r/Domain/boss/ZRotateConfig.cpp"]
+    }
+  },
+  "config_options": [
+    {"key": "init_z_rotate", "invalidates": []}
+  ]
+}
