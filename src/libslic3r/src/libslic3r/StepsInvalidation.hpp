@@ -27,6 +27,8 @@ std::map<std::string, std::vector<Step>> merge_boss_invalidations(
     const std::map<std::string, std::vector<Step>>& boss
 );
 
+const std::map<std::string, std::vector<Step>>& invalidated_steps_table();
+
 PrintAndObjectSteps get_invalidated_steps(
     const PrintObjectRegions& current_regions,
     const PrintObjectRegions& next_regions
