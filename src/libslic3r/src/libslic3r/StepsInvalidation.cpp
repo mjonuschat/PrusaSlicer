@@ -1,5 +1,6 @@
 #include "StepsInvalidation.hpp"
 
+#include <stdexcept>
 #include <variant>
 
 #include "Slic3r/Domain/Constants.hpp"
@@ -128,6 +129,20 @@ std::vector<Step> steps(const std::vector<std::vector<Step>>& steps)
     return result;
 }
 
+std::map<std::string, std::vector<Step>> merge_boss_invalidations(
+    std::map<std::string, std::vector<Step>> base,
+    const std::map<std::string, std::vector<Step>>& boss
+)
+{
+    for (const auto& [key, value] : boss) {
+        const auto [it, inserted] = base.emplace(key, value);
+        if (!inserted) {
+            throw std::logic_error("BOSS invalidation key collides with an upstream key: " + key);
+        }
+    }
+    return base;
+}
+
 std::vector<Step> all_steps()
 {
     std::set<Step> result;
@@ -140,7 +155,7 @@ std::vector<Step> all_steps()
     return std::vector<Step>{result.begin(), result.end()};
 }
 
-const std::map<std::string, std::vector<Step>> invalidated_by{
+const std::map<std::string, std::vector<Step>> upstream_invalidated_by{
     {"arc_fitting", steps({propagate(posPerimeters)})},
     {"autoemit_temperature_commands", steps({propagate(psGCodeExport)})},
     {"automatic_extrusion_widths", steps({propagate(posPerimeters)})},
@@ -157,7 +172,6 @@ const std::map<std::string, std::vector<Step>> invalidated_by{
     {"before_layer_gcode", steps({propagate(psGCodeExport)})},
     {"between_objects_gcode", steps({propagate(psGCodeExport)})},
     {"binary_gcode", steps({propagate(psGCodeExport)})},
-    {"boss_fill_pattern", steps({propagate(posPrepareInfill)})},
     {"bottom_fill_pattern", steps({propagate(posInfill)})},
     {"bottom_solid_layers", steps({propagate(posPrepareInfill)})},
     {"bottom_solid_min_thickness", steps({propagate(posPrepareInfill)})},
@@ -548,6 +562,10 @@ const std::map<std::string, std::vector<Step>> invalidated_by{
     {"wiping_volumes_use_custom_matrix", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
     {"xy_size_compensation", steps({propagate(posSlice)})},
     {"z_offset", steps({propagate(psWipeTower), propagate(psSkirtBrim)})},
+};
+
+const std::map<std::string, std::vector<Step>> invalidated_by{
+    merge_boss_invalidations(upstream_invalidated_by, boss_step_invalidations())
 };
 
 

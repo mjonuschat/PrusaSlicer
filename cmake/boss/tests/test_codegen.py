@@ -187,5 +187,20 @@ class StepInvalidationEmitTests(unittest.TestCase):
                 gbf.check_reserved_keys([m])
 
 
+class GeneratedSourcesCMakeTests(unittest.TestCase):
+    def test_generated_sources_var_emitted_even_when_empty(self):
+        with tempfile.TemporaryDirectory() as out:
+            gbf.emit_sources_cmake([], "libslic3r", Path(out))
+            text = (Path(out) / "libslic3r" / "sources.cmake").read_text()
+            self.assertIn("BOSS_LIBSLIC3R_GENERATED_SOURCES", text)
+            self.assertIn("BossStepInvalidations.cpp", text)
+
+    def test_domain_generated_sources_include_keys_impl(self):
+        with tempfile.TemporaryDirectory() as out:
+            gbf.emit_sources_cmake([], "slic3r-domain", Path(out))
+            text = (Path(out) / "slic3r-domain" / "sources.cmake").read_text()
+            self.assertIn("BossConfigOptionKeys.cpp", text)
+
+
 if __name__ == "__main__":
     unittest.main()

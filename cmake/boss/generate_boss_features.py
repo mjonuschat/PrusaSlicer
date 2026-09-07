@@ -614,6 +614,14 @@ def emit_config_option_keys(manifests: list[Manifest], output_dir: Path) -> Path
     return impl_path
 
 
+# Generated translation units each target must compile, relative to output_dir.
+# Emitted for every target on every run, so the zero-manifest build still links.
+GENERATED_TARGET_SOURCES = {
+    "libslic3r": ["libslic3r/BossStepInvalidations.cpp"],
+    "slic3r-domain": ["slic3r-domain/BossConfigOptionKeys.cpp"],
+}
+
+
 def emit_sources_cmake(manifests: list[Manifest], target: str, output_dir: Path) -> Path:
     # Manifests declare sources relative to CMAKE_SOURCE_DIR/src/ (the repo's
     # top-level src/ directory), e.g. "slic3r-domain/src/Slic3r/Domain/boss/
@@ -632,6 +640,11 @@ def emit_sources_cmake(manifests: list[Manifest], target: str, output_dir: Path)
     var_name = "BOSS_" + target.upper().replace("-", "_") + "_SOURCES"
     quoted = " ".join(f'"${{CMAKE_SOURCE_DIR}}/src/{src}"' for src in sources)
     content = f"set({var_name} {quoted})\n"
+
+    generated = GENERATED_TARGET_SOURCES.get(target, [])
+    gen_var = "BOSS_" + target.upper().replace("-", "_") + "_GENERATED_SOURCES"
+    gen_quoted = " ".join(f'"${{BOSS_GENERATED_DIR}}/{rel}"' for rel in generated)
+    content += f"set({gen_var} {gen_quoted})\n"
 
     target_dir = output_dir / target
     target_dir.mkdir(parents=True, exist_ok=True)
