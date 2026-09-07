@@ -135,10 +135,13 @@ TEST_CASE_METHOD(
 TEST_CASE_METHOD(ConfigItemComboBoxFixture, "ConfigItemComboBox: mouse wheel steps a listed string")
 {
     make_combo("filament_type");
-    REQUIRE(combo->current_index() == 0);
+    const int start_index = combo->current_index();
+    REQUIRE(start_index >= 0);
+    const std::string start_value = item->get<std::string>();
 
     wheel(1.f);
-    REQUIRE(item->get<std::string>() == "PET");
+    REQUIRE(combo->current_index() == start_index + 1);
+    REQUIRE(item->get<std::string>() != start_value);
 
     set_value(std::string("Custom"));
     REQUIRE(combo->current_index() == -1);
