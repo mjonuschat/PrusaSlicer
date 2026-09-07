@@ -202,5 +202,29 @@ class GeneratedSourcesCMakeTests(unittest.TestCase):
             self.assertIn("BossConfigOptionKeys.cpp", text)
 
 
+class OverrideStructEmitTests(unittest.TestCase):
+    def _parse(self, src):
+        path = write_manifest(Path(src), "alpha", config_options=[
+            {"key": "filament_max_speed", "invalidates": [],
+             "store": {"home": "extrude_config", "field": "filament_max_speed",
+                       "kind": "per_extruder_double"}}])
+        return gbf.validate_manifest(path, json.loads(path.read_text()))
+
+    def test_empty_home_emits_struct_with_only_constructor(self):
+        with tempfile.TemporaryDirectory() as out:
+            gbf.emit_override_struct("wipe_tower", [], Path(out))
+            hdr = (Path(out) / "include" / "boss" / "generated" / "BossWipeTowerOverrides.hpp").read_text()
+            self.assertIn("struct BossWipeTowerOverrides", hdr)
+            self.assertIn("explicit BossWipeTowerOverrides(const Slic3r::Domain::ConfigView& config);", hdr)
+
+    def test_stored_field_appears_in_header_and_impl(self):
+        with tempfile.TemporaryDirectory() as src, tempfile.TemporaryDirectory() as out:
+            gbf.emit_override_struct("extrude_config", [self._parse(src)], Path(out))
+            hdr = (Path(out) / "include" / "boss" / "generated" / "BossExtrudeConfigOverrides.hpp").read_text()
+            impl = (Path(out) / "libslic3r" / "BossExtrudeConfigOverrides.cpp").read_text()
+            self.assertIn("std::vector<double> filament_max_speed{};", hdr)
+            self.assertIn('filament_max_speed{config.get<std::vector<double>>("filament_max_speed")}', impl)
+
+
 if __name__ == "__main__":
     unittest.main()
