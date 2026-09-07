@@ -598,6 +598,7 @@ WipeTower::WipeTower(
     size_t initial_tool,
     const std::vector<unsigned>& extruder_candidates
 ) :
+    boss(config),
     m_semm(config.get<bool>("single_extruder_multi_material")),
     m_wipe_tower_pos(pos),
     m_wipe_tower_width(float(config.get<double>("wipe_tower_width"))),
