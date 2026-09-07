@@ -13,13 +13,48 @@ lost during the rebase and squash based workflow.
   (Mainsail/Fluidd) via `EXCLUDE_OBJECT_DEFINE`, so their outlines show up
   in the object list, but their G-code is never wrapped as excludable, so
   "Cancel Object" can never remove them and break the print.
+- The filament type list now includes more material presets, so a profile
+  can name the exact material you print with.
+- Output filenames can now use the `bed_number` G-code placeholder, so
+  multi-bed print jobs can be named and organized automatically.
+- Each object can now set its own extrusion multiplier, so you can adjust
+  flow for a single part without changing the filament profile.
+- Each filament profile can now set a maximum print speed, so the printer
+  never exceeds a speed that filament cannot handle.
+- Imported models can now apply a configurable Z-axis rotation
+  automatically, so parts that always need reorienting load already
+  turned the right way.
+- Added the CrossHatch infill pattern, which alternates line direction
+  between layers for stronger, quieter prints at high speed.
+- Added the Flowsnake infill pattern, with its own bridging-angle
+  handling for cleaner bridges over the pattern.
+- The wipe tower can now disable filament ramming, cooling moves, or
+  both, so a tuned setup is not overridden by the default purge behavior.
+- The wipe tower now supports a configurable maximum purge speed, so
+  purge moves stay within a speed the setup can handle.
+- Linear advance can now be force-disabled at wipe tower purge points, so
+  purge extrusion does not fight pressure advance tuning.
+- Automatic toolchange command emission can now be disabled, so custom
+  toolchange G-code is not duplicated by the automatic sequence.
+- The first extruder can now prime at the start of the print, so filament
+  is flowing before the first layer begins.
+- All toolchangers can now be force-preheated together, so every tool is
+  ready before the print reaches its first toolchange.
 
 ### Changed
+
+- The `{month}`, `{day}`, `{hour}`, `{minute}`, and `{second}` G-code
+  placeholders now zero-pad single-digit values, so generated filenames
+  and timestamps sort and line up correctly.
+- Seam moves now show in the G-code preview by default, so you can
+  review seam placement without changing a setting first.
 
 ### Fixed
 
 - Flowsnake infill now uses wider line spacing and a thinner bead, so the
   pattern reads as a visible lattice instead of a dense, squished blob.
+- 3D Honeycomb infill now bridges with the correct geometry and
+  direction, fixing gaps and misaligned bridges over open spans. (#24)
 
 ### Ported
 
