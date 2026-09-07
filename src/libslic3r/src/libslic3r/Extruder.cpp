@@ -73,6 +73,16 @@ std::pair<double, double> Extruder::unretract()
     return std::make_pair(dE, emitE);
 }
 
+std::pair<double, double> Extruder::prime()
+{
+    if (m_config->use_relative_e_distances)
+        m_E = 0.;
+    auto dE = GCodeFormatter::quantize_e(this->prime_length());
+    m_E          += dE;
+    m_absolute_E += dE;
+    return std::make_pair(dE, m_E);
+}
+
 // Setting the retract state from the script.
 // Sets current retraction value & restart extra filament amount if retracted > 0.
 void Extruder::set_retracted(double retracted, double restart_extra)
@@ -110,6 +120,11 @@ double Extruder::used_filament() const
 double Extruder::filament_diameter() const
 {
     return m_config->filament_diameter.at(m_id);
+}
+
+double Extruder::prime_length() const
+{
+    return m_config->prime_length_at_start.at(m_id);
 }
 
 double Extruder::filament_density() const
