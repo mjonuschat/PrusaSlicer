@@ -12,6 +12,7 @@
     }
   },
   "config_options": [
-    {"key": "boss_test_fixture_flag", "invalidates": ["psGCodeExport"]}
+    {"key": "boss_test_fixture_flag", "invalidates": ["psGCodeExport"],
+     "store": {"home": "extrude_config", "field": "boss_test_fixture_flag", "kind": "scalar_bool"}}
   ]
 }
