@@ -553,12 +553,17 @@ void Layer::make_fills(FillAdaptive::Octree* adaptive_fill_octree, FillAdaptive:
 		        	flow_mm3_per_mm = new_flow.mm3_per_mm();
 		        	flow_width      = new_flow.width();
 		        }
+		        flow_mm3_per_mm *= f->flow_correction();
+		        flow_width      *= f->flow_correction();
                 // Save into layer.
                 ExtrusionEntityCollection *eec        = new ExtrusionEntityCollection();
                 auto                       fill_begin = uint32_t(layerm.fills().size());
                 // Only concentric fills are not sorted.
                 eec->no_sort = f->no_sort();
                 if (params.use_arachne) {
+                    // This branch rebuilds new_flow from spacing below and never reapplies
+                    // f->flow_correction(), unlike the branch above.
+                    assert(f->flow_correction() == 1.);
                     for (const ThickPolyline &thick_polyline : thick_polylines) {
                         Flow new_flow = surface_fill.params.flow.with_spacing(float(f->spacing));
 
