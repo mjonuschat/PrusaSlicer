@@ -68,15 +68,15 @@ TEST_CASE_METHOD(
 {
     boost::filesystem::path stl_path = write_temp_box_stl(20., 10., 5.);
 
-    const Domain::ElementRefs new_instances = FileLoadingLogic::import_files_and_add_to_scene(
+    const FileLoadingLogic::ImportToSceneResult import_result = FileLoadingLogic::import_files_and_add_to_scene(
         {stl_path}, 1, scene_interactor, Domain::Vec2d{0., 0.}, nullptr, 90.
     );
 
     boost::filesystem::remove(stl_path);
 
-    REQUIRE(new_instances.size() == 1);
+    REQUIRE(import_result.instances.size() == 1);
     Domain::Project& project           = project_interactor.selected_project();
-    const Domain::ModelObject* object  = project.find_object_by_id(new_instances.front().object_id);
+    const Domain::ModelObject* object  = project.find_object_by_id(import_result.instances.front().object_id);
     REQUIRE(object != nullptr);
     REQUIRE(object->volumes.size() == 1);
 
@@ -94,15 +94,15 @@ TEST_CASE_METHOD(
 {
     boost::filesystem::path stl_path = write_temp_box_stl(20., 10., 5.);
 
-    const Domain::ElementRefs new_instances = FileLoadingLogic::import_files_and_add_to_scene(
+    const FileLoadingLogic::ImportToSceneResult import_result = FileLoadingLogic::import_files_and_add_to_scene(
         {stl_path}, 1, scene_interactor, Domain::Vec2d{0., 0.}, nullptr, 0.
     );
 
     boost::filesystem::remove(stl_path);
 
-    REQUIRE(new_instances.size() == 1);
+    REQUIRE(import_result.instances.size() == 1);
     Domain::Project& project          = project_interactor.selected_project();
-    const Domain::ModelObject* object = project.find_object_by_id(new_instances.front().object_id);
+    const Domain::ModelObject* object = project.find_object_by_id(import_result.instances.front().object_id);
     REQUIRE(object != nullptr);
     REQUIRE(object->volumes.size() == 1);
 
