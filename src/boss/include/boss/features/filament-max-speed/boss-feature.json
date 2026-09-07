@@ -9,6 +9,10 @@
     "slic3r-domain": {
       "capabilities": ["fdm_config"],
       "sources": ["slic3r-domain/src/Slic3r/Domain/boss/FilamentMaxSpeedConfig.cpp"]
+    },
+    "libslic3r": {
+      "capabilities": ["wipe_tower_speed_cap"],
+      "sources": ["libslic3r/src/libslic3r/boss/wipe_tower/FilamentMaxSpeedCap.cpp"]
     }
   },
   "config_options": [
