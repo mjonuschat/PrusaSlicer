@@ -18,6 +18,8 @@ void PostProcessorConfig::reset()
 {
     export_remaining_time_enabled = false;
     do_M104_backtrace = false;
+    preheat_time = 120.0f;
+    preheat_steps = 10;
     std::for_each(time_machines.begin(), time_machines.end(), [](TimeMachineData& m) { m.reset(); });
     extruder_temps_config.clear();
     extruder_temps_first_layer_config.clear();

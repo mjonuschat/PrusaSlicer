@@ -38,6 +38,8 @@ struct PostProcessorConfig
 {
     bool export_remaining_time_enabled{ false };
     bool do_M104_backtrace{ false };
+    float preheat_time{ 120.0f };
+    unsigned int preheat_steps{ 10 };
     std::array<TimeMachineData, TIME_MODES_COUNT> time_machines;
     std::vector<int> extruder_temps_config;
     std::vector<int> extruder_temps_first_layer_config;
