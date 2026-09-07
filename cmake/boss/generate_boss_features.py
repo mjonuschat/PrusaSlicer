@@ -287,6 +287,31 @@ def validate_manifest(path: Path, data: dict) -> Manifest:
                     f"-- known steps are {sorted(STEP_NAMES)}"
                 )
 
+        store = entry.get("store")
+        if store is not None:
+            if not isinstance(store, dict):
+                raise ManifestError(f"{path}: config_options entry {opt_key!r} 'store' must be an object")
+            if store.keys() - {"home", "field", "kind"}:
+                raise ManifestError(
+                    f"{path}: config_options entry {opt_key!r} store has unknown key(s): "
+                    f"{sorted(store.keys() - {'home', 'field', 'kind'})}"
+                )
+            if store.get("home") not in HOME_REGISTRIES:
+                raise ManifestError(
+                    f"{path}: config_options entry {opt_key!r} store.home {store.get('home')!r} "
+                    f"is unknown -- known homes are {sorted(HOME_REGISTRIES)}"
+                )
+            if store.get("kind") not in STORAGE_KINDS:
+                raise ManifestError(
+                    f"{path}: config_options entry {opt_key!r} store.kind {store.get('kind')!r} "
+                    f"is unknown -- known kinds are {sorted(STORAGE_KINDS)}"
+                )
+            if not isinstance(store.get("field"), str) or not is_valid_cpp_identifier(store["field"]):
+                raise ManifestError(
+                    f"{path}: config_options entry {opt_key!r} store.field {store.get('field')!r} "
+                    f"is not a valid, non-keyword C++ identifier"
+                )
+
     return Manifest(
         path=path,
         name=name,
@@ -318,6 +343,7 @@ def check_global_uniqueness(manifests: list[Manifest]) -> None:
     seen_ids: dict[int, Path] = {}
     seen_keys: dict[str, Path] = {}
     seen_option_keys: dict[str, Path] = {}
+    seen_home_fields: dict[tuple[str, str], Path] = {}
     for m in manifests:
         if m.name in seen_names:
             raise ManifestError(
@@ -338,6 +364,15 @@ def check_global_uniqueness(manifests: list[Manifest]) -> None:
                     f"(also declared in {seen_option_keys[opt['key']]})"
                 )
             seen_option_keys[opt["key"]] = m.path
+            store = opt.get("store")
+            if store:
+                home_field = (store["home"], store["field"])
+                if home_field in seen_home_fields:
+                    raise ManifestError(
+                        f"{m.path}: duplicate store field {store['field']!r} in home "
+                        f"{store['home']!r} (also declared in {seen_home_fields[home_field]})"
+                    )
+                seen_home_fields[home_field] = m.path
         seen_names[m.name] = m.path
         seen_ids[m.id] = m.path
         seen_keys[m.key] = m.path
@@ -360,6 +395,38 @@ CAPABILITY_REGISTRIES = {
         "template": "Slic3r::Boss::BossFillRegistry",
         "template_header": "boss/foundation/BossFillRegistry.hpp",
         "output_header": "BossFills.hpp",
+    },
+}
+
+# Storage homes: BOSS-owned override structs the generator writes and each
+# upstream class embeds once. Each entry is a full contract for the home.
+HOME_REGISTRIES = {
+    "extrude_config": {
+        "target": "libslic3r",
+        "struct": "BossExtrudeConfigOverrides",
+        "output_header": "BossExtrudeConfigOverrides.hpp",
+        "includes": ["Slic3r/Domain/Config.hpp", "Slic3r/Domain/ConfigDefsFDM.hpp"],
+    },
+    "wipe_tower": {
+        "target": "libslic3r",
+        "struct": "BossWipeTowerOverrides",
+        "output_header": "BossWipeTowerOverrides.hpp",
+        "includes": ["Slic3r/Domain/Config.hpp"],
+    },
+}
+
+# Storage kinds model the field's C++ type and how it reads from the config
+# view. Raw storage only: never resolves FloatOrPercentage or reduces by context.
+STORAGE_KINDS = {
+    "scalar_double": {"type": "double", "read": 'config.get<double>("{key}")'},
+    "scalar_bool": {"type": "bool", "read": 'config.get<bool>("{key}")'},
+    "per_extruder_double": {
+        "type": "std::vector<double>",
+        "read": 'config.get<std::vector<double>>("{key}")',
+    },
+    "per_extruder_float_or_percent": {
+        "type": "std::vector<Slic3r::Domain::FloatOrPercentage>",
+        "read": 'config.get<std::vector<Slic3r::Domain::FloatOrPercentage>>("{key}")',
     },
 }
 
