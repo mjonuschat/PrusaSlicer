@@ -681,12 +681,79 @@ def emit_config_option_keys(manifests: list[Manifest], output_dir: Path) -> Path
     return impl_path
 
 
+def _fields_for_home(manifests: list[Manifest], home: str) -> list[tuple[str, dict]]:
+    fields = []
+    for m in manifests:
+        for opt in m.config_options:
+            store = opt.get("store")
+            if store and store["home"] == home:
+                fields.append((store["field"], {"key": opt["key"], "kind": store["kind"]}))
+    return sorted(fields, key=lambda pair: pair[0])
+
+
+def emit_override_struct(home: str, manifests: list[Manifest], output_dir: Path) -> Path:
+    reg = HOME_REGISTRIES[home]
+    fields = _fields_for_home(manifests, home)
+
+    header = [
+        "// GENERATED FILE -- do not edit. Produced by cmake/boss/generate_boss_features.py.",
+        "#pragma once",
+        "#include <vector>",
+    ]
+    for inc in reg["includes"]:
+        header.append(f'#include "{inc}"')
+    header += [
+        "",
+        "namespace Slic3r::Boss {",
+        f'struct {reg["struct"]}',
+        "{",
+        f'    explicit {reg["struct"]}(const Slic3r::Domain::ConfigView& config);',
+        "",
+    ]
+    for field_name, meta in fields:
+        header.append(f'    {STORAGE_KINDS[meta["kind"]]["type"]} {field_name}{{}};')
+    header += ["};", "} // namespace Slic3r::Boss", ""]
+
+    header_dir = output_dir / "include" / "boss" / "generated"
+    header_dir.mkdir(parents=True, exist_ok=True)
+    (header_dir / reg["output_header"]).write_text("\n".join(header), encoding="utf-8")
+
+    impl = [
+        "// GENERATED FILE -- do not edit. Produced by cmake/boss/generate_boss_features.py.",
+        f'#include "boss/generated/{reg["output_header"]}"',
+        "",
+        "namespace Slic3r::Boss {",
+        f'{reg["struct"]}::{reg["struct"]}(const Slic3r::Domain::ConfigView& config)',
+    ]
+    if fields:
+        init_lines = [
+            f'{name}{{{STORAGE_KINDS[meta["kind"]]["read"].format(key=meta["key"])}}}'
+            for name, meta in fields
+        ]
+        impl.append(f"    : {init_lines[0]}")
+        impl.extend(f"    , {line}" for line in init_lines[1:])
+        impl += ["{", "}", "} // namespace Slic3r::Boss", ""]
+    else:
+        impl += ["{", "    (void) config;", "}", "} // namespace Slic3r::Boss", ""]
+
+    target_dir = output_dir / reg["target"]
+    target_dir.mkdir(parents=True, exist_ok=True)
+    impl_path = target_dir / f'{reg["struct"]}.cpp'
+    impl_path.write_text("\n".join(impl), encoding="utf-8")
+    return impl_path
+
+
 # Generated translation units each target must compile, relative to output_dir.
 # Emitted for every target on every run, so the zero-manifest build still links.
 GENERATED_TARGET_SOURCES = {
-    "libslic3r": ["libslic3r/BossStepInvalidations.cpp"],
+    "libslic3r": [
+        "libslic3r/BossStepInvalidations.cpp",
+    ],
     "slic3r-domain": ["slic3r-domain/BossConfigOptionKeys.cpp"],
 }
+GENERATED_TARGET_SOURCES["libslic3r"] += [
+    f'{reg["target"]}/{reg["struct"]}.cpp' for reg in HOME_REGISTRIES.values()
+]
 
 
 def emit_sources_cmake(manifests: list[Manifest], target: str, output_dir: Path) -> Path:
@@ -738,6 +805,8 @@ def generate(features_dir: Path, output_dir: Path) -> int:
         emit_fill_pattern_key(manifests, include_dir)
         emit_step_invalidations(manifests, output_dir)
         emit_config_option_keys(manifests, output_dir)
+        for home in HOME_REGISTRIES:
+            emit_override_struct(home, manifests, output_dir)
     except ManifestError as exc:
         print(f"boss feature generation failed: {exc}", file=sys.stderr)
         return 1
