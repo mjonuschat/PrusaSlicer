@@ -966,7 +966,7 @@ void WipeTower::toolchange_Unload(
 
     if (do_ramming) {
         writer.travel(ramming_start_pos); // move to starting position
-        if (!m_enable_pressure_advance_during_ramming)
+        if (should_disable_linear_advance_during_ramming())
             writer.disable_linear_advance();
         if (ramming_temperature_delta != 0)
             writer.set_extruder_temp(old_temperature + ramming_temperature_delta);
@@ -1076,7 +1076,7 @@ void WipeTower::toolchange_Unload(
 
         float speed_inc = (final_speed - initial_speed) / (2.f * number_of_cooling_moves - 1.f);
 
-        if (m_enable_pressure_advance_during_ramming)
+        if (should_disable_linear_advance_during_cooling())
             writer.disable_linear_advance();
 
         writer.suppress_preview()
