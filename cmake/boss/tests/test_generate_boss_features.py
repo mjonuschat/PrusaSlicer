@@ -350,5 +350,50 @@ class ConfigOptionsTests(unittest.TestCase):
                 gbf.check_global_uniqueness(manifests)
 
 
+class StoreValidationTests(unittest.TestCase):
+    def _one(self, tmp, store):
+        path = write_manifest(Path(tmp), "alpha", config_options=[
+            {"key": "some_option", "invalidates": [], "store": store}])
+        return path, json.loads(path.read_text(encoding="utf-8"))
+
+    def test_valid_store_parses(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path, data = self._one(tmp, {"home": "extrude_config", "field": "some_option",
+                                         "kind": "per_extruder_double"})
+            m = gbf.validate_manifest(path, data)
+            self.assertEqual(m.config_options[0]["store"]["home"], "extrude_config")
+
+    def test_unknown_home_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path, data = self._one(tmp, {"home": "nope", "field": "x", "kind": "scalar_bool"})
+            with self.assertRaises(gbf.ManifestError):
+                gbf.validate_manifest(path, data)
+
+    def test_unknown_kind_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path, data = self._one(tmp, {"home": "wipe_tower", "field": "x", "kind": "nope"})
+            with self.assertRaises(gbf.ManifestError):
+                gbf.validate_manifest(path, data)
+
+    def test_non_identifier_field_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path, data = self._one(tmp, {"home": "wipe_tower", "field": "1bad", "kind": "scalar_bool"})
+            with self.assertRaises(gbf.ManifestError):
+                gbf.validate_manifest(path, data)
+
+    def test_duplicate_home_field_across_manifests_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            features_dir = Path(tmp)
+            write_manifest(features_dir, "alpha", id=1, key="alpha", config_options=[
+                {"key": "opt_a", "invalidates": [],
+                 "store": {"home": "wipe_tower", "field": "dup", "kind": "scalar_bool"}}])
+            write_manifest(features_dir, "beta", id=2, key="beta", config_options=[
+                {"key": "opt_b", "invalidates": [],
+                 "store": {"home": "wipe_tower", "field": "dup", "kind": "scalar_bool"}}])
+            manifests = gbf.discover_manifests(features_dir)
+            with self.assertRaises(gbf.ManifestError):
+                gbf.check_global_uniqueness(manifests)
+
+
 if __name__ == "__main__":
     unittest.main()
