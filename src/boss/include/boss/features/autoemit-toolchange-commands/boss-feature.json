@@ -1,0 +1,17 @@
+{
+  "name": "autoemit-toolchange-commands",
+  "id": 10007,
+  "key": "autoemit-toolchange-commands",
+  "trait": "Slic3r::Boss::AutoemitToolchangeCommandsFeature",
+  "header": "boss/features/autoemit-toolchange-commands/AutoemitToolchangeCommandsFeature.hpp",
+  "label": "Disable automatic tool-change command emission",
+  "components": {
+    "slic3r-domain": {
+      "capabilities": ["fdm_config"],
+      "sources": ["slic3r-domain/src/Slic3r/Domain/boss/AutoemitToolchangeCommandsConfig.cpp"]
+    }
+  },
+  "config_options": [
+    {"key": "autoemit_toolchange_commands", "invalidates": ["psGCodeExport"]}
+  ]
+}
