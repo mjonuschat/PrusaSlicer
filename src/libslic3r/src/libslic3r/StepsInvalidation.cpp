@@ -568,6 +568,10 @@ const std::map<std::string, std::vector<Step>> invalidated_by{
     merge_boss_invalidations(upstream_invalidated_by, boss_step_invalidations())
 };
 
+const std::map<std::string, std::vector<Step>>& invalidated_steps_table()
+{
+    return invalidated_by;
+}
 
 std::set<Step> handle_special_cases(
     const ConfigView& old_config,

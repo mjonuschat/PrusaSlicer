@@ -1,6 +1,7 @@
 Build
 Build.bat
 /build/
+/build-fixtures/
 MYMETA.json
 MYMETA.yml
 _build
