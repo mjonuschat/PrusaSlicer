@@ -26,6 +26,7 @@ public:
     std::pair<double, double> extrude(double dE);
     std::pair<double, double> retract(double retract_length, double restart_extra);
     std::pair<double, double> unretract();
+    std::pair<double, double> prime();
     // How much to retract yet before retract_length is reached?
     // The value is quantized to G-code resolution.
     double                    retract_to_go(double retract_length) const;
@@ -66,6 +67,7 @@ public:
     double retract_restart_extra() const;
     double retract_length_toolchange() const;
     double retract_restart_extra_toolchange() const;
+    double prime_length() const;
 
 private:
     // Private constructor to create a key for a search in std::set.
