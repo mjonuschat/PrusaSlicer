@@ -6,6 +6,7 @@
 #include <cmath>
 #include <functional>
 #include <map>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -29,6 +30,8 @@
 #include "Slic3r/Domain/BoundingBox.hpp"
 #include "Slic3r/Domain/TriangleSelector.hpp"
 #include "Slic3r/Biz/Algorithms/AABBTreeLines.hpp"
+#include "boss/features/flowsnake/FlowsnakeFeature.hpp"
+#include "boss/generated/BossFills.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/GCode/ExtrusionProcessor.hpp"
@@ -1604,6 +1607,11 @@ template<typename T> void debug_draw(std::string name, const T& a, const T& b, c
 }
 #endif
 
+double boss_flowsnake_bridging_angle_addition(std::optional<int> boss_fill_pattern_id)
+{
+    return (boss_fill_pattern_id && *boss_fill_pattern_id == Slic3r::Boss::FlowsnakeFeature::id) ? (1.0 / 6.0) * PI : 0.0;
+}
+
 // This method applies bridge flow to the first internal solid layer above sparse infill.
 void PrintObject::bridge_over_infill()
 {
@@ -1929,7 +1937,8 @@ void PrintObject::bridge_over_infill()
     };
 
     // LAMBDA do determine optimal bridging angle
-    auto determine_bridging_angle = [](const Polygons &bridged_area, const Lines &anchors, Domain::InfillPattern dominant_pattern) {
+    auto determine_bridging_angle = [](const Polygons &bridged_area, const Lines &anchors, Domain::InfillPattern dominant_pattern,
+                                        std::optional<int> boss_fill_pattern_id) {
         AABBTreeLines::LinesDistancer<Line> lines_tree(anchors);
 
         std::map<double, int> counted_directions;
@@ -2002,6 +2011,7 @@ void PrintObject::bridge_over_infill()
         case Domain::InfillPattern::ipOctagramSpiral: bridging_angle += (1.0 / 16.0) * PI; break;
         default: break;
         }
+        bridging_angle += boss_flowsnake_bridging_angle_addition(boss_fill_pattern_id);
 
         return bridging_angle;
     };
@@ -2308,12 +2318,21 @@ void PrintObject::bridge_over_infill()
 
                     double bridging_angle = 0;
                     if (!anchors.empty()) {
+                        std::optional<int> boss_fill_pattern_id;
+                        if (Slic3r::Boss::BossFills::has_any_features) {
+                            const Domain::Boss::FillPatternKey boss_key =
+                                candidate.region->region().extruder_config_value<Domain::Boss::FillPatternKey>("boss_fill_pattern", FlowRole::frInfill);
+                            boss_fill_pattern_id = Slic3r::Boss::BossFills::id_for_key(boss_key);
+                            assert((boss_key == Domain::Boss::FillPatternKey::None || boss_fill_pattern_id.has_value())
+                                && "boss_fill_pattern resolved to a known enum value with no matching feature in this build's registry");
+                        }
                         bridging_angle = determine_bridging_angle(area_to_be_bridge, Algorithms::Polyline::to_lines(anchors),
-                                                                  candidate.region->region().extruder_config_value<Domain::InfillPattern>("fill_pattern", FlowRole::frInfill));
+                                                                  candidate.region->region().extruder_config_value<Domain::InfillPattern>("fill_pattern", FlowRole::frInfill),
+                                                                  boss_fill_pattern_id);
                     } else {
                         // use expansion boundaries as anchors.
                         // Also, use Infill pattern that is neutral for angle determination, since there are no infill lines.
-                        bridging_angle = determine_bridging_angle(area_to_be_bridge, Algorithms::Polyline::to_lines(boundary_plines), Domain::InfillPattern::ipLine);
+                        bridging_angle = determine_bridging_angle(area_to_be_bridge, Algorithms::Polyline::to_lines(boundary_plines), Domain::InfillPattern::ipLine, std::nullopt);
                     }
 
                     boundary_plines.insert(boundary_plines.end(), anchors.begin(), anchors.end());
