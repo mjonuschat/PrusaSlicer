@@ -17,6 +17,8 @@
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Cartesian_converter.h>
 
+//#define EMBOSS_CUT_DEBUG_OUT
+
 using namespace Slic3r;
 using namespace Slic3r::Biz;
 using Domain::Index3;
@@ -1201,7 +1203,9 @@ TEST_CASE("Emboss extrude cut", "[Emboss-Cut]")
             break;
         }
     }
+#ifdef EMBOSS_CUT_DEBUG_OUT
     ::CGAL::IO::write_OFF("c:\\data\\temp\\constrained.off", cgal_object);
+#endif
 
     // Seed fill the other faces inside the region.
     for (Visitor::face_descriptor fi : cgal_object.faces()) {
@@ -1263,7 +1267,9 @@ TEST_CASE("Emboss extrude cut", "[Emboss-Cut]")
             break;
         }
     }
+#ifdef EMBOSS_CUT_DEBUG_OUT
     ::CGAL::IO::write_OFF("c:\\data\\temp\\filled.off", cgal_object);
+#endif
 
     // Mapping of its_extruded faces to source faces.
     enum class FaceState : int8_t
@@ -1415,7 +1421,9 @@ TEST_CASE("Emboss extrude cut", "[Emboss-Cut]")
         }
     }
 
+#ifdef EMBOSS_CUT_DEBUG_OUT
     its_write_obj(its_extruded, "c:\\data\\temp\\text-extruded.obj");
+#endif
 
     indexed_triangle_set edges_its;
     std::vector<Vec3f> edges_its_colors;
@@ -1439,7 +1447,9 @@ TEST_CASE("Emboss extrude cut", "[Emboss-Cut]")
             edges_its_colors.emplace_back(color);
             edges_its_colors.emplace_back(color);
         }
+#ifdef EMBOSS_CUT_DEBUG_OUT
     its_write_obj(edges_its, edges_its_colors, "c:\\data\\temp\\corefined-edges.obj");
+#endif
 
     // MeshBoolean::cgal::minus(cube, cube2);
 
