@@ -3452,6 +3452,10 @@ double cap_speed(
     if (filament_volumetric_cap > 0) {
         speed = std::min(speed, filament_volumetric_cap / path_attr.mm3_per_mm);
     }
+    const double filament_max_speed{config.boss.filament_max_speed.at(extruder_id)};
+    if (filament_max_speed > 0) {
+        speed = std::min(speed, filament_max_speed);
+    }
     if (path_attr.role == ExtrusionRole::InternalInfill) {
         const double infill_cap{
             path_attr.maybe_self_crossing ?
