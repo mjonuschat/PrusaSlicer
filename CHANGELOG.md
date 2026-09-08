@@ -40,6 +40,8 @@ lost during the rebase and squash based workflow.
   is flowing before the first layer begins.
 - All toolchangers can now be force-preheated together, so every tool is
   ready before the print reaches its first toolchange.
+- Added an alternate extra perimeter option, which adds one extra wall
+  every other layer for stronger prints with fill.
 
 ### Changed
 
