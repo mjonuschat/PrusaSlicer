@@ -54,6 +54,9 @@ lost during the rebase and squash based workflow.
   "Lower" and "Upper" small perimeter length, set the length range over
   which a perimeter's speed ramps between the small perimeter speed and
   the normal perimeter speed, instead of switching at a fixed length.
+- Added three options to reverse extrusion direction on odd layers, for
+  internal perimeters, overhang perimeters, and infill separately, to
+  reduce stress and warping and improve steep overhangs.
 
 ### Changed
 
