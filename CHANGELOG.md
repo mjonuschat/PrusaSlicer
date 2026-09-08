@@ -50,6 +50,10 @@ lost during the rebase and squash based workflow.
   "Ext. perimeter/perimeter overlap" and "Perimeter/perimeter overlap",
   control how much adjacent walls overlap, so you can tune wall bonding
   and total wall thickness independently of extrusion width.
+- Added a configurable small perimeter speed threshold. Two new options,
+  "Lower" and "Upper" small perimeter length, set the length range over
+  which a perimeter's speed ramps between the small perimeter speed and
+  the normal perimeter speed, instead of switching at a fixed length.
 
 ### Changed
 
