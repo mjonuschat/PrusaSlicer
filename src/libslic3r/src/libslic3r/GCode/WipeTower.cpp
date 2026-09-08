@@ -1208,6 +1208,13 @@ void WipeTower::toolchange_Load(
     }
 }
 
+float WipeTower::apply_speed_caps(float target_speed, const std::vector<float>& speed_caps)
+{
+    for (float cap : speed_caps)
+        target_speed = std::min(target_speed, cap);
+    return target_speed;
+}
+
 // Wipe the newly loaded filament until the end of the assigned wipe area.
 void WipeTower::toolchange_Wipe(
 	WipeTowerWriter &writer,
@@ -1241,9 +1248,10 @@ void WipeTower::toolchange_Wipe(
         x_to_wipe = std::max(x_to_wipe, x_to_fill_cleaning_box);
     }
 
-    float target_speed = is_first_layer() ? m_first_layer_infill_speed * 60.f : m_infill_speed * 60.f;
-    for (float cap : m_speed_caps)
-        target_speed = std::min(target_speed, cap);
+    float target_speed = apply_speed_caps(
+        is_first_layer() ? m_first_layer_infill_speed * 60.f : m_infill_speed * 60.f,
+        m_speed_caps
+    );
     float wipe_speed = 0.33f * target_speed;
 
     // if there is less than 2.5*line_width to the edge, advance straightaway (there is likely a blob anyway)
