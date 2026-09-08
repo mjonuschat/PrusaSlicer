@@ -6,6 +6,7 @@
 #include "Slic3r/Domain/SlicingId.hpp"
 #include "Slic3r/Exception.hpp"
 #include "libslic3r/Print.hpp"
+#include "libslic3r/boss/perimeter/overlap/PerimeterOverlapValidation.hpp"
 #include "libslic3r/Brim.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Extruder.hpp"
@@ -656,6 +657,8 @@ DONE:;
     if (extruders.empty() && !m_objects.empty()) {
         errors.push_back(Error{ErrorCode::NoExtruders});
     }
+
+    Boss::validate_perimeter_overlap(*this, warnings);
 
     if (m_config.get<bool>("avoid_crossing_perimeters")
         && m_config.get<bool>("avoid_crossing_curled_overhangs"))
