@@ -1,4 +1,5 @@
 ///|/ Copyright (c) 2026 Morton Jonuschat @mjonuschat
+///|/ Copyright (c) OrcaSlicer 2023 Noisyfox @Noisyfox
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
@@ -22,6 +23,14 @@ bool ReverseOddLayerPolicy::reverse_perimeter(
 bool ReverseOddLayerPolicy::reverse_infill(bool is_odd_layer, bool infill_reverse)
 {
     return is_odd_layer && infill_reverse;
+}
+
+bool ReverseOddLayerPolicy::resolve_infill_flip(bool natural_flipped, bool is_odd_layer, bool infill_reverse)
+{
+    if (!infill_reverse) {
+        return natural_flipped;
+    }
+    return reverse_infill(is_odd_layer, infill_reverse);
 }
 
 } // namespace Slic3r::Boss
