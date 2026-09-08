@@ -42,6 +42,10 @@ lost during the rebase and squash based workflow.
   ready before the print reaches its first toolchange.
 - Added an alternate extra perimeter option, which adds one extra wall
   every other layer for stronger prints with fill.
+- Added an "External perimeters first for holes" option, so holes can
+  print their outer wall first independently of contours, with a minimum
+  hole size and a first-layers disable so it does not affect fillets or
+  chamfers.
 
 ### Changed
 
