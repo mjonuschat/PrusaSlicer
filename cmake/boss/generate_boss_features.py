@@ -203,19 +203,23 @@ def validate_manifest(path: Path, data: dict) -> Manifest:
             raise ManifestError(
                 f"{path}: component target names must be lowercase kebab-case strings, got {target!r}"
             )
-        if not isinstance(spec, dict) or "capabilities" not in spec:
-            raise ManifestError(
-                f"{path}: components.{target} must declare a 'capabilities' list"
-            )
+        if not isinstance(spec, dict):
+            raise ManifestError(f"{path}: components.{target} must be an object")
         unknown_component_keys = spec.keys() - {"capabilities", "sources"}
         if unknown_component_keys:
             raise ManifestError(
                 f"{path}: components.{target} has unknown key(s): {sorted(unknown_component_keys)}"
             )
-        capabilities = spec["capabilities"]
-        if not isinstance(capabilities, list) or not capabilities:
+        # 'capabilities' is optional -- a component that only contributes
+        # plain source files (no registry dispatch) declares 'sources' with
+        # no capabilities at all, rather than inventing a placeholder
+        # capability or hand-editing a target's own CMakeLists.txt. At
+        # least one of the two must be non-empty, or the component
+        # declares nothing for the generator to do.
+        capabilities = spec.get("capabilities", [])
+        if not isinstance(capabilities, list):
             raise ManifestError(
-                f"{path}: components.{target}.capabilities must be a non-empty list"
+                f"{path}: components.{target}.capabilities must be a list if present"
             )
         for cap in capabilities:
             if not isinstance(cap, str) or not cap:
@@ -231,6 +235,11 @@ def validate_manifest(path: Path, data: dict) -> Manifest:
                     f"{path}: components.{target}.sources entries must be non-empty, "
                     f"repo-relative paths with no leading '/' and no '..' component, got {src!r}"
                 )
+        if not capabilities and not sources:
+            raise ManifestError(
+                f"{path}: components.{target} must declare a non-empty 'capabilities' list, "
+                f"a non-empty 'sources' list, or both"
+            )
 
     vendored = data.get("vendored", [])
     if not isinstance(vendored, list):
