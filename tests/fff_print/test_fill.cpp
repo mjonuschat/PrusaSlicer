@@ -397,6 +397,11 @@ SCENARIO("Infill density zero", "[Fill]")
         config.print.items.opt("external_perimeter_speed").set(FloatOrPercentage{99.0});
         config.filament[0].items.opt("cooling").set(false);
         config.print.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
+        // Isolate this test from the BOSS small-perimeter-threshold blend: the
+        // 20mm cube's perimeter length falls in that feature's default
+        // min/max range, which would otherwise give it a feedrate other than
+        // perimeter_speed and be misread below as an infill extrusion.
+        config.print.items.opt("small_perimeter_max_length").set(0.0);
 
         std::string gcode = Slic3r::Test::slice({ Slic3r::Test::TestMesh::cube_20x20x20 }, config);
         THEN("gcode not empty") {

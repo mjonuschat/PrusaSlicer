@@ -1,0 +1,26 @@
+{
+  "name": "small-perimeter-threshold",
+  "id": 10104,
+  "key": "small-perimeter-threshold",
+  "trait": "Slic3r::Boss::SmallPerimeterThresholdFeature",
+  "header": "boss/features/small-perimeter-threshold/SmallPerimeterThresholdFeature.hpp",
+  "label": "Configurable small perimeter threshold",
+  "components": {
+    "slic3r-domain": {
+      "capabilities": ["fdm_config"],
+      "sources": ["slic3r-domain/src/Slic3r/Domain/boss/SmallPerimeterThresholdConfig.cpp"]
+    },
+    "libslic3r": {
+      "sources": [
+        "libslic3r/src/libslic3r/boss/perimeter/small_threshold/SmallPerimeterSpeedRatio.cpp"
+      ]
+    }
+  },
+  "config_options": [
+    { "key": "small_perimeter_min_length", "invalidates": ["psGCodeExport"] },
+    { "key": "small_perimeter_max_length", "invalidates": ["psGCodeExport"] }
+  ],
+  "extra_includes": {
+    "gcode": ["libslic3r/boss/perimeter/small_threshold/SmallPerimeterSpeedRatio.hpp"]
+  }
+}
