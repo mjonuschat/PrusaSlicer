@@ -10,6 +10,7 @@ list(REMOVE_ITEM BOSS_TEST_SOURCES
     test_boss_invalidation_fixture.cpp
     test_boss_extrude_overrides_fixture.cpp
     test_boss_wipe_tower_overrides_fixture.cpp
+    test_boss_capabilityless_fixture.cpp
 )
 
 add_executable(${_TEST_NAME}_tests
@@ -69,7 +70,8 @@ if (BOSS_BUILD_FIXTURE_TESTS)
         test_boss_config_fixture.cpp
         test_boss_invalidation_fixture.cpp
         test_boss_extrude_overrides_fixture.cpp
-        test_boss_wipe_tower_overrides_fixture.cpp)
+        test_boss_wipe_tower_overrides_fixture.cpp
+        test_boss_capabilityless_fixture.cpp)
 endif ()
 
 target_link_libraries(${_TEST_NAME}_tests test_common libslic3r slic3r-shared)

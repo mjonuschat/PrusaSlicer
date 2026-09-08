@@ -1,0 +1,13 @@
+{
+  "name": "boss-test-capabilityless-fixture",
+  "id": 900103,
+  "key": "boss-test-capabilityless-fixture",
+  "trait": "Slic3r::Boss::Test::CapabilitylessFixtureFeature",
+  "header": "boss/test-fixtures/capabilityless-fixture/CapabilitylessFixtureFeature.hpp",
+  "label": "BOSS test capability-less fixture",
+  "components": {
+    "libslic3r": {
+      "sources": ["libslic3r/src/libslic3r/boss/test_fixtures/CapabilitylessFixture.cpp"]
+    }
+  }
+}

@@ -40,6 +40,30 @@ class GenerateEndToEndTests(unittest.TestCase):
             sources = Path(out_tmp, "slic3r-domain", "sources.cmake").read_text()
             self.assertIn("a.cpp", sources)
 
+    def test_capability_less_component_sources_are_emitted_with_no_cmakelists_edit(self):
+        # A plain module with no registry dispatch (PreciseWalls-shaped):
+        # a manifest component declaring only 'sources' must still land in
+        # its target's generated sources.cmake, and must not appear in any
+        # capability's composition header (it joins no registry).
+        with tempfile.TemporaryDirectory() as features_tmp, tempfile.TemporaryDirectory() as out_tmp:
+            write_manifest(
+                Path(features_tmp), "plain-module",
+                id=10002, key="plain-module",
+                trait="Slic3r::Boss::PlainModuleFeature",
+                header="boss/features/plain-module/PlainModuleFeature.hpp",
+                components={"libslic3r": {"sources": ["libslic3r/src/libslic3r/boss/PlainModule.cpp"]}},
+            )
+            rc = gbf.generate(Path(features_tmp), Path(out_tmp))
+            self.assertEqual(rc, 0)
+            sources = Path(out_tmp, "libslic3r", "sources.cmake").read_text()
+            self.assertIn("libslic3r/src/libslic3r/boss/PlainModule.cpp", sources)
+            fill_header = Path(out_tmp, "include", "boss", "generated", "BossFills.hpp").read_text()
+            self.assertNotIn("PlainModuleFeature", fill_header)
+            policy_header = Path(
+                out_tmp, "include", "boss", "generated", "BossPerimeterPolicies.hpp"
+            ).read_text()
+            self.assertNotIn("PlainModuleFeature", policy_header)
+
     def test_duplicate_id_stops_generation_with_nonzero_exit(self):
         with tempfile.TemporaryDirectory() as features_tmp, tempfile.TemporaryDirectory() as out_tmp:
             write_manifest(Path(features_tmp), "alpha", id=1)
