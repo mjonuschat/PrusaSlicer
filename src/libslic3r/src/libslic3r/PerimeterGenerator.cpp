@@ -207,16 +207,12 @@ using PerimeterGeneratorLoops = std::vector<PerimeterGeneratorLoop>;
 // Resolves the BOSS perimeter-ordering policy shared by both the Arachne and
 // Classic perimeter generators, so they never compute it from different
 // inputs.
-static Slic3r::Boss::OrderingPolicy resolve_ordering_policy(const PerimeterGenerator::Parameters &params, int extruder_id)
+static Slic3r::Boss::OrderingPolicy resolve_ordering_policy(const PerimeterGenerator::Parameters &params, size_t extruder_id)
 {
     Slic3r::Boss::OrderingPolicy ordering;
     ordering.contours_external_first = params.config.get<std::vector<bool>>("external_perimeters_first").at(extruder_id);
 
-    Slic3r::Boss::PerimeterPolicyContext ctx;
-    ctx.layer_id       = params.layer_id;
-    ctx.is_first_layer = params.layer_id == 0;
-    ctx.extruder_id    = extruder_id;
-    ctx.config         = &params.config;
+    const Slic3r::Boss::PerimeterPolicyContext ctx = Slic3r::Boss::make_perimeter_policy_context(params, extruder_id);
     Slic3r::Boss::BossPerimeterPolicies::apply_ordering(ordering, ctx);
 
     return ordering;
@@ -314,9 +310,18 @@ static ExtrusionEntityCollection traverse_loops_classic(const PerimeterGenerator
     // Traverse children and build the final collection.
 	Point zero_point(0, 0);
 	std::vector<std::pair<size_t, bool>> extrusions = chain_extrusion_entities(coll.entities, &zero_point);
-    std::vector<std::pair<size_t, bool>> ordered_extrusions;
 
-    {
+    const Slic3r::Boss::OrderingPolicy ordering = resolve_ordering_policy(params, extruder_id);
+
+    // If brim will be printed, reverse the order of perimeters so that we
+    // continue inwards after having finished the brim.
+    const bool     brim_layer     = params.layer_id == 0 && params.config.get<double>("brim_width") > 0;
+    const bool     reverse_contour = ordering.contours_external_first || brim_layer;
+    const bool     reverse_hole    = (ordering.contours_external_first && ordering.holes_external_first) || brim_layer;
+    const coord_t  min_hole_size   = scaled(ordering.min_hole_perimeter_length);
+
+    std::vector<std::pair<size_t, bool>> ordered_extrusions;
+    if (reverse_contour || reverse_hole) {
         // Holes before walls before thin walls, so the per-loop reversal
         // below can treat holes and contour walls independently.
         std::vector<std::pair<size_t, bool>> holes;
@@ -336,17 +341,15 @@ static ExtrusionEntityCollection traverse_loops_classic(const PerimeterGenerator
         ordered_extrusions.insert(ordered_extrusions.end(), holes.begin(), holes.end());
         ordered_extrusions.insert(ordered_extrusions.end(), walls.begin(), walls.end());
         ordered_extrusions.insert(ordered_extrusions.end(), thin_wall_extrusions.begin(), thin_wall_extrusions.end());
+        assert(ordered_extrusions.size() == extrusions.size());
+    } else {
+        // Neither contour nor hole reversal is in effect, so every loop
+        // below takes the same branch upstream took before this feature
+        // existed. Regrouping the chain here would only discard
+        // chain_extrusion_entities()'s nearest-neighbor order for no
+        // behavioral difference -- keep that order verbatim instead.
+        ordered_extrusions = std::move(extrusions);
     }
-    assert(ordered_extrusions.size() == extrusions.size());
-
-    const Slic3r::Boss::OrderingPolicy ordering = resolve_ordering_policy(params, extruder_id);
-
-    // If brim will be printed, reverse the order of perimeters so that we
-    // continue inwards after having finished the brim.
-    const bool     brim_layer     = params.layer_id == 0 && params.config.get<double>("brim_width") > 0;
-    const bool     reverse_contour = ordering.contours_external_first || brim_layer;
-    const bool     reverse_hole    = (ordering.contours_external_first && ordering.holes_external_first) || brim_layer;
-    const coord_t  min_hole_size   = scaled(ordering.min_hole_perimeter_length);
 
     ExtrusionEntityCollection out;
     for (const std::pair<size_t, bool> &idx : ordered_extrusions) {

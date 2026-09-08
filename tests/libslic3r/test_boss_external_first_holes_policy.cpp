@@ -73,6 +73,42 @@ TEST_CASE("External-first holes respects disabled-first-layers", "[boss][perimet
     REQUIRE(policy.contours_external_first == false);
 }
 
+TEST_CASE("At their real defaults, external-first-holes keeps traverse_loops_classic's "
+          "Classic reversal gate closed",
+          "[boss][perimeter]")
+{
+    // No overrides at all: external_perimeters_first_holes (this feature's
+    // own key) defaults to true, but PerimeterGenerator.cpp's reverse_hole
+    // gate is `(contours_external_first && holes_external_first)`, and
+    // external_perimeters_first (the pre-existing native key) defaults to
+    // false -- so the AND keeps the gate closed regardless of this
+    // feature's own default. That closed gate is what lets
+    // traverse_loops_classic skip its holes/walls/thin-walls regrouping and
+    // use chain_extrusion_entities()'s nearest-neighbor order verbatim.
+    TestConfig config;
+    PrintRegionConfigView view = build_region_config_view(config);
+    REQUIRE(view.get<std::vector<bool>>("external_perimeters_first_holes").at(0) == true);
+    REQUIRE(view.get<std::vector<bool>>("external_perimeters_first").at(0) == false);
+
+    Slic3r::Boss::PerimeterPolicyContext ctx;
+    ctx.layer_id    = 1;
+    ctx.extruder_id = 0;
+    ctx.config      = &view;
+
+    Slic3r::Boss::OrderingPolicy ordering;
+    ordering.contours_external_first = view.get<std::vector<bool>>("external_perimeters_first").at(0);
+    Slic3r::Boss::ExternalFirstHolesFeature::apply_ordering(ordering, ctx);
+
+    REQUIRE(ordering.holes_external_first == true);
+    REQUIRE(ordering.contours_external_first == false);
+
+    const bool brim_layer      = false;
+    const bool reverse_contour = ordering.contours_external_first || brim_layer;
+    const bool reverse_hole    = (ordering.contours_external_first && ordering.holes_external_first) || brim_layer;
+    REQUIRE(reverse_contour == false);
+    REQUIRE(reverse_hole == false);
+}
+
 namespace {
 
 using Slic3r::Arachne::ExtrusionLine;
