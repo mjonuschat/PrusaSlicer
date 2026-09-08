@@ -298,6 +298,8 @@ private:
     float  m_first_layer_perimeter_speed = 0.f;
     float  m_first_layer_infill_speed = 0.f;
     size_t m_first_layer_idx    = size_t(-1);
+    // Lets independent features each cap the wipe speed without rewriting a shared expression.
+    std::vector<float> m_speed_caps;
 
 	// G-code generator parameters.
     float           m_cooling_tube_retraction   = 0.f;
