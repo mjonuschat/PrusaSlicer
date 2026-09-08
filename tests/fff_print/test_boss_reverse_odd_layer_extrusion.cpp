@@ -176,6 +176,11 @@ TEST_CASE("BOSS infill_reverse flips the odd layer's infill start point", "[boss
 {
     const std::vector<std::string> internal_infill{"Internal infill"};
 
+    // A pyramid's cross-section shrinks every layer, so the infill polyline set
+    // differs layer to layer and sort_fill_extrusions()'s travel-distance chaining
+    // is not free to pick the same flip on every layer by coincidence -- unlike a
+    // plain cube, where every layer's infill is identical and chaining has no
+    // reason to vary. This is the kind of geometry the fix must hold up against.
     TestConfig config = base_config();
     config.print.items.opt("perimeters").set(1);
     config.print.items.opt("fill_density").set(Percentage{20});
@@ -183,25 +188,48 @@ TEST_CASE("BOSS infill_reverse flips the odd layer's infill start point", "[boss
     config.print.items.opt("bottom_solid_layers").set(0);
 
     config.print.items.opt("infill_reverse").set(false);
-    const std::vector<std::string> layers_off = split_layers(Test::slice({TestMesh::cube_20x20x20}, config));
+    const std::vector<std::string> layers_off = split_layers(Test::slice({TestMesh::pyramid}, config));
 
     config.print.items.opt("infill_reverse").set(true);
-    const std::vector<std::string> layers_on = split_layers(Test::slice({TestMesh::cube_20x20x20}, config));
+    const std::vector<std::string> layers_on = split_layers(Test::slice({TestMesh::pyramid}, config));
 
-    REQUIRE(layers_off.size() >= 2);
-    REQUIRE(layers_on.size() >= 2);
+    REQUIRE(layers_off.size() == layers_on.size());
 
-    const std::optional<XY> even_off = first_point_after_role(layers_off[0], internal_infill);
-    const std::optional<XY> even_on = first_point_after_role(layers_on[0], internal_infill);
-    const std::optional<XY> odd_off = first_point_after_role(layers_off[1], internal_infill);
-    const std::optional<XY> odd_on = first_point_after_role(layers_on[1], internal_infill);
+    // Find two adjacent layers (one even, one odd) that both have internal infill,
+    // so the "on" run's odd/even alternation and the "off" run's even-layer
+    // baseline can both be read from the same pair of indices.
+    std::optional<std::size_t> even_index;
+    for (std::size_t i = 0; i + 1 < layers_on.size(); i += 2) {
+        if (layers_on[i].find(";TYPE:Internal infill") != std::string::npos
+            && layers_on[i + 1].find(";TYPE:Internal infill") != std::string::npos) {
+            even_index = i;
+            break;
+        }
+    }
+    REQUIRE(even_index.has_value());
+    const std::size_t odd_index = *even_index + 1;
+
+    const std::optional<XY> even_off = first_point_after_role(layers_off[*even_index], internal_infill);
+    const std::optional<XY> even_on = first_point_after_role(layers_on[*even_index], internal_infill);
+    const std::optional<XY> odd_off = first_point_after_role(layers_off[odd_index], internal_infill);
+    const std::optional<XY> odd_on = first_point_after_role(layers_on[odd_index], internal_infill);
 
     REQUIRE(even_off.has_value());
     REQUIRE(even_on.has_value());
     REQUIRE(odd_off.has_value());
     REQUIRE(odd_on.has_value());
 
+    // The option only touches odd layers when it changes something relative to the
+    // "off" baseline at the SAME layer index.
     CHECK(even_off->x == even_on->x);
     CHECK(even_off->y == even_on->y);
     CHECK((odd_off->x != odd_on->x || odd_off->y != odd_on->y));
+
+    // The stronger guarantee this option promises: within a single run with the
+    // option on, the odd layer's start point actually differs from the even
+    // layer's -- true odd/even alternation, not just "different from the off run".
+    // A naive XOR of reverse_infill onto sort_fill_extrusions()'s travel-optimized
+    // flipped() can fail this even while passing the checks above, if chaining
+    // happens to pick opposite natural flips for the two layers.
+    CHECK((even_on->x != odd_on->x || even_on->y != odd_on->y));
 }

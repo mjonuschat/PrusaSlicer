@@ -207,16 +207,16 @@ std::vector<InfillRange> extract_infill_ranges(
         const Point* start_near{previous_instance_point ? &(previous_instance_point->local_point) : nullptr};
         const ExtrusionEntityReferences sorted_extrusions{sort_fill_extrusions(extrusions, start_near)};
 
-        const bool reverse_infill = Boss::ReverseOddLayerPolicy::reverse_infill(
-            layer.id() % 2 == 1, region.config().get<bool>("infill_reverse")
-        );
+        const bool infill_reverse_enabled = region.config().get<bool>("infill_reverse");
+        const bool is_odd_layer = layer.id() % 2 == 1;
 
         std::vector<SmoothPath> paths;
         for (const ExtrusionEntityReference &extrusion_reference : sorted_extrusions) {
             std::optional<InstancePoint> last_position{get_instance_point(previous_position, offset)};
-            const ExtrusionEntityReference reversible_reference{
-                extrusion_reference.extrusion_entity(), extrusion_reference.flipped() != reverse_infill
-            };
+            const bool flipped = Boss::ReverseOddLayerPolicy::resolve_infill_flip(
+                extrusion_reference.flipped(), is_odd_layer, infill_reverse_enabled
+            );
+            const ExtrusionEntityReference reversible_reference{extrusion_reference.extrusion_entity(), flipped};
             auto [path, _]{smooth_path(&layer, &region, reversible_reference, extruder_id, last_position)};
             if (!path.empty()) {
                 paths.push_back(std::move(path));
