@@ -46,6 +46,10 @@ lost during the rebase and squash based workflow.
   print their outer wall first independently of contours, with a minimum
   hole size and a first-layers disable so it does not affect fillets or
   chamfers.
+- Added configurable perimeter overlap. Two new options,
+  "Ext. perimeter/perimeter overlap" and "Perimeter/perimeter overlap",
+  control how much adjacent walls overlap, so you can tune wall bonding
+  and total wall thickness independently of extrusion width.
 
 ### Changed
 
