@@ -1,4 +1,5 @@
 ///|/ Copyright (c) 2026 Morton Jonuschat @mjonuschat
+///|/ Copyright (c) OrcaSlicer 2023 Noisyfox @Noisyfox
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/

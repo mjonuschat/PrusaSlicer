@@ -1,3 +1,7 @@
+///|/ Copyright (c) OrcaSlicer 2023 Noisyfox @Noisyfox
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #ifndef slic3r_ExtrusionRole_hpp_
 #define slic3r_ExtrusionRole_hpp_
 
