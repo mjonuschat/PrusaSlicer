@@ -160,6 +160,51 @@ class ValidateManifestTests(unittest.TestCase):
             with self.assertRaises(gbf.ManifestError):
                 gbf.validate_manifest(path, data)
 
+    def test_component_with_sources_and_empty_capabilities_is_accepted(self):
+        # A plain module with no registry dispatch (e.g. PreciseWalls)
+        # contributes sources to its target without joining any capability.
+        with tempfile.TemporaryDirectory() as tmp:
+            path = write_manifest(
+                Path(tmp), "alpha",
+                components={"libslic3r": {"capabilities": [], "sources": ["libslic3r/src/libslic3r/Alpha.cpp"]}},
+            )
+            data = json.loads(path.read_text(encoding="utf-8"))
+            manifest = gbf.validate_manifest(path, data)
+            self.assertEqual(manifest.components["libslic3r"]["capabilities"], [])
+            self.assertEqual(
+                manifest.components["libslic3r"]["sources"], ["libslic3r/src/libslic3r/Alpha.cpp"]
+            )
+
+    def test_component_with_sources_and_omitted_capabilities_is_accepted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = write_manifest(
+                Path(tmp), "alpha",
+                components={"libslic3r": {"sources": ["libslic3r/src/libslic3r/Alpha.cpp"]}},
+            )
+            data = json.loads(path.read_text(encoding="utf-8"))
+            manifest = gbf.validate_manifest(path, data)
+            self.assertEqual(manifest.components["libslic3r"].get("capabilities", []), [])
+
+    def test_component_with_no_capabilities_and_no_sources_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = write_manifest(
+                Path(tmp), "alpha",
+                components={"libslic3r": {"capabilities": [], "sources": []}},
+            )
+            data = json.loads(path.read_text(encoding="utf-8"))
+            with self.assertRaises(gbf.ManifestError):
+                gbf.validate_manifest(path, data)
+
+    def test_component_with_neither_key_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = write_manifest(
+                Path(tmp), "alpha",
+                components={"libslic3r": {}},
+            )
+            data = json.loads(path.read_text(encoding="utf-8"))
+            with self.assertRaises(gbf.ManifestError):
+                gbf.validate_manifest(path, data)
+
     def test_keyword_trait_basename_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = write_manifest(Path(tmp), "alpha", trait="Slic3r::Boss::class")
