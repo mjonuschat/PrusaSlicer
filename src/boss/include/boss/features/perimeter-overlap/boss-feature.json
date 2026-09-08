@@ -1,0 +1,18 @@
+{
+  "name": "perimeter-overlap",
+  "id": 10103,
+  "key": "perimeter-overlap",
+  "trait": "Slic3r::Boss::PerimeterOverlapFeature",
+  "header": "boss/features/perimeter-overlap/PerimeterOverlapFeature.hpp",
+  "label": "Configurable perimeter overlap",
+  "components": {
+    "slic3r-domain": {
+      "capabilities": ["fdm_config"],
+      "sources": ["slic3r-domain/src/Slic3r/Domain/boss/PerimeterOverlapConfig.cpp"]
+    }
+  },
+  "config_options": [
+    { "key": "external_perimeter_overlap", "invalidates": ["posPerimeters"] },
+    { "key": "perimeter_perimeter_overlap", "invalidates": ["posPerimeters"] }
+  ]
+}
