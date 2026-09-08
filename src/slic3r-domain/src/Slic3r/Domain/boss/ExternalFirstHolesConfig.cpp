@@ -4,6 +4,7 @@
 ///|/
 #include "boss/features/external-first-holes/ExternalFirstHolesFeature.hpp"
 
+#include "boss/foundation/BossL.hpp"
 #include "Slic3r/Domain/ConfigDef.hpp"
 #include "Slic3r/Domain/ConfigDefUtils.hpp"
 
@@ -21,10 +22,10 @@ void ExternalFirstHolesFeature::register_config(Domain::ConfigDefinitions& defs)
     holes->category      = ConfigItemDef::Category::Print_WallsPerimeters;
     holes->option_group  = ConfigItemDef::OptionGroup::Print_WallsPerimeters_WallsQuality;
     holes->gui_type      = ConfigItemDef::GUIType::checkbox;
-    holes->label         = "Holes";
-    holes->full_label    = "External perimeters first for holes";
-    holes->tooltip       = "Print hole perimeters from the outermost one to the innermost one "
-                            "instead of the default inverse order.";
+    holes->label         = BossL("Holes");
+    holes->full_label    = BossL("External perimeters first for holes");
+    holes->tooltip       = BossL("Print hole perimeters from the outermost one to the innermost one "
+                                  "instead of the default inverse order.");
     holes->init_fn       = init_with(true);
 
     ConfigItemDef* min_size = defs.add("external_perimeters_first_holes_min_size", typeid(double));
@@ -32,11 +33,11 @@ void ExternalFirstHolesFeature::register_config(Domain::ConfigDefinitions& defs)
     min_size->category     = ConfigItemDef::Category::Print_WallsPerimeters;
     min_size->option_group = ConfigItemDef::OptionGroup::Print_WallsPerimeters_WallsQuality;
     min_size->gui_type     = ConfigItemDef::GUIType::textfield;
-    min_size->label        = "Minimum hole size";
-    min_size->full_label   = "External perimeters first minimum hole size";
-    min_size->tooltip      = "The minimum length of the hole perimeter needed to enable external "
-                              "perimeters first for holes.";
-    min_size->units        = {"mm"};
+    min_size->label        = BossL("Minimum hole size");
+    min_size->full_label   = BossL("External perimeters first minimum hole size");
+    min_size->tooltip      = BossL("The minimum length of the hole perimeter needed to enable external "
+                                    "perimeters first for holes.");
+    min_size->units        = {BossL("mm")};
     min_size->min          = 0.;
     min_size->init_fn      = init_with(30.0);
 
@@ -45,12 +46,12 @@ void ExternalFirstHolesFeature::register_config(Domain::ConfigDefinitions& defs)
     disabled_first_layers->category     = ConfigItemDef::Category::Print_WallsPerimeters;
     disabled_first_layers->option_group = ConfigItemDef::OptionGroup::Print_WallsPerimeters_WallsQuality;
     disabled_first_layers->gui_type     = ConfigItemDef::GUIType::spinbox;
-    disabled_first_layers->label        = "External perimeters first disabled for first";
-    disabled_first_layers->full_label   = "External perimeters first disabled for first layers";
-    disabled_first_layers->tooltip      = "You can set this to a positive value to disable external "
-                                           "perimeters first for the first layers, so that it does "
-                                           "not affect fillets/chamfers.";
-    disabled_first_layers->units        = {"layers"};
+    disabled_first_layers->label        = BossL("External perimeters first disabled for first");
+    disabled_first_layers->full_label   = BossL("External perimeters first disabled for first layers");
+    disabled_first_layers->tooltip      = BossL("You can set this to a positive value to disable external "
+                                                 "perimeters first for the first layers, so that it does "
+                                                 "not affect fillets/chamfers.");
+    disabled_first_layers->units        = {BossL("layers")};
     disabled_first_layers->min          = 0;
     disabled_first_layers->max          = 1000;
     disabled_first_layers->init_fn      = init_with(0);
