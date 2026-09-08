@@ -297,10 +297,6 @@ set(SLIC3R_SOURCES
     src/libslic3r/Polygon.hpp
     src/libslic3r/Polyline.cpp
     src/libslic3r/Polyline.hpp
-    src/libslic3r/boss/perimeter/overlap/PerimeterOverlapValidation.cpp
-    src/libslic3r/boss/perimeter/overlap/PerimeterOverlapValidation.hpp
-    src/libslic3r/boss/perimeter/overlap/PreciseWalls.cpp
-    src/libslic3r/boss/perimeter/overlap/PreciseWalls.hpp
     src/libslic3r/PrePreview.cpp
     src/libslic3r/PrePreview.hpp
     src/libslic3r/PrincipalComponents2D.cpp
