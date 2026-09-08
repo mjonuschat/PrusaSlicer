@@ -38,6 +38,12 @@ public:
     static const std::string toolchange_travel_tag() { return "_GCODE_WIPE_TOWER_TOOLCHANGE_TRAVEL_TAG"; }
 	static std::vector<std::vector<float>> extract_wipe_volumes(const PrintConfigView& config);
 
+    // Composes independent speed caps via minimum, so unrelated features can each
+    // contribute a limit without needing to know about one another. Exposed as a
+    // static method (rather than kept as an inline loop) so this composition rule
+    // can be tested directly, decoupled from any specific feature.
+    static float apply_speed_caps(float target_speed, const std::vector<float>& speed_caps);
+
     struct Extrusion
     {
 		Extrusion(const Domain::Vec2f &pos, float width, unsigned int tool) : pos(pos), width(width), tool(tool) {}
