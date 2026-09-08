@@ -395,5 +395,43 @@ class StoreValidationTests(unittest.TestCase):
                 gbf.check_global_uniqueness(manifests)
 
 
+class PerimeterPolicyCapabilityTests(unittest.TestCase):
+    def _one(self, tmp):
+        return write_manifest(
+            Path(tmp), "test-perimeter-policy", id=900201, key="test-perimeter-policy",
+            trait="Slic3r::Boss::Test::PerimeterPolicyFixtureFeature",
+            header="boss/test-fixtures/perimeter-policy-fixture/PerimeterPolicyFixtureFeature.hpp",
+            components={
+                "libslic3r": {
+                    "capabilities": ["perimeter_policy"],
+                    "sources": ["libslic3r/src/libslic3r/boss/test_fixtures/PerimeterPolicyFixture.cpp"],
+                }
+            },
+        )
+
+    def test_perimeter_policy_capability_is_known(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._one(tmp)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            manifest = gbf.validate_manifest(path, data)
+            gbf.check_known_capabilities([manifest])
+            gbf.check_capability_targets([manifest])
+
+    def test_perimeter_policy_generates_component_alias(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._one(tmp)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            manifest = gbf.validate_manifest(path, data)
+
+            include_dir = Path(tmp) / "generated" / "include"
+            header_path = gbf.emit_composition_header("perimeter_policy", [manifest], include_dir)
+            content = header_path.read_text(encoding="utf-8")
+            self.assertIn(
+                "using BossPerimeterPolicies = Slic3r::Boss::BossPerimeterPolicyRegistry<"
+                "Slic3r::Boss::Test::PerimeterPolicyFixtureFeature>;",
+                content,
+            )
+
+
 if __name__ == "__main__":
     unittest.main()
