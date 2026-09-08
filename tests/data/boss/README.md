@@ -1,7 +1,14 @@
 # BOSS test fixtures
 
-Each subdirectory is one feature or bugfix, built as part of porting that
-feature or fix — not ahead of time. Contents:
+Most BOSS features are proven by direct unit and integration tests against
+the C++ API (Catch2 tests linking `libslic3r`/`fff_print`) and need no
+fixture directory here.
+
+Add a subdirectory under this folder only for a feature whose effect is
+observable in emitted G-code and cannot be reasonably asserted through the
+C++ API alone — for example, a feature that changes extrusion timing or
+ordering in a way only visible once G-code is generated and parsed back.
+Contents of such a directory:
 
 - `config.ini` — the BOSS config that exercises the behavior
 - `model.stl` (or a small synthetic geometry generated in the test itself)
