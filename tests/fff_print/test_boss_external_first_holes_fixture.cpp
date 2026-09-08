@@ -24,12 +24,14 @@ namespace {
 ExtrusionEntityCollection generate_rectangle_with_hole_loops(const TestConfig &config)
 {
     const auto full_config{std::make_shared<const FullConfigFDM>(config.get_full_config())};
-    Domain::PartialObjectConfigFDM object_config{ObjectSettings{}, full_config->hw_config()};
-    Domain::PartialVolumeConfigFDM volume_config{VolumeSettings{}, full_config->hw_config()};
+    const ObjectSettings object_settings;
+    const Domain::PartialConfig object_config{{object_settings}, full_config->hw_config()};
+    const VolumeSettings volume_settings;
+    const Domain::PartialConfig volume_config{{volume_settings}, full_config->hw_config()};
     PrintRegionConfigView region_config_view{
         full_config,
-        std::make_shared<const Domain::PartialObjectConfigFDM>(std::move(object_config)),
-        {std::make_shared<const Domain::PartialVolumeConfigFDM>(std::move(volume_config))}
+        object_config,
+        {volume_config}
     };
     region_config_view.finalize();
 
@@ -116,6 +118,33 @@ SCENARIO("BOSS external-first-holes changes the Classic perimeter print order", 
                 REQUIRE(hole_entities.size() == 2);
                 REQUIRE(hole_entities.front()->role() != ExtrusionRole::ExternalPerimeter);
                 REQUIRE(hole_entities.back()->role() == ExtrusionRole::ExternalPerimeter);
+            }
+        }
+    }
+}
+
+SCENARIO("BOSS external-first-holes leaves the Classic print order untouched at its real defaults",
+         "[boss][perimeter]")
+{
+    GIVEN("a rectangle with one hole and no BOSS-related config overrides -- "
+          "external_perimeters_first false (native default), external_perimeters_first_holes "
+          "true (this feature's own default), and brim explicitly off so it cannot mask this "
+          "test the way its 5mm default would") {
+        TestConfig config;
+        config.print.items.opt("perimeter_generator").set(Domain::PerimeterGeneratorType::Classic);
+        config.print.items.opt("brim_width").set(0.0);
+
+        WHEN("Classic perimeters are generated") {
+            const ExtrusionEntityCollection flat = generate_rectangle_with_hole_loops(config);
+
+            THEN("the order matches the pre-BOSS native baseline established by "
+                 "\"Rectangle with hole\" in test_perimeters.cpp -- children-before-contour for "
+                 "the wall, external-before-internal for the hole") {
+                REQUIRE(flat.entities.size() == 6);
+                std::vector<bool> ext_order;
+                for (const ExtrusionEntity *e : flat.entities)
+                    ext_order.emplace_back(e->role() == ExtrusionRole::ExternalPerimeter);
+                REQUIRE(ext_order == std::vector<bool>{false, false, true, false, false, true});
             }
         }
     }
