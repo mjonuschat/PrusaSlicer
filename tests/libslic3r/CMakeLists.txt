@@ -1,6 +1,18 @@
 get_filename_component(_TEST_NAME ${CMAKE_CURRENT_LIST_DIR} NAME)
 
-add_executable(${_TEST_NAME}_tests 
+# BOSS test files are auto-discovered by name, so adding one never requires
+# editing this list -- independent feature branches can each add their own
+# file without conflicting on a shared line. Fixture tests are gated
+# separately below and excluded here so they stay conditional.
+file(GLOB BOSS_TEST_SOURCES CONFIGURE_DEPENDS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "${CMAKE_CURRENT_SOURCE_DIR}/test_boss_*.cpp")
+list(REMOVE_ITEM BOSS_TEST_SOURCES
+    test_boss_config_fixture.cpp
+    test_boss_invalidation_fixture.cpp
+    test_boss_extrude_overrides_fixture.cpp
+    test_boss_wipe_tower_overrides_fixture.cpp
+)
+
+add_executable(${_TEST_NAME}_tests
 	${_TEST_NAME}_tests.cpp
     test_line.cpp
     test_point.cpp
@@ -45,11 +57,7 @@ add_executable(${_TEST_NAME}_tests
     ../data/prusaparts.hpp
     test_model_utils.cpp
     test_custom_parameters_handling.cpp
-    test_boss_fill_dispatch.cpp
-    test_boss_fill_registry.cpp
-    test_boss_step_invalidation_merge.cpp
-    test_boss_registration_invariant.cpp
-    test_boss_wipe_tower_speed_caps.cpp
+    ${BOSS_TEST_SOURCES}
 	)
 
 if (TARGET OpenVDB::openvdb)
