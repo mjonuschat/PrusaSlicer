@@ -290,6 +290,8 @@ set(SLIC3R_SOURCES
     src/libslic3r/NormalUtils.hpp
     src/libslic3r/PerimeterGenerator.cpp
     src/libslic3r/PerimeterGenerator.hpp
+    src/libslic3r/boss/perimeter/PerimeterPolicyContext.cpp
+    src/libslic3r/boss/perimeter/PerimeterPolicyContext.hpp
     src/libslic3r/Point.cpp
     src/libslic3r/Point.hpp
     src/libslic3r/PointGrid.hpp
