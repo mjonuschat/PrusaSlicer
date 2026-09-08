@@ -921,6 +921,9 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Tool, Object, Volume };
     def->label = L("External perimeters first");
+    // label stays short for the grouped Holes/Contours line; full_label is
+    // what shows when this option is overridden on its own.
+    def->full_label = L("External perimeters first for contours");
     def->option_group = ConfigItemDef::OptionGroup::Print_WallsPerimeters_WallsQuality;
     def->category = ConfigItemDef::Category::Print_WallsPerimeters;
     def->order = 0;

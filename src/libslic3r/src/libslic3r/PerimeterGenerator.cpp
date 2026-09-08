@@ -34,6 +34,8 @@
 #include "libslic3r/Arachne/WallToolPaths.hpp"
 #include "libslic3r/Arachne/utils/ExtrusionLine.hpp"
 #include "libslic3r/Arachne/utils/ExtrusionJunction.hpp"
+#include "libslic3r/boss/perimeter/PerimeterPolicyContext.hpp"
+#include "boss/generated/BossPerimeterPolicies.hpp"
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/LayerRegion.hpp"
@@ -202,6 +204,24 @@ public:
 
 using PerimeterGeneratorLoops = std::vector<PerimeterGeneratorLoop>;
 
+// Resolves the BOSS perimeter-ordering policy shared by both the Arachne and
+// Classic perimeter generators, so they never compute it from different
+// inputs.
+static Slic3r::Boss::OrderingPolicy resolve_ordering_policy(const PerimeterGenerator::Parameters &params, int extruder_id)
+{
+    Slic3r::Boss::OrderingPolicy ordering;
+    ordering.contours_external_first = params.config.get<std::vector<bool>>("external_perimeters_first").at(extruder_id);
+
+    Slic3r::Boss::PerimeterPolicyContext ctx;
+    ctx.layer_id       = params.layer_id;
+    ctx.is_first_layer = params.layer_id == 0;
+    ctx.extruder_id    = extruder_id;
+    ctx.config         = &params.config;
+    Slic3r::Boss::BossPerimeterPolicies::apply_ordering(ordering, ctx);
+
+    return ordering;
+}
+
 static ExtrusionEntityCollection traverse_loops_classic(const PerimeterGenerator::Parameters &params, const Polygons &lower_slices_polygons_cache, const PerimeterGeneratorLoops &loops, ThickPolylines &thin_walls)
 {
     using namespace Slic3r::Feature::FuzzySkin;
@@ -293,9 +313,43 @@ static ExtrusionEntityCollection traverse_loops_classic(const PerimeterGenerator
     
     // Traverse children and build the final collection.
 	Point zero_point(0, 0);
-	std::vector<std::pair<size_t, bool>> chain = chain_extrusion_entities(coll.entities, &zero_point);
+	std::vector<std::pair<size_t, bool>> extrusions = chain_extrusion_entities(coll.entities, &zero_point);
+    std::vector<std::pair<size_t, bool>> ordered_extrusions;
+
+    {
+        // Holes before walls before thin walls, so the per-loop reversal
+        // below can treat holes and contour walls independently.
+        std::vector<std::pair<size_t, bool>> holes;
+        std::vector<std::pair<size_t, bool>> walls;
+        std::vector<std::pair<size_t, bool>> thin_wall_extrusions;
+        for (const std::pair<size_t, bool> &idx : extrusions) {
+            if (idx.first >= loops.size()) {
+                thin_wall_extrusions.push_back(idx);
+            } else if (!loops[idx.first].is_external() ||
+                       (!loops[idx.first].is_contour && !loops[idx.first].children.empty())) {
+                holes.push_back(idx);
+            } else {
+                walls.push_back(idx);
+            }
+        }
+        ordered_extrusions.reserve(extrusions.size());
+        ordered_extrusions.insert(ordered_extrusions.end(), holes.begin(), holes.end());
+        ordered_extrusions.insert(ordered_extrusions.end(), walls.begin(), walls.end());
+        ordered_extrusions.insert(ordered_extrusions.end(), thin_wall_extrusions.begin(), thin_wall_extrusions.end());
+    }
+    assert(ordered_extrusions.size() == extrusions.size());
+
+    const Slic3r::Boss::OrderingPolicy ordering = resolve_ordering_policy(params, extruder_id);
+
+    // If brim will be printed, reverse the order of perimeters so that we
+    // continue inwards after having finished the brim.
+    const bool     brim_layer     = params.layer_id == 0 && params.config.get<double>("brim_width") > 0;
+    const bool     reverse_contour = ordering.contours_external_first || brim_layer;
+    const bool     reverse_hole    = (ordering.contours_external_first && ordering.holes_external_first) || brim_layer;
+    const coord_t  min_hole_size   = scaled(ordering.min_hole_perimeter_length);
+
     ExtrusionEntityCollection out;
-    for (const std::pair<size_t, bool> &idx : chain) {
+    for (const std::pair<size_t, bool> &idx : ordered_extrusions) {
 		assert(coll.entities[idx.first] != nullptr);
         if (idx.first >= loops.size()) {
             // This is a thin wall.
@@ -311,7 +365,8 @@ static ExtrusionEntityCollection traverse_loops_classic(const PerimeterGenerator
             out.entities.reserve(out.entities.size() + children.entities.size() + 1);
             ExtrusionLoop *eloop = static_cast<ExtrusionLoop*>(coll.entities[idx.first]);
             coll.entities[idx.first] = nullptr;
-            if (loop.is_contour) {
+            if ((loop.is_contour && !reverse_contour) ||
+                (!loop.is_contour && reverse_hole && eloop->length() > min_hole_size)) {
                 if (eloop->is_clockwise())
                     eloop->reverse_loop();
                 out.append(std::move(children.entities));
@@ -1135,11 +1190,10 @@ void PerimeterGenerator::process_arachne(
         return true;
     }());
 
+    const Slic3r::Boss::OrderingPolicy ordering = resolve_ordering_policy(params, extruder_id);
+
     Arachne::PerimeterOrder::PerimeterExtrusions ordered_extrusions =
-        Arachne::PerimeterOrder::ordered_perimeter_extrusions(
-            perimeters,
-            params.config.get<std::vector<bool>>("external_perimeters_first").at(extruder_id)
-        );
+        Arachne::PerimeterOrder::ordered_perimeter_extrusions(perimeters, ordering);
 
     if (ExtrusionEntityCollection extrusion_coll = traverse_extrusions(params, lower_slices_polygons_cache, ordered_extrusions); !extrusion_coll.empty())
         out_loops.append(extrusion_coll);
@@ -1498,13 +1552,9 @@ void PerimeterGenerator::process_classic(
             }
         }
         // at this point, all loops should be in contours[0]
+        // traverse_loops_classic decides reversal (external-perimeters-first,
+        // brim continuation, holes) per loop.
         ExtrusionEntityCollection entities = traverse_loops_classic(params, lower_slices_polygons_cache, contours.front(), thin_walls);
-        // if brim will be printed, reverse the order of perimeters so that
-        // we continue inwards after having finished the brim
-        // TODO: add test for perimeter order
-        if (params.config.get<std::vector<bool>>("external_perimeters_first").at(extruder_id) ||
-            (params.layer_id == 0 && params.config.get<double>("brim_width") > 0))
-            entities.reverse();
         // append perimeters for this slice as a collection
         if (! entities.empty())
             out_loops.append(entities);
