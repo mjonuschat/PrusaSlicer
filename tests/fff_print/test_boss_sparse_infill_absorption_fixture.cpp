@@ -1,20 +1,15 @@
-// Proves Slic3r::Boss::SparseInfillAbsorption::absorb() behaves correctly
-// against real SurfaceFillParams (actual flow/spacing/density) pulled from a
-// live, processed Print -- not just the synthetic fixtures in
-// test_boss_sparse_infill_absorption.cpp, which build every field by hand.
-//
-// Rather than engineering a specific mesh guaranteed to already contain a
-// sub-threshold hole after ordinary classification (fragile, and dependent
-// on unrelated slicing details), this takes a stInternalSolid SurfaceFill
-// group_fills() actually produced for a real cube, injects a hole well
-// below the region's own computed sparse threshold, and calls absorb()
-// again with the real total_fill_boundary. This calls absorb() directly, so
-// it does not exercise Fill.cpp's own call site -- that wiring is covered by
-// the full ctest suite (including fff_print_tests) passing with it in place.
+// Proves the real Fill.cpp call site -- not the absorb() function in
+// isolation -- removes a sub-threshold hole. The hole is injected directly
+// into a real LayerRegion's fill_surfaces() before the single group_fills()
+// call this test observes, so the one production code path
+// (group_fills() -> Slic3r::Boss::SparseInfillAbsorption::absorb()) is what
+// performs the removal, not a second, test-driven call to absorb() on
+// group_fills()'s own output (which cannot distinguish a correctly wired
+// call site from a missing one, since group_fills() already ran absorb()
+// once by the time such a second call would see its result).
 #include <catch2/catch_test_macros.hpp>
 
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
-#include "libslic3r/boss/surface/absorption/SparseInfillAbsorption.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Fill/Fill.hpp"
 #include "libslic3r/Layer.hpp"
@@ -22,14 +17,14 @@
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/Surface.hpp"
+#include "libslic3r/SurfaceCollection.hpp"
 
 #include "test_data.hpp"
 
 using namespace Slic3r;
 using namespace Slic3r::Test;
 
-TEST_CASE("A stInternalSolid hole well below the real sparse threshold is absorbed by the live group_fills() call site",
-          "[boss][fill][fixture]")
+TEST_CASE("A stInternalSolid hole injected before group_fills() is absorbed by its live call site", "[boss][fill][fixture]")
 {
     TestConfig config;
     config.print.items.opt("skirts").set(0);
@@ -40,65 +35,78 @@ TEST_CASE("A stInternalSolid hole well below the real sparse threshold is absorb
     Print print;
     Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, config);
 
-    // Find a layer whose fill groups include both a sparse region (needed
-    // for a non-zero threshold) and a stInternalSolid region (the
-    // transition layers under/over the solid top/bottom shells).
-    std::vector<SurfaceFill> surface_fills;
-    ExPolygons               total_fill_boundary;
-    SurfaceFill             *solid = nullptr;
-    for (const Layer *layer : print.get_object(0)->layers()) {
-        std::vector<SurfaceFill> candidate = group_fills(*layer);
-
+    // Find a layer with both a sparse (stInternal) surface -- needed for
+    // absorb()'s sparse threshold to be non-zero -- and a non-empty
+    // stInternalSolid surface to inject into. The surface may already carry
+    // holes from real classification (unaffected by absorption, which only
+    // runs inside group_fills() on its derived output, never on
+    // fill_surfaces() itself) -- the assertion below targets the injected
+    // hole specifically by size, not by an absolute hole count.
+    Surface *target_surface = nullptr;
+    Layer   *target_layer   = nullptr;
+    for (Layer *layer : print.get_object(0)->layers()) {
         bool has_sparse = false;
-        for (const SurfaceFill &sf : candidate)
-            if (sf.surface.surface_type == stInternal && !sf.expolygons.empty() && sf.params.density < 99.f)
-                has_sparse = true;
+        for (const LayerRegion *layerm : layer->regions())
+            for (const Surface &surface : layerm->fill_surfaces().surfaces)
+                if (surface.surface_type == stInternal && !surface.empty())
+                    has_sparse = true;
         if (!has_sparse)
             continue;
 
-        for (size_t i = 0; i < candidate.size(); ++i)
-            if (candidate[i].surface.surface_type == stInternalSolid && !candidate[i].expolygons.empty()) {
-                surface_fills = std::move(candidate);
-                solid         = &surface_fills[i];
-                for (const LayerRegion *layerm : layer->regions())
-                    append(total_fill_boundary, layerm->fill_expolygons());
-                total_fill_boundary = union_ex(total_fill_boundary);
+        for (LayerRegion *layerm : layer->regions()) {
+            // fill_surfaces() only exposes a const accessor; layerm itself
+            // is a genuinely non-const LayerRegion*, so stripping the
+            // const off this reference to mutate its public `surfaces`
+            // member is well-defined, not undefined behavior.
+            auto &fill_surfaces = const_cast<SurfaceCollection &>(layerm->fill_surfaces());
+            for (Surface &surface : fill_surfaces.surfaces)
+                if (surface.surface_type == stInternalSolid && !surface.empty()) {
+                    target_surface = &surface;
+                    break;
+                }
+            if (target_surface)
                 break;
-            }
-        if (solid)
+        }
+        if (target_surface) {
+            target_layer = layer;
             break;
+        }
     }
-    REQUIRE(solid != nullptr);
+    REQUIRE(target_surface != nullptr);
 
-    const auto count_holes = [](const ExPolygons &eps) {
-        size_t n = 0;
-        for (const ExPolygon &ep : eps)
-            n += ep.holes.size();
-        return n;
-    };
-    const size_t holes_before_injection = count_holes(solid->expolygons);
+    const size_t holes_before_injection = target_surface->expolygon.holes.size();
 
     // Inject a hole far below any plausible sparse-fill area threshold,
     // fully inside the region and not shared with any other fill.
-    ExPolygon &target = solid->expolygons.front();
-    const BoundingBox box      = Biz::Algorithms::Polygon::get_extents(target.contour);
-    const Point       centroid = (box.min + box.max) / 2;
+    const BoundingBox box      = Biz::Algorithms::Polygon::get_extents(target_surface->expolygon.contour);
+    const Point        centroid = (box.min + box.max) / 2;
+    const coord_t      half_side = scaled(0.1);
     Polygon hole{
-        centroid + Point{-scaled(0.1), -scaled(0.1)},
-        centroid + Point{scaled(0.1), -scaled(0.1)},
-        centroid + Point{scaled(0.1), scaled(0.1)},
-        centroid + Point{-scaled(0.1), scaled(0.1)},
+        centroid + Point{-half_side, -half_side},
+        centroid + Point{half_side, -half_side},
+        centroid + Point{half_side, half_side},
+        centroid + Point{-half_side, half_side},
     };
     hole.reverse();
-    target.holes.push_back(hole);
-    REQUIRE(count_holes(solid->expolygons) == holes_before_injection + 1);
+    target_surface->expolygon.holes.push_back(hole);
+    REQUIRE(target_surface->expolygon.holes.size() == holes_before_injection + 1);
 
-    Boss::SparseInfillAbsorption::absorb(surface_fills, total_fill_boundary);
+    // The one real call: group_fills() re-derives SurfaceFillParams from
+    // the mutated fill_surfaces() and, on the production path, calls
+    // Slic3r::Boss::SparseInfillAbsorption::absorb() on the result itself.
+    const std::vector<SurfaceFill> surface_fills = group_fills(*target_layer);
 
-    // absorb() may reassign solid->expolygons in place (e.g. after merging
-    // in an absorbed sparse pocket), invalidating any reference taken into
-    // it beforehand -- re-derive the hole count from `solid` itself rather
-    // than reusing `target`. The injected hole must be gone; any holes the
-    // real classification produced independently are out of scope here.
-    REQUIRE(count_holes(solid->expolygons) <= holes_before_injection);
+    // A hole with the injected hole's area (0.2mm x 0.2mm) is orders of
+    // magnitude below any real, load-bearing feature this test's config
+    // could produce -- if one survives absorption, the injected hole was
+    // not removed.
+    const double tiny_hole_area_bound = std::abs(hole.area()) * 10.0;
+    bool         tiny_hole_survived   = false;
+    for (const SurfaceFill &sf : surface_fills)
+        if (sf.surface.surface_type == stInternalSolid)
+            for (const ExPolygon &ep : sf.expolygons)
+                for (const Polygon &remaining_hole : ep.holes)
+                    if (std::abs(remaining_hole.area()) < tiny_hole_area_bound)
+                        tiny_hole_survived = true;
+    REQUIRE_FALSE(tiny_hole_survived);
 }
