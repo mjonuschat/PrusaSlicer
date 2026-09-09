@@ -1,4 +1,3 @@
-// src/libslic3r/src/libslic3r/boss/surface/absorption/SparseInfillAbsorption.hpp
 #pragma once
 
 #include <vector>
