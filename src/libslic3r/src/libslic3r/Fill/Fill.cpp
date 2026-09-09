@@ -27,6 +27,7 @@
 #include "boss/generated/BossSolidFillPolicy.hpp"
 #include "libslic3r/boss/surface/SolidFillPolicyContext.hpp"
 #include "boss/generated/BossFillExtraIncludes.hpp"
+#include "libslic3r/boss/surface/absorption/SparseInfillAbsorption.hpp"
 #include "libslic3r/Fill/Fill.hpp"
 #include "libslic3r/Fill/FillBase.hpp"
 #include "libslic3r/Fill/FillRectilinear.hpp"
@@ -346,6 +347,17 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
                 fill.params.boss_pattern.reset();
             }
     }
+
+    // The area inside the innermost perimeters, unaffected by inter-fill
+    // trimming above (which introduces safety-offset micro-gaps). Sparse
+    // infill absorption clips its merges back to this boundary so they
+    // can't grow past it into perimeter territory.
+    ExPolygons total_fill_boundary;
+    for (const LayerRegion *layerm : layer.regions())
+        append(total_fill_boundary, layerm->fill_expolygons());
+    total_fill_boundary = union_ex(total_fill_boundary);
+
+    Slic3r::Boss::SparseInfillAbsorption::absorb(surface_fills, total_fill_boundary);
 
     return surface_fills;
 }

@@ -1,0 +1,13 @@
+{
+  "name": "sparse-infill-absorption",
+  "id": 10202,
+  "key": "sparse-infill-absorption",
+  "trait": "Slic3r::Boss::SparseInfillAbsorptionFeature",
+  "header": "boss/features/sparse-infill-absorption/SparseInfillAbsorptionFeature.hpp",
+  "label": "Sparse infill absorption",
+  "components": {
+    "libslic3r": {
+      "sources": ["libslic3r/src/libslic3r/boss/surface/absorption/SparseInfillAbsorption.cpp"]
+    }
+  }
+}
