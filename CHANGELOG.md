@@ -57,6 +57,10 @@ lost during the rebase and squash based workflow.
 - Added three options to reverse extrusion direction on odd layers, for
   internal perimeters, overhang perimeters, and infill separately, to
   reduce stress and warping and improve steep overhangs.
+- Added narrow solid-infill erosion detection. When enabled, narrow
+  internal solid infill areas switch to Arachne's variable-width fill
+  instead of the configured pattern, so thin solid regions do not print
+  with zigzag artifacts or gaps.
 
 ### Changed
 
