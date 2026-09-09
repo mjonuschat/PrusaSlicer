@@ -1,5 +1,3 @@
-// src/boss/include/boss/features/sparse-infill-absorption/SparseInfillAbsorptionFeature.hpp
-//
 // This feature joins no capability registry -- it has no config surface at
 // all, so nothing generates its dispatch call, and no composition header
 // ever references this trait. It exists only so the manifest has a

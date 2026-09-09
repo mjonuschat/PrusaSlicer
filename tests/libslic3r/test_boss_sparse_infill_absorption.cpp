@@ -35,8 +35,11 @@ SurfaceFill make_fill(SurfaceType type, float density, double spacing_mm)
 
 TEST_CASE("A small stInternalSolid hole surrounded by sparse infill is absorbed", "[boss][surface]")
 {
-    // Establishes the sparse threshold; this entry's own expolygons play
-    // no part in the hole-removal test itself.
+    // Establishes the sparse threshold. At this test's density/spacing the sparse
+    // rectangle also gets absorbed into the solid fill by absorb_small_sparse_pockets(),
+    // but that has no bearing on this test's assertions: the hole is already removed by
+    // remove_small_internal_solid_holes(), a separate, earlier step. This test does not
+    // isolate absorb_small_sparse_pockets() -- see the dedicated notch test below for that.
     SurfaceFill sparse = make_fill(stInternal, 15.f, 0.45);
     sparse.expolygons  = {rectangle({0, 0}, scaled(1.0), scaled(1.0))};
 
@@ -77,6 +80,39 @@ TEST_CASE("A hole extending past the fill boundary is kept as a real model featu
 
     REQUIRE(surface_fills[1].expolygons.size() == 1);
     REQUIRE(surface_fills[1].expolygons.front().holes.size() == 1);
+}
+
+TEST_CASE("A small sparse pocket sitting in a stSolidOverBridge notch is absorbed via closing_ex",
+          "[boss][surface]")
+{
+    // A single stSolidOverBridge fragment shaped like a "C": a 20x20 square with a
+    // 2mm-deep, 4mm-tall notch bitten out of the right edge. Because this is one
+    // expolygon (not several disjoint fragments), the grow/union/shrink merge step
+    // that closes gaps between fragments never runs (it needs more than one
+    // expolygon) -- so absorb_small_sparse_pockets()'s own closing_ex() call is the
+    // only mechanism in absorb() that can recognize the notch pocket as covered.
+    SurfaceFill bridge = make_fill(stSolidOverBridge, 100.f, 0.45);
+    ExPolygon   notched{
+        Point{scaled(0.0), scaled(0.0)},
+        Point{scaled(0.0), scaled(20.0)},
+        Point{scaled(20.0), scaled(20.0)},
+        Point{scaled(20.0), scaled(12.0)},
+        Point{scaled(18.0), scaled(12.0)},
+        Point{scaled(18.0), scaled(8.0)},
+        Point{scaled(20.0), scaled(8.0)},
+        Point{scaled(20.0), scaled(0.0)},
+    };
+    bridge.expolygons = {notched};
+
+    SurfaceFill sparse = make_fill(stInternal, 15.f, 0.45);
+    sparse.expolygons  = {rectangle({scaled(18.0), scaled(8.0)}, scaled(2.0), scaled(4.0))};
+
+    const ExPolygons total_fill_boundary{rectangle({-scaled(1.0), -scaled(1.0)}, scaled(23.0), scaled(23.0))};
+
+    std::vector<SurfaceFill> surface_fills{bridge, sparse};
+    Boss::SparseInfillAbsorption::absorb(surface_fills, total_fill_boundary);
+
+    REQUIRE(surface_fills[1].expolygons.empty());
 }
 
 TEST_CASE("Two stSolidOverBridge fragments split by bridge angle consolidate into one entry", "[boss][surface]")
