@@ -76,6 +76,11 @@ lost during the rebase and squash based workflow.
   pattern reads as a visible lattice instead of a dense, squished blob.
 - 3D Honeycomb infill now bridges with the correct geometry and
   direction, fixing gaps and misaligned bridges over open spans. (#24)
+- Small sparse infill pockets fully enclosed by solid infill are now
+  absorbed into the solid fill instead of printing their own sparse
+  pattern too small to be useful, small holes in solid infill too narrow
+  for any fill to cover are now removed, and solid regions split into
+  fragments by bridge angle are now consolidated into one region.
 
 ### Ported
 
