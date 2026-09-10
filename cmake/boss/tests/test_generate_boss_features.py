@@ -516,5 +516,55 @@ class LabelObjectsCapabilityTests(unittest.TestCase):
             )
 
 
+class VendoredEmissionTests(unittest.TestCase):
+    def _one(self, tmp):
+        return write_manifest(
+            Path(tmp), "test-vendored", id=900401, key="test-vendored",
+            trait="Slic3r::Boss::Test::VendoredFixtureFeature",
+            header="boss/test-fixtures/vendored-fixture/VendoredFixtureFeature.hpp",
+            components={
+                "libslic3r": {
+                    "capabilities": [],
+                    "sources": ["libslic3r/src/libslic3r/boss/test_fixtures/VendoredFixture.cpp"],
+                }
+            },
+            vendored=[{"name": "boss-test-vendor", "path": "vendor/boss-test-vendor", "kind": "INTERFACE"}],
+        )
+
+    def test_vendored_entry_emits_interface_library(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._one(tmp)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            manifest = gbf.validate_manifest(path, data)
+
+            output_dir = Path(tmp) / "generated"
+            cmake_path = gbf.emit_vendored_cmake([manifest], "libslic3r", output_dir)
+            content = cmake_path.read_text(encoding="utf-8")
+            self.assertIn("add_library(boss-test-vendor INTERFACE)", content)
+            self.assertIn("target_include_directories(boss-test-vendor INTERFACE", content)
+            self.assertIn("vendor/boss-test-vendor", content)
+            self.assertIn("target_link_libraries(libslic3r PRIVATE boss-test-vendor)", content)
+
+    def test_vendored_entry_not_linked_into_other_targets(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._one(tmp)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            manifest = gbf.validate_manifest(path, data)
+
+            output_dir = Path(tmp) / "generated"
+            cmake_path = gbf.emit_vendored_cmake([manifest], "slic3r-domain", output_dir)
+            self.assertEqual(cmake_path.read_text(encoding="utf-8"), "")
+
+    def test_manifest_without_vendored_emits_empty_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = write_manifest(Path(tmp), "alpha")
+            data = json.loads(path.read_text(encoding="utf-8"))
+            manifest = gbf.validate_manifest(path, data)
+
+            output_dir = Path(tmp) / "generated"
+            cmake_path = gbf.emit_vendored_cmake([manifest], "slic3r-domain", output_dir)
+            self.assertEqual(cmake_path.read_text(encoding="utf-8"), "")
+
+
 if __name__ == "__main__":
     unittest.main()
