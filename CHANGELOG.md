@@ -9,6 +9,12 @@ lost during the rebase and squash based workflow.
 
 ### Added
 
+- External bridges can now use a configurable density, from 10% to 120%,
+  instead of always printing solid. Higher densities can smooth the
+  bridge surface. The default also changes. Bridge fill no longer evens
+  out line spacing for full coverage at 100% density, so bridge spacing
+  can differ slightly from stock PrusaSlicer even when you do not change
+  the setting.
 - Skirt/brim and the wipe tower are now declared to Klipper hosts
   (Mainsail/Fluidd) via `EXCLUDE_OBJECT_DEFINE`, so their outlines show up
   in the object list, but their G-code is never wrapped as excludable, so
