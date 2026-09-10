@@ -5,7 +5,7 @@ get_filename_component(_TEST_NAME ${CMAKE_CURRENT_LIST_DIR} NAME)
 # file without conflicting on a shared line. Fixture tests are gated
 # separately below and excluded here so they stay conditional.
 file(GLOB BOSS_TEST_SOURCES CONFIGURE_DEPENDS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "${CMAKE_CURRENT_SOURCE_DIR}/test_boss_*.cpp")
-list(REMOVE_ITEM BOSS_TEST_SOURCES test_boss_fill_fixture.cpp)
+list(REMOVE_ITEM BOSS_TEST_SOURCES test_boss_fill_fixture.cpp test_boss_solid_fill_policy_fixture.cpp)
 
 add_executable(${_TEST_NAME}_tests
 	${_TEST_NAME}_tests.cpp
@@ -51,7 +51,7 @@ add_executable(${_TEST_NAME}_tests
 	)
 
 if (BOSS_BUILD_FIXTURE_TESTS)
-    target_sources(${_TEST_NAME}_tests PRIVATE test_boss_fill_fixture.cpp)
+    target_sources(${_TEST_NAME}_tests PRIVATE test_boss_fill_fixture.cpp test_boss_solid_fill_policy_fixture.cpp)
 endif ()
 
 target_link_libraries(${_TEST_NAME}_tests test_common slic3r-shared)
