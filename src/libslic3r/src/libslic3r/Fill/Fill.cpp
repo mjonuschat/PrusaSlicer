@@ -24,6 +24,8 @@
 #include "libslic3r/PerimeterGenerator.hpp"
 #include "boss/generated/BossFillPatternKey.hpp"
 #include "boss/generated/BossFills.hpp"
+#include "boss/generated/BossSolidFillPolicy.hpp"
+#include "libslic3r/boss/surface/SolidFillPolicyContext.hpp"
 #include "libslic3r/Fill/Fill.hpp"
 #include "libslic3r/Fill/FillBase.hpp"
 #include "libslic3r/Fill/FillRectilinear.hpp"
@@ -101,6 +103,15 @@ static inline bool fill_type_monotonic(Domain::InfillPattern pattern)
 	return pattern == Domain::InfillPattern::ipMonotonic || pattern == Domain::InfillPattern::ipMonotonicLines;
 }
 
+static Domain::InfillPattern resolve_internal_solid_pattern(const Slic3r::Boss::SolidFillPolicyContext &ctx)
+{
+	if (Slic3r::Boss::BossSolidFillPolicy::force_ensuring(ctx))
+		return Domain::InfillPattern::ipEnsuring;
+	if (auto pattern = Slic3r::Boss::BossSolidFillPolicy::preferred_pattern(ctx))
+		return *pattern;
+	return Domain::InfillPattern::ipEnsuring;
+}
+
 std::vector<SurfaceFill> group_fills(const Layer &layer)
 {
 	std::vector<SurfaceFill> surface_fills;
@@ -137,9 +148,19 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 		        if (surface.is_solid()) {
 		            params.density = 100.f;
 					//FIXME for non-thick bridges, shall we allow a bottom surface pattern?
-		            params.pattern = (surface.is_external() && ! is_bridge) ? 
-						(surface.is_top() ? region_config.get<Domain::InfillPattern>("top_fill_pattern") : region_config.get<Domain::InfillPattern>("bottom_fill_pattern")) :
-		                fill_type_monotonic(region_config.get<Domain::InfillPattern>("top_fill_pattern")) ? Domain::InfillPattern::ipMonotonic : Domain::InfillPattern::ipRectilinear;
+		            if (surface.is_external() && ! is_bridge) {
+		                params.pattern = surface.is_top() ? region_config.get<Domain::InfillPattern>("top_fill_pattern")
+		                                                   : region_config.get<Domain::InfillPattern>("bottom_fill_pattern");
+		                if (Slic3r::Boss::BossSolidFillPolicy::skip_narrow_top_bottom(
+		                        {region_config, ExPolygons{surface.expolygon}, layerm.flow(frSolidInfill).scaled_width()}))
+		                    continue;
+		            } else if (is_bridge) {
+		                params.pattern = fill_type_monotonic(region_config.get<Domain::InfillPattern>("top_fill_pattern"))
+		                    ? Domain::InfillPattern::ipMonotonic : Domain::InfillPattern::ipRectilinear;
+		            } else {
+		                params.pattern = resolve_internal_solid_pattern(
+		                    {region_config, ExPolygons{surface.expolygon}, layerm.flow(frSolidInfill).scaled_width()});
+		            }
 		        } else if (params.density <= 0)
 		            continue;
 
@@ -292,7 +313,8 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 	        if (internal_solid_fill == nullptr) {
 	        	// Produce another solid fill.
 		        params.extruder 	 = layerm.region().extruder(frSolidInfill);
-	            params.pattern 		 = fill_type_monotonic(layerm.region().config().get<Domain::InfillPattern>("top_fill_pattern")) ? Domain::InfillPattern::ipMonotonic : Domain::InfillPattern::ipRectilinear;
+	            params.pattern 		 = resolve_internal_solid_pattern(
+	                {layerm.region().config(), extensions, layerm.flow(frSolidInfill).scaled_width()});
 	            params.density 		 = 100.f;
 		        params.extrusion_role = ExtrusionRole::InternalInfill;
 		        params.angle 		= float(deg2rad(layerm.region().config().get<double>("fill_angle")));
@@ -310,13 +332,15 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 		}
     }
 
-    // Use Domain::InfillPattern::ipEnsuring pattern for all internal Solids.
+    // The pattern is already final by this point (set at each entry's creation
+    // site). boss_pattern still needs clearing here: params is a reused
+    // function-scope variable, so this is the only reliable reset point for
+    // the synthetic void-fill-extension entry.
     {
         for (size_t surface_fill_id = 0; surface_fill_id < surface_fills.size(); ++surface_fill_id)
             if (SurfaceFill &fill = surface_fills[surface_fill_id];
                     fill.surface.surface_type == stInternalSolid
                     || fill.surface.surface_type == stSolidOverBridge) {
-                fill.params.pattern = Domain::InfillPattern::ipEnsuring;
                 fill.params.boss_pattern.reset();
             }
     }

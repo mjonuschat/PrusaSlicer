@@ -419,6 +419,13 @@ CAPABILITY_REGISTRIES = {
         "template_header": "boss/foundation/BossLabelObjectsRegistry.hpp",
         "output_header": "BossLabelObjects.hpp",
     },
+    "solid_fill_policy": {
+        "target": "libslic3r",
+        "alias": "BossSolidFillPolicy",
+        "template": "Slic3r::Boss::BossSolidFillPolicyRegistry",
+        "template_header": "boss/foundation/BossSolidFillPolicyRegistry.hpp",
+        "output_header": "BossSolidFillPolicy.hpp",
+    },
 }
 
 # Storage homes: BOSS-owned override structs the generator writes and each
