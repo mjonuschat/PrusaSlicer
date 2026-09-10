@@ -74,7 +74,13 @@ void consolidate_solid_over_bridge(std::vector<SurfaceFill> &surface_fills)
 // Removes holes in stInternalSolid that are too small (or, if large but
 // thin, fail an erosion test) for sparse fill to cover, unless another
 // fill occupies them or they extend past the true fill boundary -- both of
-// which mark a real model feature rather than a trimming artifact.
+// which mark a real model feature rather than a trimming artifact. A
+// feature that fragments stInternalSolid by pattern (e.g.
+// narrow-solid-infill-erosion) can split one physical hole's boundary
+// across multiple entries, so the keep/remove decision is made once per
+// reunified hole shape -- not per entry's own fragment, which alone may
+// look too small or too thin even though the real feature is neither --
+// and then applied to every entry that shares a piece of it.
 void remove_small_internal_solid_holes(std::vector<SurfaceFill> &surface_fills, const SparseThreshold &threshold,
                                         const ExPolygons &total_fill_boundary)
 {
@@ -82,38 +88,71 @@ void remove_small_internal_solid_holes(std::vector<SurfaceFill> &surface_fills, 
         return;
 
     Polygons other_fill_polys;
-    for (const SurfaceFill &sf : surface_fills)
-        if (sf.surface.surface_type != stInternalSolid && sf.surface.surface_type != stInternal && !sf.expolygons.empty())
+    Polygons all_hole_contours;
+    for (const SurfaceFill &sf : surface_fills) {
+        if (sf.expolygons.empty())
+            continue;
+        if (sf.surface.surface_type != stInternalSolid && sf.surface.surface_type != stInternal)
             append(other_fill_polys, to_polygons(sf.expolygons));
+        if (sf.surface.surface_type == stInternalSolid)
+            for (const ExPolygon &ep : sf.expolygons)
+                for (const Polygon &hole : ep.holes) {
+                    Polygon contour = hole;
+                    contour.reverse();
+                    all_hole_contours.push_back(std::move(contour));
+                }
+    }
+    if (all_hole_contours.empty())
+        return;
+
+    // NOTE: this merges every stInternalSolid hole that touches, overlaps, or is
+    // nested inside another one -- not just genuine fragments of a hole split by
+    // a sibling feature. A hole nested inside another entry's hole (e.g. a
+    // pillar's through-hole sitting inside the surrounding pocket's outline,
+    // when narrow-solid-infill-erosion puts the pillar in a separate entry) is
+    // ordinary topology in this composition, not a rare coincidence, and gets
+    // silently absorbed into the outer hole's evaluation. A precise fix would
+    // need hole-provenance tracking, which the data model doesn't carry --
+    // accepted trade-off for now; the failure mode is bounded (one hole kept or
+    // dropped that should have gone the other way, never an area-accounting
+    // loss or a crash).
+    const ExPolygons combined_holes = union_ex(all_hole_contours);
+
+    ExPolygons holes_to_remove;
+    for (const ExPolygon &hole_shape : combined_holes) {
+        const Polygon &contour = hole_shape.contour;
+        bool           remove  = true;
+        // Keep large holes unless they're too thin for sparse fill.
+        if (std::abs(contour.area()) >= threshold.min_area &&
+            (threshold.erode_radius <= 0 || !opening_ex(ExPolygons{ExPolygon(contour)}, threshold.erode_radius).empty()))
+            remove = false;
+        // Keep the hole if another fill occupies it.
+        if (remove && !intersection_ex(ExPolygons{ExPolygon(contour)}, other_fill_polys).empty())
+            remove = false;
+        // Keep the hole if it extends outside the fill boundary -- a real
+        // model feature (a through-hole), not a trimming artifact.
+        if (remove) {
+            if (ExPolygons outside = diff_ex(ExPolygons{ExPolygon(contour)}, total_fill_boundary);
+                !outside.empty() && total_area(outside) > std::abs(contour.area()) * 0.1)
+                remove = false;
+        }
+        if (remove)
+            holes_to_remove.push_back(ExPolygon(contour));
+    }
+    if (holes_to_remove.empty())
+        return;
 
     for (SurfaceFill &fill : surface_fills) {
         if (fill.expolygons.empty() || fill.surface.surface_type != stInternalSolid)
             continue;
         for (ExPolygon &ep : fill.expolygons)
             ep.holes.erase(
-                std::remove_if(
-                    ep.holes.begin(), ep.holes.end(),
-                    [&](const Polygon &hole) {
-                        Polygon contour = hole;
-                        contour.reverse();
-                        // Keep large holes unless they're too thin for sparse fill.
-                        if (std::abs(hole.area()) >= threshold.min_area) {
-                            if (threshold.erode_radius <= 0)
-                                return false;
-                            if (!opening_ex(ExPolygons{ExPolygon(contour)}, threshold.erode_radius).empty())
-                                return false; // Thick enough for sparse fill.
-                            // Falls through: large area but too thin, evaluate further.
-                        }
-                        // Keep the hole if another fill occupies it.
-                        if (!intersection_ex(ExPolygons{ExPolygon(contour)}, other_fill_polys).empty())
-                            return false;
-                        // Keep the hole if it extends outside the fill boundary --
-                        // a real model feature (a through-hole), not a trimming artifact.
-                        if (ExPolygons outside = diff_ex(ExPolygons{ExPolygon(contour)}, total_fill_boundary);
-                            !outside.empty() && total_area(outside) > std::abs(contour.area()) * 0.1)
-                            return false;
-                        return true;
-                    }),
+                std::remove_if(ep.holes.begin(), ep.holes.end(),
+                                [&](const Polygon &hole) {
+                                    Polygon contour = hole;
+                                    contour.reverse();
+                                    return diff_ex(ExPolygons{ExPolygon(contour)}, holes_to_remove).empty();
+                                }),
                 ep.holes.end());
     }
 }
