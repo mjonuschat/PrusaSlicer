@@ -55,8 +55,11 @@ void validate_perimeter_overlap(const Print &print, std::vector<Biz::Slicing::Wa
     if (first_object->all_regions().empty())
         return;
     const PrintRegion &first_region = first_object->all_regions().front();
+    const int extruder = first_region.config().get<int>("perimeter_extruder");
+    const int extruder_id = extruder == 0 ? 0 : extruder - 1;
     const double perimeter_width = resolve_reference_width(
-        first_region.config().get<Domain::FloatOrPercentage>("perimeter_extrusion_width"), nozzle_diameter);
+        first_region.config().get<std::vector<Domain::FloatOrPercentage>>("perimeter_extrusion_width").at(extruder_id),
+        nozzle_diameter);
 
     bool out_of_bounds = false;
     out_of_bounds |= overlap_out_of_bounds(print, "external_perimeter_overlap", perimeter_width, -100.0, 100.0);
