@@ -73,6 +73,7 @@ bool SurfaceFillParams::operator<(const SurfaceFillParams &rhs) const {
 	RETURN_COMPARE_NON_EQUAL(spacing);
 	RETURN_COMPARE_NON_EQUAL(angle);
 	RETURN_COMPARE_NON_EQUAL(density);
+	RETURN_COMPARE_NON_EQUAL_TYPED(unsigned, dont_adjust);
 	RETURN_COMPARE_NON_EQUAL(anchor_length);
 	RETURN_COMPARE_NON_EQUAL(anchor_length_max);
 	RETURN_COMPARE_NON_EQUAL(flow.width());
@@ -90,6 +91,7 @@ bool SurfaceFillParams::operator==(const SurfaceFillParams &rhs) const {
 			this->angle   			== rhs.angle   			&&
 			this->bridge   			== rhs.bridge   		&&
 			this->density   		== rhs.density   		&&
+			this->dont_adjust   	== rhs.dont_adjust   	&&
 			this->anchor_length  	== rhs.anchor_length    &&
 			this->anchor_length_max == rhs.anchor_length_max &&
 			this->flow 				== rhs.flow 			&&
@@ -173,6 +175,11 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 					// Always enable thick bridges for internal bridges.
 					layerm.bridging_flow(extrusion_role, surface.is_bridge() && ! surface.is_external()) :
 					layerm.flow(extrusion_role, (surface.thickness == -1) ? layer.height : surface.thickness);
+
+				if (params.bridge && surface.is_external() && params.density > 99.0f) {
+					params.density = float(region.extruder_config_value<Domain::Percentage>("bridge_density", extrusion_role).value);
+					params.dont_adjust = true;
+				}
 
 				// Calculate flow spacing for infill pattern generation.
 		        if (surface.is_solid() || is_bridge) {
@@ -510,7 +517,7 @@ void Layer::make_fills(FillAdaptive::Octree* adaptive_fill_octree, FillAdaptive:
         // apply half spacing using this flow's own spacing and generate infill
         FillParams params;
         params.density                    = float(0.01 * surface_fill.params.density);
-        params.dont_adjust                = false; //  surface_fill.params.dont_adjust;
+        params.dont_adjust                = surface_fill.params.dont_adjust;
         params.anchor_length              = surface_fill.params.anchor_length;
         params.anchor_length_max          = surface_fill.params.anchor_length_max;
         params.resolution                 = resolution;

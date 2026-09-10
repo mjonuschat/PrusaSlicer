@@ -1,0 +1,17 @@
+{
+  "name": "bridge-density",
+  "id": 10301,
+  "key": "bridge-density",
+  "trait": "Slic3r::Boss::BridgeDensityFeature",
+  "header": "boss/features/bridge-density/BridgeDensityFeature.hpp",
+  "label": "Bridge density",
+  "components": {
+    "slic3r-domain": {
+      "capabilities": ["fdm_config"],
+      "sources": ["slic3r-domain/src/Slic3r/Domain/boss/BridgeDensityConfig.cpp"]
+    }
+  },
+  "config_options": [
+    { "key": "bridge_density", "invalidates": ["posInfill"] }
+  ]
+}
