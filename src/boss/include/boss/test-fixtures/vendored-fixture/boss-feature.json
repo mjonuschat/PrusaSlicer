@@ -1,0 +1,16 @@
+{
+  "name": "boss-test-vendored-fixture",
+  "id": 900104,
+  "key": "boss-test-vendored-fixture",
+  "trait": "Slic3r::Boss::Test::VendoredFixtureFeature",
+  "header": "boss/test-fixtures/vendored-fixture/VendoredFixtureFeature.hpp",
+  "label": "BOSS test vendored fixture",
+  "components": {
+    "libslic3r": {
+      "sources": ["libslic3r/src/libslic3r/boss/test_fixtures/VendoredFixture.cpp"]
+    }
+  },
+  "vendored": [
+    {"name": "boss-test-vendor", "path": "vendor/boss-test-vendor", "kind": "INTERFACE"}
+  ]
+}
