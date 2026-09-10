@@ -71,6 +71,9 @@ lost during the rebase and squash based workflow.
   internal solid infill areas switch to Arachne's variable-width fill
   instead of the configured pattern, so thin solid regions do not print
   with zigzag artifacts or gaps.
+- Added a "Solid fill pattern" option, which sets the pattern for internal
+  solid infill separately from the top and bottom fill patterns. The
+  default is Monotonic.
 
 ### Changed
 
