@@ -1,0 +1,22 @@
+{
+  "name": "boss-test-solid-fill-policy-fixture",
+  "id": 900501,
+  "key": "boss-test-solid-fill-policy-fixture",
+  "trait": "Slic3r::Boss::Test::SolidFillPolicyFixtureFeature",
+  "header": "boss/test-fixtures/solid-fill-policy-fixture/SolidFillPolicyFixtureFeature.hpp",
+  "label": "BOSS test solid-fill-policy fixture",
+  "components": {
+    "slic3r-domain": {
+      "capabilities": ["fdm_config"],
+      "sources": ["slic3r-domain/src/Slic3r/Domain/boss/test_fixtures/SolidFillPolicyFixtureConfig.cpp"]
+    },
+    "libslic3r": {
+      "capabilities": ["solid_fill_policy"],
+      "sources": ["libslic3r/src/libslic3r/boss/surface/test_fixtures/SolidFillPolicyFixture.cpp"]
+    }
+  },
+  "config_options": [
+    {"key": "boss_test_solid_fill_policy_active", "invalidates": ["posInfill"]},
+    {"key": "boss_test_solid_fill_policy_force", "invalidates": ["posInfill"]}
+  ]
+}
