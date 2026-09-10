@@ -6,10 +6,12 @@
 #include "libslic3r/PerimeterGenerator.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
+#include "libslic3r/boss/surface/fuzzyskin/FuzzySkinNoiseProvider.hpp"
 
 #include "FuzzySkin.hpp"
 #include "libslic3r/ConfigViews.hpp"
 #include "Slic3r/Domain/ConfigDefsFDM.hpp"
+#include "boss/features/structured-fuzzy-skin/StructuredFuzzySkinFeature.hpp"
 
 using namespace Slic3r;
 
@@ -25,7 +27,24 @@ static double random_value()
     return dist(gen);
 }
 
-void fuzzy_polyline(Points &poly, const bool closed, const double fuzzy_skin_thickness, const double fuzzy_skin_point_distance)
+static double get_displacement(const PrintRegionConfigView &config, const double slice_z, const Point &sample_point, const double thickness)
+{
+    using Domain::Boss::FuzzySkinNoiseType;
+
+    const FuzzySkinNoiseType noise_type = config.get<FuzzySkinNoiseType>("fuzzy_skin_noise_type");
+    if (noise_type == FuzzySkinNoiseType::Classic)
+        return random_value() * (thickness * 2.) - thickness;
+
+    return Slic3r::Boss::FuzzySkinNoiseProvider::get_displacement(
+        noise_type,
+        config.get<double>("fuzzy_skin_feature_size"),
+        config.get<int>("fuzzy_skin_octaves"),
+        config.get<double>("fuzzy_skin_persistence"),
+        sample_point, slice_z, thickness);
+}
+
+void fuzzy_polyline(Points &poly, const bool closed, const double fuzzy_skin_thickness, const double fuzzy_skin_point_distance,
+                     const PrintRegionConfigView &config, const double slice_z)
 {
     const double min_dist_between_points = fuzzy_skin_point_distance * 3. / 4.; // hardcoded: the point distance may vary between 3/4 and 5/4 the supplied value
     const double range_random_point_dist = fuzzy_skin_point_distance / 2.;
@@ -44,8 +63,9 @@ void fuzzy_polyline(Points &poly, const bool closed, const double fuzzy_skin_thi
         double p0p1_size = p0p1.norm();
         double p0pa_dist = dist_left_over;
         for (; p0pa_dist < p0p1_size; p0pa_dist += min_dist_between_points + random_value() * range_random_point_dist) {
-            double r = random_value() * (fuzzy_skin_thickness * 2.) - fuzzy_skin_thickness;
-            out.emplace_back(*p0 + (p0p1 * (p0pa_dist / p0p1_size) + perp(p0p1).cast<double>().normalized() * r).cast<coord_t>());
+            Point  pa = *p0 + (p0p1 * (p0pa_dist / p0p1_size)).cast<coord_t>();
+            double r  = get_displacement(config, slice_z, pa, fuzzy_skin_thickness);
+            out.emplace_back(pa + (perp(p0p1).cast<double>().normalized() * r).cast<coord_t>());
         }
 
         dist_left_over = p0pa_dist - p0p1_size;
@@ -67,12 +87,14 @@ void fuzzy_polyline(Points &poly, const bool closed, const double fuzzy_skin_thi
     }
 }
 
-void fuzzy_polygon(Polygon &polygon, double fuzzy_skin_thickness, double fuzzy_skin_point_distance)
+void fuzzy_polygon(Polygon &polygon, double fuzzy_skin_thickness, double fuzzy_skin_point_distance,
+                    const PrintRegionConfigView &config, const double slice_z)
 {
-    fuzzy_polyline(polygon.points, true, fuzzy_skin_thickness, fuzzy_skin_point_distance);
+    fuzzy_polyline(polygon.points, true, fuzzy_skin_thickness, fuzzy_skin_point_distance, config, slice_z);
 }
 
-void fuzzy_extrusion_line(Arachne::ExtrusionLine &ext_lines, const double fuzzy_skin_thickness, const double fuzzy_skin_point_distance)
+void fuzzy_extrusion_line(Arachne::ExtrusionLine &ext_lines, const double fuzzy_skin_thickness, const double fuzzy_skin_point_distance,
+                           const PrintRegionConfigView &config, const double slice_z)
 {
     const double min_dist_between_points = fuzzy_skin_point_distance * 3. / 4.; // hardcoded: the point distance may vary between 3/4 and 5/4 the supplied value
     const double range_random_point_dist = fuzzy_skin_point_distance / 2.;
@@ -93,8 +115,9 @@ void fuzzy_extrusion_line(Arachne::ExtrusionLine &ext_lines, const double fuzzy_
         double p0p1_size = p0p1.norm();
         double p0pa_dist = dist_left_over;
         for (; p0pa_dist < p0p1_size; p0pa_dist += min_dist_between_points + random_value() * range_random_point_dist) {
-            double r = random_value() * (fuzzy_skin_thickness * 2.) - fuzzy_skin_thickness;
-            out.emplace_back(p0->p + (p0p1 * (p0pa_dist / p0p1_size) + perp(p0p1).cast<double>().normalized() * r).cast<coord_t>(), p1.w, p1.perimeter_index);
+            Point  pa = p0->p + (p0p1 * (p0pa_dist / p0p1_size)).cast<coord_t>();
+            double r  = get_displacement(config, slice_z, pa, fuzzy_skin_thickness);
+            out.emplace_back(pa + (perp(p0p1).cast<double>().normalized() * r).cast<coord_t>(), p1.w, p1.perimeter_index);
         }
 
         dist_left_over = p0pa_dist - p0p1_size;
@@ -135,14 +158,15 @@ bool should_fuzzify(const PrintRegionConfigView &config, const size_t layer_idx,
     return is_contour ? fuzzify_contours : fuzzify_holes;
 }
 
-Polygon apply_fuzzy_skin(const Polygon &polygon, const PrintRegionConfigView &base_config, const PerimeterRegions &perimeter_regions, const size_t layer_idx, const size_t perimeter_idx, const bool is_contour)
+Polygon apply_fuzzy_skin(const Polygon &polygon, const PrintRegionConfigView &base_config, const PerimeterRegions &perimeter_regions, const size_t layer_idx, const size_t perimeter_idx, const bool is_contour, const double slice_z)
 {
     using namespace Slic3r::Algorithm::LineSegmentation;
 
-    auto apply_fuzzy_skin_on_polygon = [&layer_idx, &perimeter_idx, &is_contour](const Polygon &polygon, const PrintRegionConfigView &config) -> Polygon {
+    auto apply_fuzzy_skin_on_polygon = [&layer_idx, &perimeter_idx, &is_contour, &slice_z](const Polygon &polygon, const PrintRegionConfigView &config) -> Polygon {
         if (should_fuzzify(config, layer_idx, perimeter_idx, is_contour)) {
             Polygon fuzzified_polygon = polygon;
-            fuzzy_polygon(fuzzified_polygon, scaled<double>(config.get<double>("fuzzy_skin_thickness")), scaled<double>(config.get<double>("fuzzy_skin_point_dist")));
+            fuzzy_polygon(fuzzified_polygon, scaled<double>(config.get<double>("fuzzy_skin_thickness")), scaled<double>(config.get<double>("fuzzy_skin_point_dist")),
+                          config, slice_z);
 
             return fuzzified_polygon;
         } else {
@@ -164,7 +188,8 @@ Polygon apply_fuzzy_skin(const Polygon &polygon, const PrintRegionConfigView &ba
     for (PolylineRegionSegment &segment : segments) {
         const PrintRegionConfigView &config = segment.config;
         if (should_fuzzify(config, layer_idx, perimeter_idx, is_contour)) {
-            fuzzy_polyline(segment.polyline.points, false, scaled<double>(config.get<double>("fuzzy_skin_thickness")), scaled<double>(config.get<double>("fuzzy_skin_point_dist")));
+            fuzzy_polyline(segment.polyline.points, false, scaled<double>(config.get<double>("fuzzy_skin_thickness")), scaled<double>(config.get<double>("fuzzy_skin_point_dist")),
+                           config, slice_z);
         }
 
         assert(!segment.polyline.empty());
@@ -187,7 +212,7 @@ Polygon apply_fuzzy_skin(const Polygon &polygon, const PrintRegionConfigView &ba
     return fuzzified_polygon;
 }
 
-Arachne::ExtrusionLine apply_fuzzy_skin(const Arachne::ExtrusionLine &extrusion, const PrintRegionConfigView &base_config, const PerimeterRegions &perimeter_regions, const size_t layer_idx, const size_t perimeter_idx, const bool is_contour)
+Arachne::ExtrusionLine apply_fuzzy_skin(const Arachne::ExtrusionLine &extrusion, const PrintRegionConfigView &base_config, const PerimeterRegions &perimeter_regions, const size_t layer_idx, const size_t perimeter_idx, const bool is_contour, const double slice_z)
 {
     using namespace Slic3r::Algorithm::LineSegmentation;
     using namespace Slic3r::Arachne;
@@ -195,7 +220,8 @@ Arachne::ExtrusionLine apply_fuzzy_skin(const Arachne::ExtrusionLine &extrusion,
     if (perimeter_regions.empty()) {
         if (should_fuzzify(base_config, layer_idx, perimeter_idx, is_contour)) {
             ExtrusionLine fuzzified_extrusion = extrusion;
-            fuzzy_extrusion_line(fuzzified_extrusion, scaled<double>(base_config.get<double>("fuzzy_skin_thickness")), scaled<double>(base_config.get<double>("fuzzy_skin_point_dist")));
+            fuzzy_extrusion_line(fuzzified_extrusion, scaled<double>(base_config.get<double>("fuzzy_skin_thickness")), scaled<double>(base_config.get<double>("fuzzy_skin_point_dist")),
+                                 base_config, slice_z);
 
             return fuzzified_extrusion;
         } else {
@@ -209,7 +235,8 @@ Arachne::ExtrusionLine apply_fuzzy_skin(const Arachne::ExtrusionLine &extrusion,
     for (ExtrusionRegionSegment &segment : segments) {
         const PrintRegionConfigView &config = segment.config;
         if (should_fuzzify(config, layer_idx, perimeter_idx, is_contour)) {
-            fuzzy_extrusion_line(segment.extrusion, scaled<double>(config.get<double>("fuzzy_skin_thickness")), scaled<double>(config.get<double>("fuzzy_skin_point_dist")));
+            fuzzy_extrusion_line(segment.extrusion, scaled<double>(config.get<double>("fuzzy_skin_thickness")), scaled<double>(config.get<double>("fuzzy_skin_point_dist")),
+                                 config, slice_z);
         }
 
         assert(!segment.extrusion.empty());
