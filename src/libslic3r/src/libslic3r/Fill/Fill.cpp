@@ -322,6 +322,7 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 				params.flow = layerm.flow(frSolidInfill);
 		        params.spacing = params.flow.spacing();	        
 				surface_fills.emplace_back(params);
+				surface_fills.back().region_id = region_id;
 				surface_fills.back().surface.surface_type = stInternalSolid;
 				surface_fills.back().surface.thickness = layer.height;
 				surface_fills.back().expolygons = std::move(extensions);
