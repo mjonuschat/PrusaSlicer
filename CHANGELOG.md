@@ -15,6 +15,10 @@ lost during the rebase and squash based workflow.
   out line spacing for full coverage at 100% density, so bridge spacing
   can differ slightly from stock PrusaSlicer even when you do not change
   the setting.
+- The first layer and the top solid layer can now each use their own flow
+  ratio, from 0.5 to 1.5. Lower the first layer ratio to fix a rough or
+  sticking first layer, or raise the top layer ratio to smooth the top
+  surface.
 - Skirt/brim and the wipe tower are now declared to Klipper hosts
   (Mainsail/Fluidd) via `EXCLUDE_OBJECT_DEFINE`, so their outlines show up
   in the object list, but their G-code is never wrapped as excludable, so
