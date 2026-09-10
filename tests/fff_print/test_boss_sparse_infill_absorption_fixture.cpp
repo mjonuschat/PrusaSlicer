@@ -9,7 +9,6 @@
 // once by the time such a second call would see its result).
 #include <catch2/catch_test_macros.hpp>
 
-#include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Fill/Fill.hpp"
 #include "libslic3r/Layer.hpp"
@@ -33,7 +32,11 @@ TEST_CASE("A stInternalSolid hole injected before group_fills() is absorbed by i
     config.print.items.opt("bottom_solid_layers").set(3);
 
     Print print;
-    Slic3r::Test::init_and_process_print({TestMesh::cube_20x20x20}, print, config);
+    // A step, not a cube: a cube's only stInternalSolid surfaces are the thin
+    // rings ensure_vertical_shell_thickness leaves beside the walls, too
+    // narrow to hold an injected hole clear of its own edges. The step's lower
+    // roof is solid across its width, on a layer that also carries sparse fill.
+    Slic3r::Test::init_and_process_print({TestMesh::step}, print, config);
 
     // Find a layer with both a sparse (stInternal) surface -- needed for
     // absorb()'s sparse threshold to be non-zero -- and a non-empty
@@ -42,8 +45,11 @@ TEST_CASE("A stInternalSolid hole injected before group_fills() is absorbed by i
     // runs inside group_fills() on its derived output, never on
     // fill_surfaces() itself) -- the assertion below targets the injected
     // hole specifically by size, not by an absolute hole count.
-    Surface *target_surface = nullptr;
-    Layer   *target_layer   = nullptr;
+    const coord_t half_side = scaled(0.1);
+
+    Surface   *target_surface = nullptr;
+    Layer     *target_layer   = nullptr;
+    ExPolygons interior;
     for (Layer *layer : print.get_object(0)->layers()) {
         bool has_sparse = false;
         for (const LayerRegion *layerm : layer->regions())
@@ -59,11 +65,22 @@ TEST_CASE("A stInternalSolid hole injected before group_fills() is absorbed by i
             // const off this reference to mutate its public `surfaces`
             // member is well-defined, not undefined behavior.
             auto &fill_surfaces = const_cast<SurfaceCollection &>(layerm->fill_surfaces());
-            for (Surface &surface : fill_surfaces.surfaces)
-                if (surface.surface_type == stInternalSolid && !surface.empty()) {
-                    target_surface = &surface;
-                    break;
-                }
+            for (Surface &surface : fill_surfaces.surfaces) {
+                if (surface.surface_type != stInternalSolid || surface.empty())
+                    continue;
+                // Eroding backs away from the contour and the holes alike,
+                // so a non-empty result both proves the surface can hold the
+                // hole and yields a point to build it around. A bounding-box
+                // centre would not: on a ring it lands inside the surface's
+                // own hole, and a hole nested in a hole is not something
+                // absorption can be asked about.
+                ExPolygons eroded = offset_ex(surface.expolygon, -float(half_side) * 2.f);
+                if (eroded.empty())
+                    continue;
+                target_surface = &surface;
+                interior       = std::move(eroded);
+                break;
+            }
             if (target_surface)
                 break;
         }
@@ -78,9 +95,7 @@ TEST_CASE("A stInternalSolid hole injected before group_fills() is absorbed by i
 
     // Inject a hole far below any plausible sparse-fill area threshold,
     // fully inside the region and not shared with any other fill.
-    const BoundingBox box      = Biz::Algorithms::Polygon::get_extents(target_surface->expolygon.contour);
-    const Point        centroid = (box.min + box.max) / 2;
-    const coord_t      half_side = scaled(0.1);
+    const Point centroid = interior.front().contour.points.front();
     Polygon hole{
         centroid + Point{-half_side, -half_side},
         centroid + Point{half_side, -half_side},
