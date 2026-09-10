@@ -39,6 +39,9 @@ struct SurfaceFillParams
     float  bridge_angle = 0.f;
 
     float density = 0.f;
+    // Don't let the filler re-adjust spacing to fill the space evenly. Bridge density is
+    // a direct target, not a hint the filler should round to an even division of the area.
+    bool  dont_adjust = false;
     // Length of the infill anchor along the perimeter line.
     // 1000mm is roughly the maximum length line that fits into a 32bit coord_t.
     float anchor_length     = 1000.f;
