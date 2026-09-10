@@ -1,0 +1,18 @@
+{
+  "name": "first-top-layer-flow-ratio",
+  "id": 10302,
+  "key": "first-top-layer-flow-ratio",
+  "trait": "Slic3r::Boss::FirstTopLayerFlowRatioFeature",
+  "header": "boss/features/first-top-layer-flow-ratio/FirstTopLayerFlowRatioFeature.hpp",
+  "label": "First/top layer flow ratio",
+  "components": {
+    "slic3r-domain": {
+      "capabilities": ["fdm_config"],
+      "sources": ["slic3r-domain/src/Slic3r/Domain/boss/FirstTopLayerFlowRatioConfig.cpp"]
+    }
+  },
+  "config_options": [
+    { "key": "first_layer_flow_ratio", "invalidates": ["posSupportMaterial", "posPerimeters", "posInfill", "psSkirtBrim"] },
+    { "key": "top_layer_flow_ratio", "invalidates": ["posInfill"] }
+  ]
+}
