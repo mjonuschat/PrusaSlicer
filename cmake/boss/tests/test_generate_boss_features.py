@@ -516,6 +516,44 @@ class LabelObjectsCapabilityTests(unittest.TestCase):
             )
 
 
+class SolidFillPolicyCapabilityTests(unittest.TestCase):
+    def _one(self, tmp):
+        return write_manifest(
+            Path(tmp), "test-solid-fill-policy", id=900501, key="test-solid-fill-policy",
+            trait="Slic3r::Boss::Test::SolidFillPolicyFixtureFeature",
+            header="boss/test-fixtures/solid-fill-policy-fixture/SolidFillPolicyFixtureFeature.hpp",
+            components={
+                "libslic3r": {
+                    "capabilities": ["solid_fill_policy"],
+                    "sources": ["libslic3r/src/libslic3r/boss/test_fixtures/SolidFillPolicyFixture.cpp"],
+                }
+            },
+        )
+
+    def test_solid_fill_policy_capability_is_known(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._one(tmp)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            manifest = gbf.validate_manifest(path, data)
+            gbf.check_known_capabilities([manifest])
+            gbf.check_capability_targets([manifest])
+
+    def test_solid_fill_policy_generates_component_alias(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._one(tmp)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            manifest = gbf.validate_manifest(path, data)
+
+            include_dir = Path(tmp) / "generated" / "include"
+            header_path = gbf.emit_composition_header("solid_fill_policy", [manifest], include_dir)
+            content = header_path.read_text(encoding="utf-8")
+            self.assertIn(
+                "using BossSolidFillPolicy = Slic3r::Boss::BossSolidFillPolicyRegistry<"
+                "Slic3r::Boss::Test::SolidFillPolicyFixtureFeature>;",
+                content,
+            )
+
+
 class VendoredEmissionTests(unittest.TestCase):
     def _one(self, tmp):
         return write_manifest(
