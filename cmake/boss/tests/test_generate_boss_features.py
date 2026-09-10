@@ -478,5 +478,43 @@ class PerimeterPolicyCapabilityTests(unittest.TestCase):
             )
 
 
+class LabelObjectsCapabilityTests(unittest.TestCase):
+    def _one(self, tmp):
+        return write_manifest(
+            Path(tmp), "test-label-objects", id=900301, key="test-label-objects",
+            trait="Slic3r::Boss::Test::LabelObjectsFixtureFeature",
+            header="boss/test-fixtures/label-objects-fixture/LabelObjectsFixtureFeature.hpp",
+            components={
+                "libslic3r": {
+                    "capabilities": ["label_objects"],
+                    "sources": ["libslic3r/src/libslic3r/boss/test_fixtures/LabelObjectsFixture.cpp"],
+                }
+            },
+        )
+
+    def test_label_objects_capability_is_known(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._one(tmp)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            manifest = gbf.validate_manifest(path, data)
+            gbf.check_known_capabilities([manifest])
+            gbf.check_capability_targets([manifest])
+
+    def test_label_objects_generates_component_alias(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._one(tmp)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            manifest = gbf.validate_manifest(path, data)
+
+            include_dir = Path(tmp) / "generated" / "include"
+            header_path = gbf.emit_composition_header("label_objects", [manifest], include_dir)
+            content = header_path.read_text(encoding="utf-8")
+            self.assertIn(
+                "using BossLabelObjects = Slic3r::Boss::BossLabelObjectsRegistry<"
+                "Slic3r::Boss::Test::LabelObjectsFixtureFeature>;",
+                content,
+            )
+
+
 if __name__ == "__main__":
     unittest.main()
