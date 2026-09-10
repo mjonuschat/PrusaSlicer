@@ -426,6 +426,13 @@ CAPABILITY_REGISTRIES = {
         "template_header": "boss/foundation/BossSolidFillPolicyRegistry.hpp",
         "output_header": "BossSolidFillPolicy.hpp",
     },
+    "extrusion_registry": {
+        "target": "libslic3r",
+        "alias": "BossExtrusionFeatures",
+        "template": "Slic3r::Boss::BossExtrusionRegistry",
+        "template_header": "boss/foundation/BossExtrusionRegistry.hpp",
+        "output_header": "BossExtrusionFeatures.hpp",
+    },
 }
 
 # Storage homes: BOSS-owned override structs the generator writes and each
@@ -453,6 +460,10 @@ STORAGE_KINDS = {
     "per_extruder_double": {
         "type": "std::vector<double>",
         "read": 'config.get<std::vector<double>>("{key}")',
+    },
+    "per_extruder_int": {
+        "type": "std::vector<int>",
+        "read": 'config.get<std::vector<int>>("{key}")',
     },
     "per_extruder_float_or_percent": {
         "type": "std::vector<Slic3r::Domain::FloatOrPercentage>",

@@ -249,6 +249,21 @@ class OverrideStructEmitTests(unittest.TestCase):
             self.assertIn("std::vector<double> filament_max_speed{};", hdr)
             self.assertIn('filament_max_speed{config.get<std::vector<double>>("filament_max_speed")}', impl)
 
+    def _parse_int(self, src):
+        path = write_manifest(Path(src), "beta", config_options=[
+            {"key": "bridge_jerk", "invalidates": [],
+             "store": {"home": "extrude_config", "field": "bridge_jerk",
+                       "kind": "per_extruder_int"}}])
+        return gbf.validate_manifest(path, json.loads(path.read_text()))
+
+    def test_stored_int_field_appears_in_header_and_impl(self):
+        with tempfile.TemporaryDirectory() as src, tempfile.TemporaryDirectory() as out:
+            gbf.emit_override_struct("extrude_config", [self._parse_int(src)], Path(out))
+            hdr = (Path(out) / "include" / "boss" / "generated" / "BossExtrudeConfigOverrides.hpp").read_text()
+            impl = (Path(out) / "libslic3r" / "BossExtrudeConfigOverrides.cpp").read_text()
+            self.assertIn("std::vector<int> bridge_jerk{};", hdr)
+            self.assertIn('bridge_jerk{config.get<std::vector<int>>("bridge_jerk")}', impl)
+
 
 class FullGenerateTests(unittest.TestCase):
     def test_generate_composes_invalidation_and_storage(self):
@@ -264,6 +279,16 @@ class FullGenerateTests(unittest.TestCase):
             self.assertIn('{"filament_max_speed", steps(', inval)
             self.assertIn("std::vector<double> filament_max_speed{};", hdr)
             self.assertIn('"filament_max_speed"', keys)
+
+    def test_generate_composes_int_storage(self):
+        with tempfile.TemporaryDirectory() as src, tempfile.TemporaryDirectory() as out:
+            write_manifest(Path(src), "alpha", config_options=[
+                {"key": "bridge_jerk", "invalidates": [],
+                 "store": {"home": "extrude_config", "field": "bridge_jerk",
+                           "kind": "per_extruder_int"}}])
+            self.assertEqual(gbf.generate(Path(src), Path(out)), 0)
+            hdr = (Path(out) / "include" / "boss" / "generated" / "BossExtrudeConfigOverrides.hpp").read_text()
+            self.assertIn("std::vector<int> bridge_jerk{};", hdr)
 
 
 if __name__ == "__main__":
