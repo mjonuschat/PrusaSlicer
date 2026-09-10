@@ -412,6 +412,13 @@ CAPABILITY_REGISTRIES = {
         "template_header": "boss/foundation/BossPerimeterPolicyRegistry.hpp",
         "output_header": "BossPerimeterPolicies.hpp",
     },
+    "label_objects": {
+        "target": "libslic3r",
+        "alias": "BossLabelObjects",
+        "template": "Slic3r::Boss::BossLabelObjectsRegistry",
+        "template_header": "boss/foundation/BossLabelObjectsRegistry.hpp",
+        "output_header": "BossLabelObjects.hpp",
+    },
 }
 
 # Storage homes: BOSS-owned override structs the generator writes and each
