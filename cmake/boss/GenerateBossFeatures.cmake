@@ -47,6 +47,11 @@ function(boss_target_sources target_name)
         include("${_sources_cmake}")
     endif ()
 
+    set(_vendored_cmake "${BOSS_GENERATED_DIR}/${target_name}/vendored.cmake")
+    if (EXISTS "${_vendored_cmake}")
+        include("${_vendored_cmake}")
+    endif ()
+
     string(TOUPPER "${target_name}" _target_upper)
     string(REPLACE "-" "_" _target_upper "${_target_upper}")
     set(_sources_var "BOSS_${_target_upper}_SOURCES")
