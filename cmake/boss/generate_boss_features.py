@@ -810,6 +810,37 @@ def emit_sources_cmake(manifests: list[Manifest], target: str, output_dir: Path)
     return cmake_path
 
 
+def emit_vendored_cmake(manifests: list[Manifest], target: str, output_dir: Path) -> Path:
+    # Guarded by `if (NOT TARGET ...)`: the same vendored entry can appear in
+    # more than one target's vendored.cmake (a manifest's components can
+    # span several targets), and every one of those files gets include()d in
+    # the same CMake run. PRIVATE matches boss_target_sources()'s
+    # target_sources(... PRIVATE ...) for this manifest's own sources -- a
+    # vendored header is an implementation detail, not a public interface.
+    lines: list[str] = []
+    for manifest in manifests:
+        if target not in manifest.components or not manifest.vendored:
+            continue
+        feature_dir = manifest.path.parent.name
+        for entry in manifest.vendored:
+            name, kind, path = entry["name"], entry["kind"], entry["path"]
+            lines.append(f"if (NOT TARGET {name})")
+            lines.append(f"    add_library({name} {kind})")
+            lines.append(
+                f'    target_include_directories({name} {kind} '
+                f'"${{BOSS_FEATURES_DIR}}/{feature_dir}/{path}")'
+            )
+            lines.append("endif ()")
+            lines.append(f"target_link_libraries({target} PRIVATE {name})")
+
+    target_dir = output_dir / target
+    target_dir.mkdir(parents=True, exist_ok=True)
+    cmake_path = target_dir / "vendored.cmake"
+    content = "\n".join(lines) + "\n" if lines else ""
+    cmake_path.write_text(content, encoding="utf-8")
+    return cmake_path
+
+
 def generate(features_dir: Path, output_dir: Path) -> int:
     try:
         manifests = discover_manifests(features_dir)
@@ -839,6 +870,7 @@ def generate(features_dir: Path, output_dir: Path) -> int:
     targets = {target for m in manifests for target in m.components} | {"slic3r-domain", "libslic3r"}
     for target in targets:
         emit_sources_cmake(manifests, target, output_dir)
+        emit_vendored_cmake(manifests, target, output_dir)
 
     return 0
 
