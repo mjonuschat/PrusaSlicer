@@ -124,7 +124,8 @@ void LayerRegion::make_perimeters(
         this->flow(frSolidInfill),
         region_config,
         perimeter_regions,
-        spiral_vase
+        spiral_vase,
+        this->layer()->slice_z
     );
 
     // Cummulative sum of polygons over all the regions.
