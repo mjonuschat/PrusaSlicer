@@ -7,6 +7,7 @@
 
 #include "Slic3r/Biz/Algorithms/DouglasPeucker.hpp"
 #include "Slic3r/Biz/Algorithms/ModelObject.hpp"
+#include "boss/generated/BossLabelObjects.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/GCode/GCodeWriter.hpp"
 #include "libslic3r/Model.hpp"
@@ -54,7 +55,7 @@ Polygon instance_outline(const PrintInstance* pi)
 }; // anonymous namespace
 
 
-void LabelObjects::init(const SpanOfConstPtrs<PrintObject>& objects, Domain::LabelObjectsStyle label_object_style, GCodeFlavor gcode_flavor)
+void LabelObjects::init(const Print& print, Domain::LabelObjectsStyle label_object_style, GCodeFlavor gcode_flavor)
 {
     m_label_objects_style = label_object_style;
     m_flavor = gcode_flavor;
@@ -66,7 +67,7 @@ void LabelObjects::init(const SpanOfConstPtrs<PrintObject>& objects, Domain::Lab
 
     // Iterate over all PrintObjects and their PrintInstances, collect PrintInstances which
     // belong to the same ModelObject.
-    for (const PrintObject* po : objects)
+    for (const PrintObject* po : print.objects())
         for (const PrintInstance& pi : po->instances())
             model_object_to_print_instances[pi.model_instance.get_object()].emplace_back(&pi);
 
@@ -141,6 +142,13 @@ void LabelObjects::init(const SpanOfConstPtrs<PrintObject>& objects, Domain::Lab
             ++unique_id;
         }
     }
+
+    if (m_label_objects_style == Domain::LabelObjectsStyle::Firmware && m_flavor == gcfKlipper) {
+        Slic3r::Boss::LabelObjectsPolicyContext ctx;
+        ctx.print = &print;
+        for (const auto& decl : Slic3r::Boss::BossLabelObjects::declare(ctx))
+            m_static_label_data.push_back({decl.name, decl.center, decl.polygon});
+    }
 }
 
 bool LabelObjects::update(const PrintInstance *instance) {
@@ -201,6 +209,8 @@ std::string LabelObjects::all_objects_header() const
             out += stop_object(*label.pi);
         }
     }
+    for (const StaticLabelData& label : m_static_label_data)
+        out += "EXCLUDE_OBJECT_DEFINE NAME='" + label.name + "' CENTER=" + label.center + " POLYGON=" + label.polygon + "\n";
     out += "\n";
     return out;
 }
@@ -209,12 +219,20 @@ std::string LabelObjects::all_objects_header_singleline_json() const
 {
     std::string out;
     out = "{\"objects\":[";
-    for (size_t i=0; i<m_label_data.size(); ++i) {
-        const LabelData& label = m_label_data[i];
+    bool first = true;
+    for (const LabelData& label : m_label_data) {
+        if (! first)
+            out += ",";
         out += std::string("{\"name\":\"") + label.name + "\",";
         out += "\"polygon\":" + label.polygon + "}";
-        if (i != m_label_data.size() - 1)
+        first = false;
+    }
+    for (const StaticLabelData& label : m_static_label_data) {
+        if (! first)
             out += ",";
+        out += std::string("{\"name\":\"") + label.name + "\",";
+        out += "\"polygon\":" + label.polygon + "}";
+        first = false;
     }
     out += "]}";
     return out;
