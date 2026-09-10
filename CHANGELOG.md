@@ -38,6 +38,12 @@ lost during the rebase and squash based workflow.
   between layers for stronger, quieter prints at high speed.
 - Added the Flowsnake infill pattern, with its own bridging-angle
   handling for cleaner bridges over the pattern.
+- Fuzzy skin can now use a structured noise type (Perlin, Billow, Ridged
+  Multifractal, or Voronoi) instead of the original uniform-random jitter,
+  with its own feature size, octave count, and persistence settings. The
+  noise flows vertically across layers for a more consistent texture. The
+  original jitter stays available as the "Classic" noise type and remains
+  the default, so existing profiles are unaffected.
 - The wipe tower can now disable filament ramming, cooling moves, or
   both, so a tuned setup is not overridden by the default purge behavior.
 - The wipe tower now supports a configurable maximum purge speed, so
