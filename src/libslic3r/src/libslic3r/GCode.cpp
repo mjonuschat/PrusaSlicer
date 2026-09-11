@@ -3764,13 +3764,13 @@ std::string GCodeGenerator::_extrude(
                 assert(angle > 0);
                 const double line_length = angle * std::abs(radius);
                 double dE = e_per_mm * line_length;
+                assert(dE > 0);
                 Boss::ExtrusionContext boss_ctx{
                     path_attr.role, this->on_first_layer(), this->object_layer_over_raft(), extruder_id
                 };
                 boss_ctx.extrude_config = &config;
                 boss_ctx.path_length    = line_length;
                 dE                      = Boss::BossExtrusionFeatures::modify_flow(dE, boss_ctx);
-                assert(dE > 0);
                 gcode += m_writer.extrude_to_xy_G2G3IJ(p, ij, it->ccw(), dE, comment);
             }
             prev = p;
