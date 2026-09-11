@@ -33,6 +33,9 @@ ScvLine split_scv_line(std::string_view scv_line)
 
 std::string MergeVelocityLimitFeature::filter_layer(std::string gcode)
 {
+    if (gcode.find("SET_VELOCITY_LIMIT") == std::string::npos)
+        return gcode;
+
     std::istringstream input(gcode);
     std::ostringstream output;
     std::string line;
