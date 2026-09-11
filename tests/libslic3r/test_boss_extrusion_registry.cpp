@@ -116,3 +116,13 @@ TEST_CASE("BossExtrusionRegistry pipeline-folds modify_retract across two contri
     CHECK(Forward::modify_retract(0.4, ctx) == Catch::Approx(0.7));
     CHECK(Reverse::modify_retract(0.4, ctx) == Catch::Approx(0.6));
 }
+
+TEST_CASE("ExtrusionContext carries path_length, defaulting to zero", "[boss][extrusion]")
+{
+    ExtrusionContext ctx{ExtrusionRole::InternalInfill, false, false, 0};
+    CHECK(ctx.path_length == 0.0);
+
+    ExtrusionContext with_length{ExtrusionRole::InternalInfill, false, false, 0};
+    with_length.path_length = 12.5;
+    CHECK(with_length.path_length == 12.5);
+}
