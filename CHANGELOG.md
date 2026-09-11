@@ -80,6 +80,11 @@ lost during the rebase and squash based workflow.
 - Added a "Solid fill pattern" option, which sets the pattern for internal
   solid infill separately from the top and bottom fill patterns. The
   default is Monotonic.
+- Each print role (perimeters, infill, bridges, the first layer, travel,
+  and the wipe tower) can now set its own jerk and minimum cruise ratio,
+  in addition to its own acceleration. Minimum cruise ratio applies only
+  on Klipper. Set a value to 0 to leave that role's jerk or minimum cruise
+  ratio at the printer's own default.
 
 ### Changed
 
