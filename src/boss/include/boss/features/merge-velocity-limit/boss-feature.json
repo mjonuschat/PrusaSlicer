@@ -1,0 +1,15 @@
+{
+  "name": "merge-velocity-limit",
+  "id": 10503,
+  "key": "merge-velocity-limit",
+  "trait": "Slic3r::Boss::MergeVelocityLimitFeature",
+  "header": "boss/features/merge-velocity-limit/MergeVelocityLimitFeature.hpp",
+  "label": "Merge consecutive Klipper velocity-limit commands",
+  "components": {
+    "libslic3r": {
+      "capabilities": ["layer_filters"],
+      "sources": ["libslic3r/src/libslic3r/boss/gcode/MergeVelocityLimitFilter.cpp"]
+    }
+  },
+  "config_options": []
+}
