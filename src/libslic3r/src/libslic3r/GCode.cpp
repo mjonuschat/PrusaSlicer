@@ -3746,6 +3746,12 @@ std::string GCodeGenerator::_extrude(
                 // Extrude line segment.
                 if (const double line_length = (p - prev).norm(); line_length > 0) {
                     double extrusion_amount{e_per_mm * line_length * it->e_fraction};
+                    Boss::ExtrusionContext boss_ctx{
+                        path_attr.role, this->on_first_layer(), this->object_layer_over_raft(), extruder_id
+                    };
+                    boss_ctx.extrude_config = &config;
+                    boss_ctx.path_length    = line_length;
+                    extrusion_amount        = Boss::BossExtrusionFeatures::modify_flow(extrusion_amount, boss_ctx);
                     if (it->height_fraction < 1.0 || std::prev(it)->height_fraction < 1.0) {
                         const Vec3d destination{to_3d(p, this->m_last_layer_z + (it->height_fraction - 1) * m_last_height)};
                         gcode += m_writer.extrude_to_xyz(destination, extrusion_amount);
@@ -3757,7 +3763,13 @@ std::string GCodeGenerator::_extrude(
                 double angle = Geometry::ArcWelder::arc_angle(prev.cast<double>(), p.cast<double>(), double(radius));
                 assert(angle > 0);
                 const double line_length = angle * std::abs(radius);
-                const double dE          = e_per_mm * line_length;
+                double dE = e_per_mm * line_length;
+                Boss::ExtrusionContext boss_ctx{
+                    path_attr.role, this->on_first_layer(), this->object_layer_over_raft(), extruder_id
+                };
+                boss_ctx.extrude_config = &config;
+                boss_ctx.path_length    = line_length;
+                dE                      = Boss::BossExtrusionFeatures::modify_flow(dE, boss_ctx);
                 assert(dE > 0);
                 gcode += m_writer.extrude_to_xy_G2G3IJ(p, ij, it->ccw(), dE, comment);
             }
