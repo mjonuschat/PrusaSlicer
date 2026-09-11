@@ -71,7 +71,7 @@ All commits are squashed per-release snapshots by oozeBot R&D.
 | BOSS feature | preFlight version | Release commit | Notes |
 |--------------|-------------------|----------------|-------|
 | Configurable perimeter overlap | v0.9.0 (present at first release) | `ff31cc5205` | BOSS referenced v0.9.4 (`727d4ea7f4`) |
-| Nip/Tuck (V-Notch) seam hiding | v0.9.3 (introduced) | `ac7d12ea43` | BOSS upgraded to v0.9.9 base (`1559f778d8`) |
+| Nip/Tuck (V-Notch) seam hiding | v0.9.3 (introduced) | `ac7d12ea43` | BOSS upgraded to v0.9.9 base (`1559f778d8`). BOSS 3.0 port (`feature-nip-tuck-seam`, from `boss` `901d98a8c9`): DEVIATION — inner-perimeter trim spacing no longer resolves `external_perimeter_overlap`, since that option now lives on a separate, independently-composable feature branch (`feature-perimeter-overlap`); spacing computes as `ext_width` (equivalent to zero overlap) unless that branch is composed alongside this one |
 | Sparse infill absorption | v0.9.7 (origin) | `1c74b8e42d` | BOSS ported at v0.9.9 |
 | Detect narrow solid infill (erosion) | v0.9.7 (origin) | `1c74b8e42d` | preFlight later swapped Voronoi medial axis → erosion at v0.9.15 (`c7dbb58d78`); BOSS made the same change independently |
 | Paint-on line drawing | v0.9.7 | `1c74b8e42d` | |
