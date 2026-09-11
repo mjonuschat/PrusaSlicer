@@ -92,6 +92,10 @@ lost during the rebase and squash based workflow.
 - Added a "Z-hop allowed" option, which restricts the Z-hop lift to top
   surfaces, the first layer, both, or everywhere (the default). Use it to
   keep the nozzle closer to the print except where a lift actually helps.
+- Added a "Bias aligned seam to the back" option. When Seam position is
+  Aligned, it biases the seam search toward the back of the model,
+  similar to Rear, while keeping Aligned's cross-layer smoothing. Off by
+  default.
 
 ### Changed
 
