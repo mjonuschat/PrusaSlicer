@@ -1,0 +1,62 @@
+{
+  "name": "small-area-flow-compensation",
+  "id": 10504,
+  "key": "small-area-flow-compensation",
+  "trait": "Slic3r::Boss::SmallAreaFlowCompensationFeature",
+  "header": "boss/features/small-area-flow-compensation/SmallAreaFlowCompensationFeature.hpp",
+  "label": "Small-area infill flow compensation",
+  "components": {
+    "slic3r-domain": {
+      "capabilities": ["fdm_config"],
+      "sources": ["slic3r-domain/src/Slic3r/Domain/boss/SmallAreaFlowCompensationConfig.cpp"]
+    },
+    "libslic3r": {
+      "capabilities": ["extrusion_registry"],
+      "sources": ["libslic3r/src/libslic3r/boss/gcode/flow/SmallAreaFlowCompensator.cpp"]
+    }
+  },
+  "config_options": [
+    { "key": "small_area_infill_flow_compensation", "invalidates": [],
+      "store": {"home": "extrude_config", "kind": "scalar_bool", "field": "small_area_infill_flow_compensation"} },
+    { "key": "small_area_infill_flow_compensation_extrusion_length_0", "invalidates": [],
+      "store": {"home": "extrude_config", "kind": "scalar_double", "field": "small_area_infill_flow_compensation_extrusion_length_0"} },
+    { "key": "small_area_infill_flow_compensation_extrusion_length_1", "invalidates": [],
+      "store": {"home": "extrude_config", "kind": "scalar_double", "field": "small_area_infill_flow_compensation_extrusion_length_1"} },
+    { "key": "small_area_infill_flow_compensation_extrusion_length_2", "invalidates": [],
+      "store": {"home": "extrude_config", "kind": "scalar_double", "field": "small_area_infill_flow_compensation_extrusion_length_2"} },
+    { "key": "small_area_infill_flow_compensation_extrusion_length_3", "invalidates": [],
+      "store": {"home": "extrude_config", "kind": "scalar_double", "field": "small_area_infill_flow_compensation_extrusion_length_3"} },
+    { "key": "small_area_infill_flow_compensation_extrusion_length_4", "invalidates": [],
+      "store": {"home": "extrude_config", "kind": "scalar_double", "field": "small_area_infill_flow_compensation_extrusion_length_4"} },
+    { "key": "small_area_infill_flow_compensation_extrusion_length_5", "invalidates": [],
+      "store": {"home": "extrude_config", "kind": "scalar_double", "field": "small_area_infill_flow_compensation_extrusion_length_5"} },
+    { "key": "small_area_infill_flow_compensation_extrusion_length_6", "invalidates": [],
+      "store": {"home": "extrude_config", "kind": "scalar_double", "field": "small_area_infill_flow_compensation_extrusion_length_6"} },
+    { "key": "small_area_infill_flow_compensation_extrusion_length_7", "invalidates": [],
+      "store": {"home": "extrude_config", "kind": "scalar_double", "field": "small_area_infill_flow_compensation_extrusion_length_7"} },
+    { "key": "small_area_infill_flow_compensation_extrusion_length_8", "invalidates": [],
+      "store": {"home": "extrude_config", "kind": "scalar_double", "field": "small_area_infill_flow_compensation_extrusion_length_8"} },
+    { "key": "small_area_infill_flow_compensation_extrusion_length_9", "invalidates": [],
+      "store": {"home": "extrude_config", "kind": "scalar_double", "field": "small_area_infill_flow_compensation_extrusion_length_9"} },
+    { "key": "small_area_infill_flow_compensation_compensation_factor_0", "invalidates": [],
+      "store": {"home": "extrude_config", "kind": "scalar_double", "field": "small_area_infill_flow_compensation_compensation_factor_0"} },
+    { "key": "small_area_infill_flow_compensation_compensation_factor_1", "invalidates": [],
+      "store": {"home": "extrude_config", "kind": "scalar_double", "field": "small_area_infill_flow_compensation_compensation_factor_1"} },
+    { "key": "small_area_infill_flow_compensation_compensation_factor_2", "invalidates": [],
+      "store": {"home": "extrude_config", "kind": "scalar_double", "field": "small_area_infill_flow_compensation_compensation_factor_2"} },
+    { "key": "small_area_infill_flow_compensation_compensation_factor_3", "invalidates": [],
+      "store": {"home": "extrude_config", "kind": "scalar_double", "field": "small_area_infill_flow_compensation_compensation_factor_3"} },
+    { "key": "small_area_infill_flow_compensation_compensation_factor_4", "invalidates": [],
+      "store": {"home": "extrude_config", "kind": "scalar_double", "field": "small_area_infill_flow_compensation_compensation_factor_4"} },
+    { "key": "small_area_infill_flow_compensation_compensation_factor_5", "invalidates": [],
+      "store": {"home": "extrude_config", "kind": "scalar_double", "field": "small_area_infill_flow_compensation_compensation_factor_5"} },
+    { "key": "small_area_infill_flow_compensation_compensation_factor_6", "invalidates": [],
+      "store": {"home": "extrude_config", "kind": "scalar_double", "field": "small_area_infill_flow_compensation_compensation_factor_6"} },
+    { "key": "small_area_infill_flow_compensation_compensation_factor_7", "invalidates": [],
+      "store": {"home": "extrude_config", "kind": "scalar_double", "field": "small_area_infill_flow_compensation_compensation_factor_7"} },
+    { "key": "small_area_infill_flow_compensation_compensation_factor_8", "invalidates": [],
+      "store": {"home": "extrude_config", "kind": "scalar_double", "field": "small_area_infill_flow_compensation_compensation_factor_8"} },
+    { "key": "small_area_infill_flow_compensation_compensation_factor_9", "invalidates": [],
+      "store": {"home": "extrude_config", "kind": "scalar_double", "field": "small_area_infill_flow_compensation_compensation_factor_9"} }
+  ]
+}
