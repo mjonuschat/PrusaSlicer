@@ -89,6 +89,9 @@ lost during the rebase and squash based workflow.
   in addition to its own acceleration. Minimum cruise ratio applies only
   on Klipper. Set a value to 0 to leave that role's jerk or minimum cruise
   ratio at the printer's own default.
+- Added a "Z-hop allowed" option, which restricts the Z-hop lift to top
+  surfaces, the first layer, both, or everywhere (the default). Use it to
+  keep the nozzle closer to the print except where a lift actually helps.
 
 ### Changed
 
