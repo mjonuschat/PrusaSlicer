@@ -892,7 +892,7 @@ def generate(features_dir: Path, output_dir: Path) -> int:
 
     # Every component name appearing in any manifest gets its own sources.cmake,
     # even one with no BOSS sources at all (an empty list is still valid CMake).
-    targets = {target for m in manifests for target in m.components} | {"slic3r-domain", "libslic3r"}
+    targets = {target for m in manifests for target in m.components} | {"slic3r-domain", "libslic3r", "libpgcode"}
     for target in targets:
         emit_sources_cmake(manifests, target, output_dir)
         emit_vendored_cmake(manifests, target, output_dir)
