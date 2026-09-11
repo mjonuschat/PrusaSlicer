@@ -377,6 +377,36 @@ void compare_3mfs(const Zip& a, const Zip& b, const Domain::PrinterTechnology te
 
 constexpr bool debug_files{false};
 
+TEST_CASE("Legacy aligned_rear seam position survives the conversion", "[config]")
+{
+    // Round-trips only because the feature appends the choice; without it the
+    // conversion drops to the default silently.
+    boost::nowide::ifstream original{(fs::path(TEST_DATA_DIR) / "test_fdm.ini").string()};
+    std::stringstream buffer;
+    buffer << original.rdbuf();
+    std::string ini = buffer.str();
+
+    const std::string from = "seam_position = aligned";
+    const size_t      at   = ini.find(from + "\n");
+    REQUIRE(at != std::string::npos);
+    ini.replace(at, from.size(), "seam_position = aligned_rear");
+
+    const fs::path tmp = fs::temp_directory_path() / "boss_aligned_rear_seam.ini";
+    {
+        boost::nowide::ofstream out{tmp};
+        out << ini;
+    }
+
+    Domain::ConfigPack pack = Biz::load_config_from_legacy_file(tmp.string());
+    fs::remove(tmp);
+
+    REQUIRE(std::holds_alternative<Domain::ConfigPackFDM>(pack));
+    const Domain::ConfigPackFDM& cfg = std::get<Domain::ConfigPackFDM>(pack);
+
+    CHECK(cfg.print.items.opt("seam_position").get<Domain::EnumWrapper>().get_string()
+          == "aligned_rear");
+}
+
 TEST_CASE("Legacy FDM 3MF roundtrip", "[config]")
 {
     for (const std::string& filename : std::vector<std::string>{"fdm_roundtrip1.3mf", "fdm_roundtrip2.3mf"}) {
