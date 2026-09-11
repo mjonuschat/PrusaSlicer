@@ -25,6 +25,7 @@
 #include "Slic3r/LegacyFormat.hpp"
 #include "Slic3r/Time.hpp"
 #include "libslic3r/CustomParametersHandling.hpp"
+#include "boss/generated/BossActiveLayerFilters.hpp"
 
 #include <algorithm>
 #include <cstdlib>
@@ -1607,6 +1608,8 @@ void GCodeGenerator::process_layers(
         [find_replace = this->m_find_replace.get()](std::string s) -> std::string {
             return find_replace->process_layer(std::move(s));
         });
+    const auto boss_layer_filters = tbb::make_filter<std::string, std::string>(slic3r_tbb_filtermode::serial_in_order,
+        [](std::string s) -> std::string { return Boss::BossActiveLayerFilters::filter_layer(std::move(s)); });
     const auto output = tbb::make_filter<std::string, void>(slic3r_tbb_filtermode::serial_in_order,
         [&output_stream](std::string s) { output_stream.write(s); }
     );
@@ -1620,6 +1623,7 @@ void GCodeGenerator::process_layers(
     tbb::filter<LayerResult, std::string> pipeline_to_string = cooling;
     if (m_find_replace)
         pipeline_to_string = pipeline_to_string & find_replace;
+    pipeline_to_string = pipeline_to_string & boss_layer_filters;
 
     // It registers a handler that sets locales to "C" before any TBB thread starts participating in tbb::parallel_pipeline.
     // Handler is unregistered when the destructor is called.
@@ -1707,6 +1711,8 @@ void GCodeGenerator::process_layers(
         [find_replace = this->m_find_replace.get()](std::string s) -> std::string {
             return find_replace->process_layer(std::move(s));
         });
+    const auto boss_layer_filters = tbb::make_filter<std::string, std::string>(slic3r_tbb_filtermode::serial_in_order,
+        [](std::string s) -> std::string { return Boss::BossActiveLayerFilters::filter_layer(std::move(s)); });
     const auto output = tbb::make_filter<std::string, void>(slic3r_tbb_filtermode::serial_in_order,
         [&output_stream](std::string s) { output_stream.write(s); }
     );
@@ -1720,6 +1726,7 @@ void GCodeGenerator::process_layers(
     tbb::filter<LayerResult, std::string> pipeline_to_string = cooling;
     if (m_find_replace)
         pipeline_to_string = pipeline_to_string & find_replace;
+    pipeline_to_string = pipeline_to_string & boss_layer_filters;
 
     // It registers a handler that sets locales to "C" before any TBB thread starts participating in tbb::parallel_pipeline.
     // Handler is unregistered when the destructor is called.
