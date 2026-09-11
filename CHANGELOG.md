@@ -96,6 +96,10 @@ lost during the rebase and squash based workflow.
   Aligned, it biases the seam search toward the back of the model,
   similar to Rear, while keeping Aligned's cross-layer smoothing. Off by
   default.
+- When Seam position is Aligned, the seam now follows a painted seam
+  enforcer region across layers, blending smoothly from layer to layer
+  and staying aligned from the start of the shell. No new option: this
+  applies whenever a shell has painted enforcer points.
 
 ### Changed
 
