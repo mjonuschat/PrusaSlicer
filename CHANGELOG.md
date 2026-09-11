@@ -9,6 +9,10 @@ lost during the rebase and squash based workflow.
 
 ### Added
 
+- Small solid-infill areas can now compensate flow with a 10-point curve
+  that scales extrusion by segment length. Short solid-infill and top-
+  solid-infill segments print with less over-extrusion. The feature is
+  off by default.
 - External bridges can now use a configurable density, from 10% to 120%,
   instead of always printing solid. Higher densities can smooth the
   bridge surface. The default also changes. Bridge fill no longer evens
