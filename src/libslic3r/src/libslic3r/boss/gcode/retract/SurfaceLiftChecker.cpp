@@ -18,8 +18,10 @@ namespace Slic3r::Boss {
 
 bool SurfaceLiftChecker::is_over_top_surface(const Layer& layer, const double x, const double y)
 {
-    if (m_layer != &layer) {
-        m_layer = &layer;
+    if (m_layer != &layer || m_object != layer.object() || m_layer_id != layer.id()) {
+        m_layer    = &layer;
+        m_object   = layer.object();
+        m_layer_id = layer.id();
         m_top_surfaces.clear();
         m_aabbtree.clear();
         for (const LayerRegion* layerm : layer.regions())
