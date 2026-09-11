@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <memory>
 
 #include "Slic3r/Exception.hpp"
 #include "boss/features/small-area-flow-compensation/SmallAreaFlowCompensationFeature.hpp"
@@ -129,8 +130,58 @@ double SmallAreaFlowCompensator::modify_flow(double line_length, double dE, Slic
     return dE;
 }
 
+namespace {
+
+// Caches the compensator built from the last-seen ExtrudeConfig* so it is
+// rebuilt only when the resolved config changes, not on every extrusion
+// segment. thread_local because GCode export runs the extrusion pipeline
+// across multiple TBB worker threads.
+SmallAreaFlowCompensator &compensator_for_config(
+    const Biz::Slicing::ExtrudeConfig *extrude_config, const BossExtrudeConfigOverrides &boss)
+{
+    static thread_local const Biz::Slicing::ExtrudeConfig *s_cached_config = nullptr;
+    static thread_local std::unique_ptr<SmallAreaFlowCompensator> s_compensator;
+
+    if (s_cached_config != extrude_config) {
+        const std::vector<double> lengths = {
+            boss.small_area_infill_flow_compensation_extrusion_length_0,
+            boss.small_area_infill_flow_compensation_extrusion_length_1,
+            boss.small_area_infill_flow_compensation_extrusion_length_2,
+            boss.small_area_infill_flow_compensation_extrusion_length_3,
+            boss.small_area_infill_flow_compensation_extrusion_length_4,
+            boss.small_area_infill_flow_compensation_extrusion_length_5,
+            boss.small_area_infill_flow_compensation_extrusion_length_6,
+            boss.small_area_infill_flow_compensation_extrusion_length_7,
+            boss.small_area_infill_flow_compensation_extrusion_length_8,
+            boss.small_area_infill_flow_compensation_extrusion_length_9,
+        };
+        const std::vector<double> factors = {
+            boss.small_area_infill_flow_compensation_compensation_factor_0,
+            boss.small_area_infill_flow_compensation_compensation_factor_1,
+            boss.small_area_infill_flow_compensation_compensation_factor_2,
+            boss.small_area_infill_flow_compensation_compensation_factor_3,
+            boss.small_area_infill_flow_compensation_compensation_factor_4,
+            boss.small_area_infill_flow_compensation_compensation_factor_5,
+            boss.small_area_infill_flow_compensation_compensation_factor_6,
+            boss.small_area_infill_flow_compensation_compensation_factor_7,
+            boss.small_area_infill_flow_compensation_compensation_factor_8,
+            boss.small_area_infill_flow_compensation_compensation_factor_9,
+        };
+
+        s_compensator   = std::make_unique<SmallAreaFlowCompensator>(lengths, factors);
+        s_cached_config = extrude_config;
+    }
+
+    return *s_compensator;
+}
+
+} // namespace
+
 double SmallAreaFlowCompensationFeature::modify_flow(double dE, const ExtrusionContext &ctx)
 {
+    if (ctx.role != Slic3r::ExtrusionRole::SolidInfill && ctx.role != Slic3r::ExtrusionRole::TopSolidInfill)
+        return dE;
+
     if (ctx.extrude_config == nullptr)
         return dE;
 
@@ -138,33 +189,7 @@ double SmallAreaFlowCompensationFeature::modify_flow(double dE, const ExtrusionC
     if (!boss.small_area_infill_flow_compensation)
         return dE;
 
-    const std::vector<double> lengths = {
-        boss.small_area_infill_flow_compensation_extrusion_length_0,
-        boss.small_area_infill_flow_compensation_extrusion_length_1,
-        boss.small_area_infill_flow_compensation_extrusion_length_2,
-        boss.small_area_infill_flow_compensation_extrusion_length_3,
-        boss.small_area_infill_flow_compensation_extrusion_length_4,
-        boss.small_area_infill_flow_compensation_extrusion_length_5,
-        boss.small_area_infill_flow_compensation_extrusion_length_6,
-        boss.small_area_infill_flow_compensation_extrusion_length_7,
-        boss.small_area_infill_flow_compensation_extrusion_length_8,
-        boss.small_area_infill_flow_compensation_extrusion_length_9,
-    };
-    const std::vector<double> factors = {
-        boss.small_area_infill_flow_compensation_compensation_factor_0,
-        boss.small_area_infill_flow_compensation_compensation_factor_1,
-        boss.small_area_infill_flow_compensation_compensation_factor_2,
-        boss.small_area_infill_flow_compensation_compensation_factor_3,
-        boss.small_area_infill_flow_compensation_compensation_factor_4,
-        boss.small_area_infill_flow_compensation_compensation_factor_5,
-        boss.small_area_infill_flow_compensation_compensation_factor_6,
-        boss.small_area_infill_flow_compensation_compensation_factor_7,
-        boss.small_area_infill_flow_compensation_compensation_factor_8,
-        boss.small_area_infill_flow_compensation_compensation_factor_9,
-    };
-
-    SmallAreaFlowCompensator compensator(lengths, factors);
-    return compensator.modify_flow(ctx.path_length, dE, ctx.role);
+    return compensator_for_config(ctx.extrude_config, boss).modify_flow(ctx.path_length, dE, ctx.role);
 }
 
 } // namespace Slic3r::Boss
