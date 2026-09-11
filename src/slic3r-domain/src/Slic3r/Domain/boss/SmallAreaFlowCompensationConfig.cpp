@@ -13,20 +13,23 @@ namespace Slic3r::Boss {
 namespace {
 
 constexpr double kDefaultLengths[10] = {0, 0.2, 0.4, 0.6, 0.8, 1.5, 2, 3, 5, 10};
-constexpr double kDefaultFactors[10] = {0, 0.4444, 0.6145, 0.7059, 0.7619, 0.8571, 0.8889, 0.9231, 0.9520, 1.0};
+constexpr double kDefaultFactors[10] =
+    {0, 0.4444, 0.6145, 0.7059, 0.7619, 0.8571, 0.8889, 0.9231, 0.9520, 1.0};
 
-void register_point(Domain::ConfigDefinitions &defs, int index)
+void register_point(Domain::ConfigDefinitions& defs, int index)
 {
     using namespace Slic3r::Domain;
 
-    ConfigItemDef *length = defs.add(
-        "small_area_infill_flow_compensation_extrusion_length_" + std::to_string(index), typeid(double)
+    ConfigItemDef* length = defs.add(
+        "small_area_infill_flow_compensation_extrusion_length_" + std::to_string(index),
+        typeid(double)
     );
     length->location     = FDMConfigLocation::Print;
     length->category     = ConfigItemDef::Category::Print_Infill;
-    length->option_group = ConfigItemDef::OptionGroup::Print_Infill_Advanced;
+    length->option_group = ConfigItemDef::OptionGroup::Print_Infill_FlowCompensation;
+    length->order        = 2 * index + 1;
     length->gui_type     = ConfigItemDef::GUIType::textfield;
-    length->label        = BossL("Extrusion length");
+    length->label        = BossL("Extrusion length") + " " + std::to_string(index + 1);
     length->tooltip      = BossL(
         "Extrusion length up to which the flow compensation applies. Typical range is 0-20mm."
     );
@@ -35,14 +38,16 @@ void register_point(Domain::ConfigDefinitions &defs, int index)
     length->max     = 100.0;
     length->init_fn = init_with(kDefaultLengths[index]);
 
-    ConfigItemDef *factor = defs.add(
-        "small_area_infill_flow_compensation_compensation_factor_" + std::to_string(index), typeid(double)
+    ConfigItemDef* factor = defs.add(
+        "small_area_infill_flow_compensation_compensation_factor_" + std::to_string(index),
+        typeid(double)
     );
     factor->location     = FDMConfigLocation::Print;
     factor->category     = ConfigItemDef::Category::Print_Infill;
-    factor->option_group = ConfigItemDef::OptionGroup::Print_Infill_Advanced;
+    factor->option_group = ConfigItemDef::OptionGroup::Print_Infill_FlowCompensation;
+    factor->order        = 2 * index + 2;
     factor->gui_type     = ConfigItemDef::GUIType::textfield;
-    factor->label        = BossL("Compensation factor");
+    factor->label        = BossL("Compensation factor") + " " + std::to_string(index + 1);
     factor->tooltip      = BossL("Compensation factor to apply to the extrusion amount.");
     factor->min          = 0.0;
     factor->max          = 1.0;
@@ -51,16 +56,17 @@ void register_point(Domain::ConfigDefinitions &defs, int index)
 
 } // namespace
 
-void SmallAreaFlowCompensationFeature::register_config(Domain::ConfigDefinitions &defs)
+void SmallAreaFlowCompensationFeature::register_config(Domain::ConfigDefinitions& defs)
 {
     using namespace Slic3r::Domain;
 
-    ConfigItemDef *enable = defs.add("small_area_infill_flow_compensation", typeid(bool));
+    ConfigItemDef* enable = defs.add("small_area_infill_flow_compensation", typeid(bool));
     enable->location      = FDMConfigLocation::Print;
     enable->category      = ConfigItemDef::Category::Print_Infill;
-    enable->option_group  = ConfigItemDef::OptionGroup::Print_Infill_Advanced;
+    enable->option_group  = ConfigItemDef::OptionGroup::Print_Infill_FlowCompensation;
+    enable->order         = 0;
     enable->gui_type      = ConfigItemDef::GUIType::checkbox;
-    enable->label         = BossL("Enable small area infill flow compensation");
+    enable->label         = BossL("Enable flow compensation");
     enable->tooltip       = BossL("Enable flow compensation for small infill areas.");
     enable->init_fn       = init_with(false);
 
