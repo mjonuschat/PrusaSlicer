@@ -10,14 +10,14 @@ TEST_CASE(
 {
     std::string input =
         "G1 X10 Y10 E1\n"
-        "SET_VELOCITY_LIMIT ACCEL=1000 MINIMUM_CRUISE_RATIO=0.5 ; adjust velocity limit "
+        "SET_VELOCITY_LIMIT ACCEL=1000 MINIMUM_CRUISE_RATIO=0.5 ; adjust acceleration "
         "(Perimeter)\n"
-        "SET_VELOCITY_LIMIT SQUARE_CORNER_VELOCITY=5 ; adjust velocity limit (Perimeter)\n"
+        "SET_VELOCITY_LIMIT SQUARE_CORNER_VELOCITY=5 ; adjust jerk (Perimeter)\n"
         "G1 X20 Y20 E2\n";
     std::string expected =
         "G1 X10 Y10 E1\n"
         "SET_VELOCITY_LIMIT ACCEL=1000 MINIMUM_CRUISE_RATIO=0.5 SQUARE_CORNER_VELOCITY=5 ; "
-        "adjust velocity limit (Perimeter)\n"
+        "adjust acceleration (Perimeter)\n"
         "G1 X20 Y20 E2\n";
     CHECK(MergeVelocityLimitFeature::filter_layer(input) == expected);
 }
@@ -58,4 +58,13 @@ TEST_CASE(
         "SET_VELOCITY_LIMIT SQUARE_CORNER_VELOCITY=5 ; bar\n";
     std::string expected = "SET_VELOCITY_LIMIT ACCEL=1000 SQUARE_CORNER_VELOCITY=5 ; bar\n";
     CHECK(MergeVelocityLimitFeature::filter_layer(input) == expected);
+}
+
+TEST_CASE(
+    "MergeVelocityLimitFeature returns the input unchanged when it has no SET_VELOCITY_LIMIT line",
+    "[boss][klipper]"
+)
+{
+    std::string input = "M204 S1000\nM205 X5 Y5\nG1 X10 Y10 E1"; // deliberately no trailing newline
+    CHECK(MergeVelocityLimitFeature::filter_layer(input) == input);
 }
