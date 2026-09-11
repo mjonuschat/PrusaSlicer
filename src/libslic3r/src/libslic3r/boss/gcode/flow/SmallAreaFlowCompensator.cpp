@@ -15,13 +15,21 @@
 #include "boss/features/small-area-flow-compensation/SmallAreaFlowCompensationFeature.hpp"
 #include "boss/foundation/ExtrusionContext.hpp"
 #include "libslic3r/ExtrudeConfig.hpp"
-#include "libslic3r/libslic3r.h"
 
 namespace Slic3r::Boss {
 
 SmallAreaFlowCompensator::SmallAreaFlowCompensator(std::vector<double> lengths, std::vector<double> factors)
 {
-    if (std::abs(lengths[0]) >= EPSILON) {
+    if (lengths.empty()) {
+        throw Slic3r::InvalidArgument(
+            "Small area infill flow compensation requires at least one length/factor pair");
+    }
+    if (lengths.size() != factors.size()) {
+        throw Slic3r::InvalidArgument(
+            "Small area infill flow compensation lengths and factors must have the same size");
+    }
+
+    if (lengths[0] != 0.0) {
         throw Slic3r::InvalidArgument(
             "First extrusion length for small area infill compensation length must be 0");
     }
@@ -41,7 +49,7 @@ SmallAreaFlowCompensator::SmallAreaFlowCompensator(std::vector<double> lengths, 
         m_factors.push_back(factors[i]);
     }
 
-    if (std::abs(m_factors.back() - 1.0) >= EPSILON) {
+    if (m_factors.back() != 1.0) {
         throw Slic3r::InvalidArgument(
             "Final compensation factor for small area infill flow compensation must be 1.0");
     }
