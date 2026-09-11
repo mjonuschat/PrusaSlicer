@@ -13,14 +13,16 @@ namespace Slic3r::Boss {
 namespace {
 
 constexpr double kDefaultLengths[10] = {0, 0.2, 0.4, 0.6, 0.8, 1.5, 2, 3, 5, 10};
-constexpr double kDefaultFactors[10] = {0, 0.4444, 0.6145, 0.7059, 0.7619, 0.8571, 0.8889, 0.9231, 0.9520, 1.0};
+constexpr double kDefaultFactors[10] =
+    {0, 0.4444, 0.6145, 0.7059, 0.7619, 0.8571, 0.8889, 0.9231, 0.9520, 1.0};
 
-void register_point(Domain::ConfigDefinitions &defs, int index)
+void register_point(Domain::ConfigDefinitions& defs, int index)
 {
     using namespace Slic3r::Domain;
 
-    ConfigItemDef *length = defs.add(
-        "small_area_infill_flow_compensation_extrusion_length_" + std::to_string(index), typeid(double)
+    ConfigItemDef* length = defs.add(
+        "small_area_infill_flow_compensation_extrusion_length_" + std::to_string(index),
+        typeid(double)
     );
     length->location     = FDMConfigLocation::Print;
     length->category     = ConfigItemDef::Category::Print_Infill;
@@ -35,8 +37,9 @@ void register_point(Domain::ConfigDefinitions &defs, int index)
     length->max     = 100.0;
     length->init_fn = init_with(kDefaultLengths[index]);
 
-    ConfigItemDef *factor = defs.add(
-        "small_area_infill_flow_compensation_compensation_factor_" + std::to_string(index), typeid(double)
+    ConfigItemDef* factor = defs.add(
+        "small_area_infill_flow_compensation_compensation_factor_" + std::to_string(index),
+        typeid(double)
     );
     factor->location     = FDMConfigLocation::Print;
     factor->category     = ConfigItemDef::Category::Print_Infill;
@@ -51,11 +54,11 @@ void register_point(Domain::ConfigDefinitions &defs, int index)
 
 } // namespace
 
-void SmallAreaFlowCompensationFeature::register_config(Domain::ConfigDefinitions &defs)
+void SmallAreaFlowCompensationFeature::register_config(Domain::ConfigDefinitions& defs)
 {
     using namespace Slic3r::Domain;
 
-    ConfigItemDef *enable = defs.add("small_area_infill_flow_compensation", typeid(bool));
+    ConfigItemDef* enable = defs.add("small_area_infill_flow_compensation", typeid(bool));
     enable->location      = FDMConfigLocation::Print;
     enable->category      = ConfigItemDef::Category::Print_Infill;
     enable->option_group  = ConfigItemDef::OptionGroup::Print_Infill_Advanced;

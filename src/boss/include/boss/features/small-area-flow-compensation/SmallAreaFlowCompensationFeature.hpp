@@ -17,12 +17,12 @@ namespace Slic3r::Boss {
 
 struct SmallAreaFlowCompensationFeature
 {
-    static constexpr int              id    = 10504;
+    static constexpr int id                 = 10504;
     static constexpr std::string_view key   = "small-area-flow-compensation";
     static constexpr std::string_view label = "Small-area infill flow compensation";
 
-    static void   register_config(Domain::ConfigDefinitions &defs);
-    static double modify_flow(double dE, const ExtrusionContext &ctx);
+    static void register_config(Domain::ConfigDefinitions& defs);
+    static double modify_flow(double dE, const ExtrusionContext& ctx);
 };
 
 } // namespace Slic3r::Boss
