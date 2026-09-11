@@ -103,6 +103,14 @@ struct Params {
     double continuity_modifier{};
 };
 
+// Exported (rather than kept .cpp-local) so a BOSS feature's own chooser
+// can drive this same degenerate/non-degenerate per-slice dispatch from a
+// separate translation unit instead of reimplementing it.
+std::vector<SeamChoice> get_shell_seam(
+    const Shells::Shell<> &shell,
+    const std::function<SeamChoice(const Perimeters::Perimeter &, std::size_t)> &chooser
+);
+
 std::vector<std::vector<SeamPerimeterChoice>> get_object_seams(
     Shells::Shells<> &&shells,
     const SeamChoiceVisibility& visibility_calculator,
