@@ -18,20 +18,24 @@
 
 namespace Slic3r::Boss {
 
-SmallAreaFlowCompensator::SmallAreaFlowCompensator(std::vector<double> lengths, std::vector<double> factors)
+SmallAreaFlowCompensator::
+    SmallAreaFlowCompensator(std::vector<double> lengths, std::vector<double> factors)
 {
     if (lengths.empty()) {
         throw Slic3r::InvalidArgument(
-            "Small area infill flow compensation requires at least one length/factor pair");
+            "Small area infill flow compensation requires at least one length/factor pair"
+        );
     }
     if (lengths.size() != factors.size()) {
         throw Slic3r::InvalidArgument(
-            "Small area infill flow compensation lengths and factors must have the same size");
+            "Small area infill flow compensation lengths and factors must have the same size"
+        );
     }
 
     if (lengths[0] != 0.0) {
         throw Slic3r::InvalidArgument(
-            "First extrusion length for small area infill compensation length must be 0");
+            "First extrusion length for small area infill compensation length must be 0"
+        );
     }
 
     m_lengths.push_back(lengths[0]);
@@ -39,11 +43,14 @@ SmallAreaFlowCompensator::SmallAreaFlowCompensator(std::vector<double> lengths, 
 
     for (size_t i = 1; i < lengths.size(); ++i) {
         if (lengths[i] <= 0.0 || lengths[i] <= m_lengths.back()) {
-            throw Slic3r::InvalidArgument("Extrusion lengths for subsequent points must be increasing");
+            throw Slic3r::InvalidArgument(
+                "Extrusion lengths for subsequent points must be increasing"
+            );
         }
         if (factors[i] <= factors[i - 1]) {
             throw Slic3r::InvalidArgument(
-                "Flow compensation factors must strictly increase with extrusion length");
+                "Flow compensation factors must strictly increase with extrusion length"
+            );
         }
         m_lengths.push_back(lengths[i]);
         m_factors.push_back(factors[i]);
@@ -51,7 +58,8 @@ SmallAreaFlowCompensator::SmallAreaFlowCompensator(std::vector<double> lengths, 
 
     if (m_factors.back() != 1.0) {
         throw Slic3r::InvalidArgument(
-            "Final compensation factor for small area infill flow compensation must be 1.0");
+            "Final compensation factor for small area infill flow compensation must be 1.0"
+        );
     }
 
     compute_akima_coefficients();
@@ -70,7 +78,8 @@ void SmallAreaFlowCompensator::compute_akima_coefficients()
 
     // Extend delta with 2 ghost values at each end (Akima's boundary formula),
     // mirroring: delta[-1] = 2*delta[0] - delta[1], etc.
-    auto d = [&](int i) -> double {
+    auto d = [&](int i) -> double
+    {
         if (i < 0) {
             int j = -i - 1;
             if (j >= (int) delta.size())
@@ -89,7 +98,7 @@ void SmallAreaFlowCompensator::compute_akima_coefficients()
 
     m_slopes.resize(n);
     for (size_t i = 0; i < n; ++i) {
-        int    ii = (int) i;
+        int ii    = (int) i;
         double w1 = std::abs(d(ii + 1) - d(ii));
         double w2 = std::abs(d(ii - 1) - d(ii - 2));
 
@@ -130,7 +139,8 @@ double SmallAreaFlowCompensator::flow_comp_model(double line_length)
     return std::clamp(result, 0.0, 1.0);
 }
 
-double SmallAreaFlowCompensator::modify_flow(double line_length, double dE, Slic3r::ExtrusionRole role)
+double
+SmallAreaFlowCompensator::modify_flow(double line_length, double dE, Slic3r::ExtrusionRole role)
 {
     if (role == Slic3r::ExtrusionRole::SolidInfill || role == Slic3r::ExtrusionRole::TopSolidInfill)
         return dE * flow_comp_model(line_length);
@@ -144,10 +154,12 @@ namespace {
 // rebuilt only when the resolved config changes, not on every extrusion
 // segment. thread_local because GCode export runs the extrusion pipeline
 // across multiple TBB worker threads.
-SmallAreaFlowCompensator &compensator_for_config(
-    const Biz::Slicing::ExtrudeConfig *extrude_config, const BossExtrudeConfigOverrides &boss)
+SmallAreaFlowCompensator& compensator_for_config(
+    const Biz::Slicing::ExtrudeConfig* extrude_config,
+    const BossExtrudeConfigOverrides& boss
+)
 {
-    static thread_local const Biz::Slicing::ExtrudeConfig *s_cached_config = nullptr;
+    static thread_local const Biz::Slicing::ExtrudeConfig* s_cached_config = nullptr;
     static thread_local std::unique_ptr<SmallAreaFlowCompensator> s_compensator;
 
     if (s_cached_config != extrude_config) {
@@ -185,19 +197,21 @@ SmallAreaFlowCompensator &compensator_for_config(
 
 } // namespace
 
-double SmallAreaFlowCompensationFeature::modify_flow(double dE, const ExtrusionContext &ctx)
+double SmallAreaFlowCompensationFeature::modify_flow(double dE, const ExtrusionContext& ctx)
 {
-    if (ctx.role != Slic3r::ExtrusionRole::SolidInfill && ctx.role != Slic3r::ExtrusionRole::TopSolidInfill)
+    if (ctx.role != Slic3r::ExtrusionRole::SolidInfill
+        && ctx.role != Slic3r::ExtrusionRole::TopSolidInfill)
         return dE;
 
     if (ctx.extrude_config == nullptr)
         return dE;
 
-    const Slic3r::Boss::BossExtrudeConfigOverrides &boss = ctx.extrude_config->boss;
+    const Slic3r::Boss::BossExtrudeConfigOverrides& boss = ctx.extrude_config->boss;
     if (!boss.small_area_infill_flow_compensation)
         return dE;
 
-    return compensator_for_config(ctx.extrude_config, boss).modify_flow(ctx.path_length, dE, ctx.role);
+    return compensator_for_config(ctx.extrude_config, boss)
+        .modify_flow(ctx.path_length, dE, ctx.role);
 }
 
 } // namespace Slic3r::Boss
