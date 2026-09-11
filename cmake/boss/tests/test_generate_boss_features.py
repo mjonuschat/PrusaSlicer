@@ -589,6 +589,44 @@ class SolidFillPolicyCapabilityTests(unittest.TestCase):
             )
 
 
+class SeamVisibilityCapabilityTests(unittest.TestCase):
+    def _one(self, tmp):
+        return write_manifest(
+            Path(tmp), "test-seam-visibility", id=900701, key="test-seam-visibility",
+            trait="Slic3r::Boss::Test::SeamVisibilityFixtureFeature",
+            header="boss/test-fixtures/seam-visibility-fixture/SeamVisibilityFixtureFeature.hpp",
+            components={
+                "libslic3r": {
+                    "capabilities": ["seam_visibility"],
+                    "sources": ["libslic3r/src/libslic3r/boss/test_fixtures/SeamVisibilityFixture.cpp"],
+                }
+            },
+        )
+
+    def test_seam_visibility_capability_is_known(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._one(tmp)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            manifest = gbf.validate_manifest(path, data)
+            gbf.check_known_capabilities([manifest])
+            gbf.check_capability_targets([manifest])
+
+    def test_seam_visibility_generates_component_alias(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._one(tmp)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            manifest = gbf.validate_manifest(path, data)
+
+            include_dir = Path(tmp) / "generated" / "include"
+            header_path = gbf.emit_composition_header("seam_visibility", [manifest], include_dir)
+            content = header_path.read_text(encoding="utf-8")
+            self.assertIn(
+                "using BossSeamVisibilityFeatures = Slic3r::Boss::BossSeamVisibilityRegistry<"
+                "Slic3r::Boss::Test::SeamVisibilityFixtureFeature>;",
+                content,
+            )
+
+
 class EmitOverrideStructTests(unittest.TestCase):
     def _one(self, tmp):
         return write_manifest(
