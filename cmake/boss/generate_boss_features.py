@@ -464,6 +464,13 @@ CAPABILITY_REGISTRIES = {
         "template_header": "boss/foundation/BossSeamVisibilityRegistry.hpp",
         "output_header": "BossSeamVisibilityFeatures.hpp",
     },
+    "seam_aligned": {
+        "target": "libslic3r",
+        "alias": "BossSeamAlignedFeatures",
+        "template": "Slic3r::Boss::BossSeamAlignedRegistry",
+        "template_header": "boss/foundation/BossSeamAlignedRegistry.hpp",
+        "output_header": "BossSeamAlignedFeatures.hpp",
+    },
 }
 
 # Storage homes: BOSS-owned override structs the generator writes and each

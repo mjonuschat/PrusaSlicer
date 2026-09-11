@@ -19,6 +19,17 @@ namespace Slic3r::Seams::Aligned {
 
 using SeamChoiceVisibility  = std::function<double(const SeamChoice &, const Perimeters::Perimeter &)>;
 
+struct LeastVisiblePoint
+{
+    SeamChoice choice;
+    double visibility;
+};
+
+struct SeamCandidate {
+    std::vector<SeamChoice> choices;
+    std::vector<double> visibilities;
+};
+
 namespace Impl {
 struct SeamOptions
 {
