@@ -3422,6 +3422,17 @@ std::string GCodeGenerator::travel_to_first_position(
             lift = 0.0;
         }
 
+        if (this->layer() != nullptr) {
+            Boss::ExtrusionContext boss_ctx{
+                role, this->on_first_layer(), this->object_layer_over_raft(), m_writer.extruder()->id()
+            };
+            boss_ctx.layer          = this->layer();
+            boss_ctx.query_point_x  = unscaled(point.x());
+            boss_ctx.query_point_y  = unscaled(point.y());
+            boss_ctx.extrude_config = &config;
+            lift                    = Boss::BossExtrusionFeatures::modify_retract(lift, boss_ctx);
+        }
+
         if (config.retract_length.at(m_writer.extruder()->id()) > 0 && !this->last_position) {
             if (!this->last_position || config.retract_before_travel.at(m_writer.extruder()->id()) < (this->point_to_gcode(*this->last_position) - gcode_point.head<2>()).norm()) {
                 gcode += this->writer().retract();
@@ -3990,6 +4001,21 @@ std::string GCodeGenerator::travel_to(
     if ((lower_limit > 0 && initial_elevation < lower_limit) ||
         (upper_limit > 0 && initial_elevation > upper_limit)) {
         can_be_flat = true;
+    }
+
+    if (!can_be_flat && this->layer() != nullptr) {
+        const double nominal_lift = config.travel_ramping_lift.at(extruder_id) ?
+            config.travel_max_lift.at(extruder_id) :
+            config.retract_lift.at(extruder_id);
+        Boss::ExtrusionContext boss_ctx{
+            role, this->on_first_layer(), this->object_layer_over_raft(), extruder_id
+        };
+        boss_ctx.layer          = this->layer();
+        boss_ctx.query_point_x  = unscaled(start_point.x());
+        boss_ctx.query_point_y  = unscaled(start_point.y());
+        boss_ctx.extrude_config = &config;
+        if (Boss::BossExtrusionFeatures::modify_retract(nominal_lift, boss_ctx) <= 0.0)
+            can_be_flat = true;
     }
 
     Points3 travel = (
