@@ -31,6 +31,8 @@ add_library(libpgcode
     src/Slic3r/Biz/libpgcode/Utils.cpp
 )
 
+boss_target_sources(libpgcode)
+
 set_target_properties(libpgcode PROPERTIES PREFIX "")
 
 target_include_directories(libpgcode PUBLIC include)

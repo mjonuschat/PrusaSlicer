@@ -17,6 +17,7 @@ target_include_directories(test_common INTERFACE ${CMAKE_CURRENT_LIST_DIR})
 
 # TODO: This temporarily allows using private header files from libslic3r in all tests.
 target_include_directories(test_common INTERFACE "$<TARGET_PROPERTY:libslic3r,SOURCE_DIR>/src")
+target_include_directories(test_common INTERFACE "$<TARGET_PROPERTY:libpgcode,SOURCE_DIR>/src")
 
 target_compile_definitions(test_common INTERFACE TEST_DATA_DIR=R"\(${TEST_DATA_DIR}\)" CATCH_CONFIG_FAST_COMPILE)
 target_link_libraries(test_common INTERFACE slic3r-test-utils Catch2::Catch2WithMain)
