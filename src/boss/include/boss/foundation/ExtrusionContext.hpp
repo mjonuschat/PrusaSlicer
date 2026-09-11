@@ -8,9 +8,11 @@ namespace Slic3r {
 class PrintRegionConfigView;
 }
 
-namespace Slic3r::Boss {
+namespace Slic3r::Biz::Slicing {
+struct ExtrudeConfig;
+}
 
-struct BossExtrudeConfigOverrides;
+namespace Slic3r::Boss {
 
 struct ExtrusionContext {
     ExtrusionRole role;
@@ -25,10 +27,13 @@ struct ExtrusionContext {
     bool is_travel = false;
     bool is_short_distance_travel = false;
 
-    // _extrude()/extrude_smooth_path() (GCode.cpp) likewise only carry
-    // Biz::Slicing::ExtrudeConfig, not a raw ConfigView, so per-role values reach
-    // here via ExtrudeConfig::boss instead of ctx.config.
-    const BossExtrudeConfigOverrides *boss_config = nullptr;
+    // _extrude()/extrude_smooth_path()/generate_travel_gcode() (GCode.cpp) never
+    // carry a raw ConfigView -- only the pre-resolved Biz::Slicing::ExtrudeConfig --
+    // so per-role values reach a feature via this pointer's ::boss member instead
+    // of ctx.config. Exposing the full ExtrudeConfig (not just its ::boss member)
+    // also lets a feature's own per-role selection ride on a foundation-owned
+    // per-role value it doesn't itself store, such as an acceleration field.
+    const Biz::Slicing::ExtrudeConfig *extrude_config = nullptr;
 };
 
 } // namespace Slic3r::Boss
