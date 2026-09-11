@@ -433,6 +433,13 @@ CAPABILITY_REGISTRIES = {
         "template_header": "boss/foundation/BossExtrusionRegistry.hpp",
         "output_header": "BossExtrusionFeatures.hpp",
     },
+    "layer_filters": {
+        "target": "libslic3r",
+        "alias": "BossActiveLayerFilters",
+        "template": "Slic3r::Boss::BossLayerFilters",
+        "template_header": "boss/foundation/BossLayerFilters.hpp",
+        "output_header": "BossActiveLayerFilters.hpp",
+    },
 }
 
 # Storage homes: BOSS-owned override structs the generator writes and each
