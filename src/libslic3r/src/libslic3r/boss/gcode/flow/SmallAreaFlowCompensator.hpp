@@ -30,10 +30,13 @@ private:
     std::vector<double> m_c;
     std::vector<double> m_d;
 
-    void   compute_akima_coefficients();
+    void compute_akima_coefficients();
     double flow_comp_model(double line_length);
 
-    double max_modified_length() const { return m_lengths.back(); }
+    double max_modified_length() const
+    {
+        return m_lengths.back();
+    }
 };
 
 } // namespace Slic3r::Boss
