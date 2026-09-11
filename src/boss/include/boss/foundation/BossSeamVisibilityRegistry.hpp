@@ -13,8 +13,8 @@ struct HasModifyVisibility : std::false_type {};
 template<class Feature>
 struct HasModifyVisibility<
     Feature,
-    std::void_t<decltype(Feature::modify_visibility(std::declval<const SeamVisibilityContext &>()))>>
-    : std::true_type {};
+    std::void_t<decltype(Feature::modify_visibility(
+        std::declval<const SeamVisibilityContext &>()))>> : std::true_type {};
 
 template<class... Features>
 struct BossSeamVisibilityRegistry {

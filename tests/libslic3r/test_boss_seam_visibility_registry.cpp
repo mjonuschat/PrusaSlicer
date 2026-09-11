@@ -24,7 +24,10 @@ struct FakeNoOpFeature {
 };
 } // namespace
 
-TEST_CASE("BossSeamVisibilityRegistry calls every feature that implements modify_visibility", "[boss][seam]")
+TEST_CASE(
+    "BossSeamVisibilityRegistry calls every feature that implements modify_visibility",
+    "[boss][seam]"
+)
 {
     std::vector<float> visibility{0.0f, 0.5f};
     std::vector<Vec3f> normals{Vec3f(0, -1, 0), Vec3f(0, 1, 0)};
@@ -36,7 +39,10 @@ TEST_CASE("BossSeamVisibilityRegistry calls every feature that implements modify
     CHECK(visibility[1] == 1.5f);
 }
 
-TEST_CASE("BossSeamVisibilityRegistry is a no-op when no feature implements modify_visibility", "[boss][seam]")
+TEST_CASE(
+    "BossSeamVisibilityRegistry is a no-op when no feature implements modify_visibility",
+    "[boss][seam]"
+)
 {
     std::vector<float> visibility{0.25f};
     std::vector<Vec3f> normals{Vec3f(0, -1, 0)};
