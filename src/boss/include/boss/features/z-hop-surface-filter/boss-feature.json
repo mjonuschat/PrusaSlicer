@@ -1,0 +1,23 @@
+{
+  "name": "z-hop-surface-filter",
+  "id": 10505,
+  "key": "z-hop-surface-filter",
+  "trait": "Slic3r::Boss::ZHopSurfaceFilterFeature",
+  "header": "boss/features/z-hop-surface-filter/ZHopSurfaceFilterFeature.hpp",
+  "label": "Z-hop surface filtering",
+  "components": {
+    "slic3r-domain": {
+      "capabilities": ["fdm_config"],
+      "sources": ["slic3r-domain/src/Slic3r/Domain/boss/ZHopSurfaceFilterConfig.cpp"]
+    },
+    "libslic3r": {
+      "capabilities": ["extrusion_registry"],
+      "sources": ["libslic3r/src/libslic3r/boss/gcode/retract/SurfaceLiftChecker.cpp"]
+    }
+  },
+  "config_options": [
+    { "key": "retract_lift_enforce", "invalidates": [],
+      "store": {"home": "extrude_config", "kind": "per_extruder_enum", "field": "retract_lift_enforce",
+                "enum_type": "Slic3r::Boss::ZHopSurfaceFilterMode"} }
+  ]
+}
