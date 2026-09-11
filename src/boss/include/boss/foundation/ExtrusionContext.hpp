@@ -6,6 +6,7 @@
 
 namespace Slic3r {
 class PrintRegionConfigView;
+class Layer;
 }
 
 namespace Slic3r::Biz::Slicing {
@@ -20,6 +21,13 @@ struct ExtrusionContext {
     bool          is_object_layer_over_raft = false;
     std::size_t   extruder_id = 0;
     const PrintRegionConfigView *config = nullptr;
+
+    double        path_length = 0.0;
+    const Layer  *layer = nullptr;
+
+    // Only meaningful when layer != nullptr.
+    double query_point_x = 0.0;
+    double query_point_y = 0.0;
 
     // generate_travel_gcode() (GCode.cpp) never carries a raw ConfigView -- only the
     // pre-resolved Biz::Slicing::ExtrudeConfig -- so its two travel roles are flagged
