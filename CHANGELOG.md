@@ -100,6 +100,12 @@ lost during the rebase and squash based workflow.
   enforcer region across layers, blending smoothly from layer to layer
   and staying aligned from the start of the shell. No new option: this
   applies whenever a shell has painted enforcer points.
+- Added a "Nip/Tuck seams" option. It cuts a small V-shaped notch at the
+  seam on the external perimeter and trims the first inner perimeter to
+  match, so start/stop blobs hide inside the notch instead of showing on
+  the surface. Choose Nip, Tuck, Nip/Tuck, or Alternating (flips per
+  layer); off by default. Requires at least 2 perimeters and is skipped
+  in spiral vase mode.
 
 ### Changed
 
