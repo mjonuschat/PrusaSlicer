@@ -543,3 +543,98 @@ TEST_CASE("GCodeWriter emits G1 code correctly according to XYZF_EXPORT_DIGITS",
         CHECK(result3 == "");
     }
 }
+
+SCENARIO("set_print_acceleration and set_jerk emit flavor-specific G-code", "[GCodeWriter][boss]")
+{
+    GIVEN("a Klipper GCodeWriter")
+    {
+        Test::TestConfig config;
+        Biz::Slicing::GCodeWriterConfig writer_config{config.get_view()};
+        writer_config.gcode_flavor = Domain::GCodeFlavor::gcfKlipper;
+
+        WHEN("set_print_acceleration is called with no minimum cruise ratio")
+        {
+            GCodeWriter writer{writer_config};
+            THEN("only ACCEL is emitted")
+            {
+                REQUIRE_THAT(
+                    writer.set_print_acceleration(1000),
+                    Catch::Matchers::Equals("SET_VELOCITY_LIMIT ACCEL=1000\n")
+                );
+            }
+        }
+        WHEN("set_print_acceleration is called with a minimum cruise ratio")
+        {
+            GCodeWriter writer{writer_config};
+            THEN("ACCEL and MINIMUM_CRUISE_RATIO are both emitted")
+            {
+                REQUIRE_THAT(
+                    writer.set_print_acceleration(1000, 0.5),
+                    Catch::Matchers::
+                        Equals("SET_VELOCITY_LIMIT ACCEL=1000 MINIMUM_CRUISE_RATIO=0.5\n")
+                );
+            }
+        }
+        WHEN("set_jerk is called")
+        {
+            GCodeWriter writer{writer_config};
+            THEN("SQUARE_CORNER_VELOCITY is emitted")
+            {
+                REQUIRE_THAT(
+                    writer.set_jerk(10),
+                    Catch::Matchers::Equals("SET_VELOCITY_LIMIT SQUARE_CORNER_VELOCITY=10\n")
+                );
+            }
+        }
+    }
+
+    GIVEN("a RepRapFirmware GCodeWriter")
+    {
+        Test::TestConfig config;
+        Biz::Slicing::GCodeWriterConfig writer_config{config.get_view()};
+        writer_config.gcode_flavor = Domain::GCodeFlavor::gcfRepRapFirmware;
+
+        WHEN("set_jerk is called")
+        {
+            GCodeWriter writer{writer_config};
+            THEN("M566 converts mm/s to mm/min")
+            {
+                REQUIRE_THAT(writer.set_jerk(10), Catch::Matchers::Equals("M566 X600 Y600\n"));
+            }
+        }
+    }
+
+    GIVEN("a Marlin GCodeWriter")
+    {
+        Test::TestConfig config;
+        Biz::Slicing::GCodeWriterConfig writer_config{config.get_view()};
+        writer_config.gcode_flavor = Domain::GCodeFlavor::gcfMarlinFirmware;
+
+        WHEN("set_jerk is called")
+        {
+            GCodeWriter writer{writer_config};
+            THEN("M205 is emitted in mm/s")
+            {
+                REQUIRE_THAT(writer.set_jerk(10), Catch::Matchers::Equals("M205 X10 Y10\n"));
+            }
+        }
+    }
+
+    GIVEN("a GCodeWriter with machine jerk limits")
+    {
+        Test::TestConfig config;
+        Biz::Slicing::GCodeWriterConfig writer_config{config.get_view()};
+        writer_config.gcode_flavor = Domain::GCodeFlavor::gcfMarlinFirmware;
+        writer_config.max_jerk_x   = 5;
+        writer_config.max_jerk_y   = 8;
+
+        WHEN("set_jerk is called above both limits")
+        {
+            GCodeWriter writer{writer_config};
+            THEN("each axis clamps to its own machine maximum")
+            {
+                REQUIRE_THAT(writer.set_jerk(10), Catch::Matchers::Equals("M205 X5 Y8\n"));
+            }
+        }
+    }
+}
