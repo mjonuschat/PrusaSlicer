@@ -439,6 +439,41 @@ class StoreValidationTests(unittest.TestCase):
             with self.assertRaises(gbf.ManifestError):
                 gbf.check_global_uniqueness(manifests)
 
+    def test_per_extruder_enum_requires_enum_type(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path, data = self._one(
+                tmp, {"home": "extrude_config", "field": "some_option", "kind": "per_extruder_enum"}
+            )
+            with self.assertRaises(gbf.ManifestError):
+                gbf.validate_manifest(path, data)
+
+    def test_per_extruder_enum_rejects_non_qualified_type(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path, data = self._one(tmp, {
+                "home": "extrude_config", "field": "some_option", "kind": "per_extruder_enum",
+                "enum_type": "not a type",
+            })
+            with self.assertRaises(gbf.ManifestError):
+                gbf.validate_manifest(path, data)
+
+    def test_per_extruder_enum_with_valid_type_parses(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path, data = self._one(tmp, {
+                "home": "extrude_config", "field": "some_option", "kind": "per_extruder_enum",
+                "enum_type": "Slic3r::Boss::SomeMode",
+            })
+            m = gbf.validate_manifest(path, data)
+            self.assertEqual(m.config_options[0]["store"]["enum_type"], "Slic3r::Boss::SomeMode")
+
+    def test_enum_type_rejected_on_non_enum_kind(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path, data = self._one(tmp, {
+                "home": "extrude_config", "field": "some_option", "kind": "scalar_bool",
+                "enum_type": "Slic3r::Boss::SomeMode",
+            })
+            with self.assertRaises(gbf.ManifestError):
+                gbf.validate_manifest(path, data)
+
 
 class PerimeterPolicyCapabilityTests(unittest.TestCase):
     def _one(self, tmp):
@@ -551,6 +586,50 @@ class SolidFillPolicyCapabilityTests(unittest.TestCase):
                 "using BossSolidFillPolicy = Slic3r::Boss::BossSolidFillPolicyRegistry<"
                 "Slic3r::Boss::Test::SolidFillPolicyFixtureFeature>;",
                 content,
+            )
+
+
+class EmitOverrideStructTests(unittest.TestCase):
+    def _one(self, tmp):
+        return write_manifest(
+            Path(tmp), "test-enum-store", id=900501, key="test-enum-store",
+            trait="Slic3r::Boss::Test::EnumStoreFixtureFeature",
+            header="boss/test-fixtures/enum-store-fixture/EnumStoreFixtureFeature.hpp",
+            components={
+                "libslic3r": {
+                    "capabilities": [],
+                    "sources": ["libslic3r/src/libslic3r/boss/test_fixtures/EnumStoreFixture.cpp"],
+                }
+            },
+            config_options=[{
+                "key": "test_enum_store_mode", "invalidates": [],
+                "store": {"home": "extrude_config", "field": "test_enum_store_mode",
+                          "kind": "per_extruder_enum", "enum_type": "Slic3r::Boss::TestEnumStoreMode"},
+            }],
+        )
+
+    def test_per_extruder_enum_field_uses_concrete_type(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._one(tmp)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            manifest = gbf.validate_manifest(path, data)
+
+            output_dir = Path(tmp) / "generated"
+            impl_path = gbf.emit_override_struct("extrude_config", [manifest], output_dir)
+            impl = impl_path.read_text(encoding="utf-8")
+            header = (
+                output_dir / "include" / "boss" / "generated" / "BossExtrudeConfigOverrides.hpp"
+            ).read_text(encoding="utf-8")
+
+            self.assertIn(
+                "std::vector<Slic3r::Boss::TestEnumStoreMode> test_enum_store_mode{};", header
+            )
+            self.assertIn(
+                '#include "boss/test-fixtures/enum-store-fixture/EnumStoreFixtureFeature.hpp"', header
+            )
+            self.assertIn(
+                'config.get<std::vector<Slic3r::Boss::TestEnumStoreMode>>("test_enum_store_mode")',
+                impl,
             )
 
 

@@ -60,6 +60,11 @@ def is_valid_cpp_identifier(name: str) -> bool:
     return bool(CPP_IDENTIFIER.match(name)) and name not in CPP_KEYWORDS
 
 
+def is_valid_cpp_qualified_identifier(name: str) -> bool:
+    segments = name.split("::")
+    return bool(segments) and all(is_valid_cpp_identifier(segment) for segment in segments)
+
+
 PATH_SAFE_CHARS = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_./-")
 
 
@@ -300,10 +305,10 @@ def validate_manifest(path: Path, data: dict) -> Manifest:
         if store is not None:
             if not isinstance(store, dict):
                 raise ManifestError(f"{path}: config_options entry {opt_key!r} 'store' must be an object")
-            if store.keys() - {"home", "field", "kind"}:
+            if store.keys() - {"home", "field", "kind", "enum_type"}:
                 raise ManifestError(
                     f"{path}: config_options entry {opt_key!r} store has unknown key(s): "
-                    f"{sorted(store.keys() - {'home', 'field', 'kind'})}"
+                    f"{sorted(store.keys() - {'home', 'field', 'kind', 'enum_type'})}"
                 )
             if store.get("home") not in HOME_REGISTRIES:
                 raise ManifestError(
@@ -319,6 +324,18 @@ def validate_manifest(path: Path, data: dict) -> Manifest:
                 raise ManifestError(
                     f"{path}: config_options entry {opt_key!r} store.field {store.get('field')!r} "
                     f"is not a valid, non-keyword C++ identifier"
+                )
+            if store["kind"] == "per_extruder_enum":
+                enum_type = store.get("enum_type")
+                if not isinstance(enum_type, str) or not is_valid_cpp_qualified_identifier(enum_type):
+                    raise ManifestError(
+                        f"{path}: config_options entry {opt_key!r} store.enum_type {enum_type!r} "
+                        f"is not a valid, non-keyword, '::'-qualified C++ type name"
+                    )
+            elif "enum_type" in store:
+                raise ManifestError(
+                    f"{path}: config_options entry {opt_key!r} store.enum_type is only valid "
+                    f"for store.kind 'per_extruder_enum'"
                 )
 
     return Manifest(
@@ -475,6 +492,12 @@ STORAGE_KINDS = {
     "per_extruder_float_or_percent": {
         "type": "std::vector<Slic3r::Domain::FloatOrPercentage>",
         "read": 'config.get<std::vector<Slic3r::Domain::FloatOrPercentage>>("{key}")',
+    },
+    # A per-extruder EnumWrapper option resolves to an EnumVectorWrapper, not a
+    # std::vector<int> -- per_extruder_int would throw on the mismatched variant.
+    "per_extruder_enum": {
+        "type": "std::vector<{enum_type}>",
+        "read": 'config.get<std::vector<{enum_type}>>("{key}")',
     },
 }
 
@@ -735,7 +758,11 @@ def _fields_for_home(manifests: list[Manifest], home: str) -> list[tuple[str, di
         for opt in m.config_options:
             store = opt.get("store")
             if store and store["home"] == home:
-                fields.append((store["field"], {"key": opt["key"], "kind": store["kind"]}))
+                meta = {"key": opt["key"], "kind": store["kind"]}
+                if store["kind"] == "per_extruder_enum":
+                    meta["enum_type"] = store["enum_type"]
+                    meta["header"] = m.header
+                fields.append((store["field"], meta))
     return sorted(fields, key=lambda pair: pair[0])
 
 
@@ -750,6 +777,8 @@ def emit_override_struct(home: str, manifests: list[Manifest], output_dir: Path)
     ]
     for inc in reg["includes"]:
         header.append(f'#include "{inc}"')
+    for inc in sorted({meta["header"] for _, meta in fields if "header" in meta}):
+        header.append(f'#include "{inc}"')
     header += [
         "",
         "namespace Slic3r::Boss {",
@@ -759,7 +788,8 @@ def emit_override_struct(home: str, manifests: list[Manifest], output_dir: Path)
         "",
     ]
     for field_name, meta in fields:
-        header.append(f'    {STORAGE_KINDS[meta["kind"]]["type"]} {field_name}{{}};')
+        field_type = STORAGE_KINDS[meta["kind"]]["type"].format(enum_type=meta.get("enum_type", ""))
+        header.append(f'    {field_type} {field_name}{{}};')
     header += ["};", "} // namespace Slic3r::Boss", ""]
 
     header_dir = output_dir / "include" / "boss" / "generated"
@@ -775,7 +805,7 @@ def emit_override_struct(home: str, manifests: list[Manifest], output_dir: Path)
     ]
     if fields:
         init_lines = [
-            f'{name}{{{STORAGE_KINDS[meta["kind"]]["read"].format(key=meta["key"])}}}'
+            f'{name}{{{STORAGE_KINDS[meta["kind"]]["read"].format(key=meta["key"], enum_type=meta.get("enum_type", ""))}}}'
             for name, meta in fields
         ]
         impl.append(f"    : {init_lines[0]}")
