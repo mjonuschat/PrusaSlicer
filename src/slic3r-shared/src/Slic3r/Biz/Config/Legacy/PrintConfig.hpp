@@ -131,7 +131,10 @@ enum SupportMaterialInterfacePattern {
 };
 
 enum SeamPosition {
-    spRandom, spNearest, spAligned, spRear
+    // Appended, not inserted where BOSS 2.9.x had it: this layer only ever
+    // converts by string, so the numbering is free, and leaving the upstream
+    // four alone keeps this diff off their values.
+    spRandom, spNearest, spAligned, spRear, spAlignedRear
 };
 
 enum class ScarfSeamPlacement {
