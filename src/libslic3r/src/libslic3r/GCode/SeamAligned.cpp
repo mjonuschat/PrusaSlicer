@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <utility>
 
+#include "boss/foundation/BossSeamAlignedRegistry.hpp"
+#include "boss/generated/BossSeamAlignedFeatures.hpp"
 #include "libslic3r/GCode/SeamGeometry.hpp"
 #include "libslic3r/GCode/ModelVisibility.hpp"
 #include "libslic3r/KDTreeIndirect.hpp"
@@ -235,17 +237,6 @@ std::vector<Vec2d> get_starting_positions(const Shells::Shell<> &shell) {
     return perimeter.positions;
 }
 
-struct LeastVisiblePoint
-{
-    SeamChoice choice;
-    double visibility;
-};
-
-struct SeamCandidate {
-    std::vector<SeamChoice> choices;
-    std::vector<double> visibilities;
-};
-
 std::vector<SeamChoice> get_shell_seam(
     const Shells::Shell<> &shell,
     const std::function<SeamChoice(const Perimeters::Perimeter &, std::size_t)> &chooser
@@ -369,11 +360,14 @@ std::vector<ShellLeastVisiblePoints> get_shells_least_visible_points(
 using ShellStartingPositions = std::vector<Vec2d>;
 
 std::vector<ShellStartingPositions> get_shells_starting_positions(
-    const Shells::Shells<> &shells
+    const Shells::Shells<> &shells, const Params &params
 ) {
     std::vector<ShellStartingPositions> result;
     for (const Shells::Shell<> &shell : shells) {
-        std::vector<Vec2d> starting_positions{get_starting_positions(shell)};
+        std::optional<std::vector<Vec2d>> override_positions{
+            Boss::BossSeamAlignedFeatures::get_starting_positions_override(shell, params)};
+        std::vector<Vec2d> starting_positions{
+            override_positions ? std::move(*override_positions) : get_starting_positions(shell)};
         result.push_back(std::move(starting_positions));
     }
     return result;
@@ -401,14 +395,25 @@ std::vector<ShellSeamCandidates> get_shells_seam_candidates(
         const Shells::Shell<> &shell{shells[shell_index]};
         using Perimeters::Perimeter, Perimeters::AngleType;
 
-        result[shell_index][starting_position_index] = get_seam_candidate(
-            shell,
-            starting_positions[shell_index][starting_position_index],
-            visibility_calculator,
-            params,
-            precalculated_visibility[shell_index],
-            least_visible_points[shell_index]
-        );
+        std::optional<SeamCandidate> override_candidate{
+            Boss::BossSeamAlignedFeatures::get_seam_candidate_override(
+                shell,
+                starting_positions[shell_index][starting_position_index],
+                visibility_calculator,
+                params,
+                precalculated_visibility[shell_index],
+                least_visible_points[shell_index]
+            )};
+        result[shell_index][starting_position_index] = override_candidate ?
+            std::move(*override_candidate) :
+            get_seam_candidate(
+                shell,
+                starting_positions[shell_index][starting_position_index],
+                visibility_calculator,
+                params,
+                precalculated_visibility[shell_index],
+                least_visible_points[shell_index]
+            );
     });
     return result;
 }
@@ -457,6 +462,7 @@ std::vector<SeamChoice> get_shell_seam(
         }
     }
 
+    Boss::BossSeamAlignedFeatures::postprocess_shell_choices(shell, seam, params);
     return seam;
 }
 
@@ -473,7 +479,7 @@ std::vector<std::vector<SeamPerimeterChoice>> get_object_seams(
     };
 
     const std::vector<ShellStartingPositions> starting_positions{
-        get_shells_starting_positions(shells)
+        get_shells_starting_positions(shells, params)
     };
 
     const std::vector<ShellSeamCandidates> seam_candidates{
