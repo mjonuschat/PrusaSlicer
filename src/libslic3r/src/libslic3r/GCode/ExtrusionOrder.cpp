@@ -4,6 +4,8 @@
 #include <cassert>
 #include <cinttypes>
 
+#include "boss/foundation/BossPerimeterGeometryRegistry.hpp"
+#include "boss/generated/BossPerimeterGeometryFeatures.hpp"
 #include "libslic3r/GCode/SmoothPath.hpp"
 #include "libslic3r/ShortestPath.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
@@ -262,6 +264,8 @@ std::vector<IslandExtrusions> extract_island_extrusions(
                 print, layer, island, offset, previous_position, should_pick_infill, smooth_path, extruder_id
             );
         }
+        Boss::BossPerimeterGeometryFeatures::modify_perimeters(Boss::PerimeterGeometryContext{
+            island_extrusions.perimeters, &region.config(), int(layer.id()), extruder_id});
     }
     return result;
 }
