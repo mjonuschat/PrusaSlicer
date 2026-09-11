@@ -457,6 +457,13 @@ CAPABILITY_REGISTRIES = {
         "template_header": "boss/foundation/BossLayerFilters.hpp",
         "output_header": "BossActiveLayerFilters.hpp",
     },
+    "seam_visibility": {
+        "target": "libslic3r",
+        "alias": "BossSeamVisibilityFeatures",
+        "template": "Slic3r::Boss::BossSeamVisibilityRegistry",
+        "template_header": "boss/foundation/BossSeamVisibilityRegistry.hpp",
+        "output_header": "BossSeamVisibilityFeatures.hpp",
+    },
 }
 
 # Storage homes: BOSS-owned override structs the generator writes and each
