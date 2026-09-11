@@ -24,6 +24,10 @@ struct PerimeterGeometryContext {
     std::vector<GCode::ExtrusionOrder::Perimeter> &perimeters;
     const Domain::ConfigView                      *config = nullptr;
     int                                             layer_index = 0;
+    // 0-based physical extruder slot for this island, matching the index
+    // scheme every other per-material-slot config read in this codebase
+    // uses (e.g. PrintRegion.cpp's config.get<std::vector<int>>(...).at(slot)).
+    unsigned                                        extruder_id = 0;
 };
 
 } // namespace Slic3r::Boss
