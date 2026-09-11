@@ -1,0 +1,23 @@
+{
+  "name": "nip-tuck-seam",
+  "id": 10508,
+  "key": "nip-tuck-seam",
+  "trait": "Slic3r::Boss::NipTuckSeamFeature",
+  "header": "boss/features/nip-tuck-seam/NipTuckSeamFeature.hpp",
+  "label": "Nip/Tuck (V-Notch) seam hiding",
+  "components": {
+    "slic3r-domain": {
+      "capabilities": ["fdm_config"],
+      "sources": ["slic3r-domain/src/Slic3r/Domain/boss/NipTuckSeamConfig.cpp"]
+    },
+    "libslic3r": {
+      "capabilities": ["perimeter_geometry"],
+      "sources": ["libslic3r/src/libslic3r/boss/seam/NipTuckSeamNotch.cpp"]
+    }
+  },
+  "config_options": [
+    { "key": "seam_type", "invalidates": ["psGCodeExport"] },
+    { "key": "seam_notch_width", "invalidates": ["psGCodeExport"] },
+    { "key": "seam_notch_angle", "invalidates": ["psGCodeExport"] }
+  ]
+}
