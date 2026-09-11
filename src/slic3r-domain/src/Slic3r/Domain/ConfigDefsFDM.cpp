@@ -1715,7 +1715,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("First object layer over raft interface");
     def->option_group = ConfigItemDef::OptionGroup::Print_MotionDynamics_FirstLayerAcceleration;
     def->category = ConfigItemDef::Category::Print_MotionDynamics;
-    def->order = 1;
+    def->order = 10;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This is the acceleration your printer will use for first layer of object above raft interface. Set zero "
                    "to disable acceleration control for first layer of object above raft interface.");
@@ -2122,6 +2122,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Infill");
     def->option_group = ConfigItemDef::OptionGroup::Print_MotionDynamics_MainStructureAcceleration;
     def->category = ConfigItemDef::Category::Print_MotionDynamics;
+    def->order = 30;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This is the acceleration your printer will use for infill. Set zero to disable "
                      "acceleration control for infill.");
@@ -2135,7 +2136,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Solid infill");
     def->option_group = ConfigItemDef::OptionGroup::Print_MotionDynamics_MainStructureAcceleration;
     def->category = ConfigItemDef::Category::Print_MotionDynamics;
-    def->order = 4;
+    def->order = 40;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This is the acceleration your printer will use for solid infill. Set zero to use "
                      "the value for infill.");
@@ -2149,7 +2150,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Top solid infill");
     def->option_group = ConfigItemDef::OptionGroup::Print_MotionDynamics_MainStructureAcceleration;
     def->category = ConfigItemDef::Category::Print_MotionDynamics;
-    def->order = 5;
+    def->order = 50;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This is the acceleration your printer will use for top solid infill. Set zero to use "
                      "the value for solid infill.");
@@ -2193,7 +2194,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label        = L("Travel short distance acceleration");
     def->option_group = ConfigItemDef::OptionGroup::Print_MotionDynamics_TravelsAcceleration;
     def->category     = ConfigItemDef::Category::Print_MotionDynamics;
-    def->order = 1;
+    def->order = 10;
     def->gui_type     = ConfigItemDef::GUIType::textfield;
     def->tooltip      = L(
         "Acceleration used for short travel moves. Short travel distance is determined by the retract_before_travel setting."
@@ -3000,7 +3001,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Perimeters");
     def->option_group = ConfigItemDef::OptionGroup::Print_MotionDynamics_MainStructureAcceleration;
     def->category = ConfigItemDef::Category::Print_MotionDynamics;
-    def->order = 3;
+    def->order = 20;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This is the acceleration your printer will use for perimeters. "
                      "Set zero to disable acceleration control for perimeters.");
@@ -3013,6 +3014,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("External perimeters");
     def->option_group = ConfigItemDef::OptionGroup::Print_MotionDynamics_MainStructureAcceleration;
     def->category = ConfigItemDef::Category::Print_MotionDynamics;
+    def->order = 10;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This is the acceleration your printer will use for external perimeters. "
                      "Set zero to use the value for perimeters.");
