@@ -3430,6 +3430,7 @@ std::string GCodeGenerator::travel_to_first_position(
             boss_ctx.query_point_x  = unscaled(point.x());
             boss_ctx.query_point_y  = unscaled(point.y());
             boss_ctx.extrude_config = &config;
+            boss_ctx.is_travel      = true;
             lift                    = Boss::BossExtrusionFeatures::modify_retract(lift, boss_ctx);
         }
 
@@ -4014,6 +4015,7 @@ std::string GCodeGenerator::travel_to(
         boss_ctx.query_point_x  = unscaled(start_point.x());
         boss_ctx.query_point_y  = unscaled(start_point.y());
         boss_ctx.extrude_config = &config;
+        boss_ctx.is_travel      = true;
         if (Boss::BossExtrusionFeatures::modify_retract(nominal_lift, boss_ctx) <= 0.0)
             can_be_flat = true;
     }
