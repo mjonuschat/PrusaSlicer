@@ -26,6 +26,7 @@
 #include "Slic3r/Time.hpp"
 #include "libslic3r/CustomParametersHandling.hpp"
 #include "boss/generated/BossActiveLayerFilters.hpp"
+#include "boss/generated/BossGCodeExtraIncludes.hpp"
 
 #include <algorithm>
 #include <cstdlib>
