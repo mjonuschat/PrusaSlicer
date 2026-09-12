@@ -48,6 +48,11 @@ struct SurfaceFillParams
     Flow flow;
 
     ExtrusionRole extrusion_role{ExtrusionRole::None};
+    // Per-role speed override (bridge/infill/solid/top-solid/over-bridge),
+    // read from the region config. Two regions with the same pattern but a
+    // different effective speed must stay in separate SurfaceFill groups,
+    // or the modifier region's distinct speed is lost when merged.
+    float role_speed = 0.f;
 
     // Index of this entry in a linear vector.
     size_t idx = 0;
