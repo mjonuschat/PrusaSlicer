@@ -1,3 +1,7 @@
+///|/ Copyright (c) OrcaSlicer 2023 Noisyfox @Noisyfox
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #ifndef slic3r_ExtrusionRole_hpp_
 #define slic3r_ExtrusionRole_hpp_
 
@@ -90,7 +94,9 @@ struct ExtrusionRole : public ExtrusionRoleModifiers
     static constexpr const ExtrusionRoleModifiers Mixed{ ExtrusionRoleModifier::Mixed };
 
     bool is_perimeter() const { return this->ExtrusionRoleModifiers::has(ExtrusionRoleModifier::Perimeter); }
+    bool is_internal_perimeter() const { return this->is_perimeter() && ! this->is_external(); }
     bool is_external_perimeter() const { return this->is_perimeter() && this->is_external(); }
+    bool is_overhang_perimeter() const { return this->is_perimeter() && this->is_bridge(); }
     bool is_infill() const { return this->ExtrusionRoleModifiers::has(ExtrusionRoleModifier::Infill); }
     bool is_solid_infill() const { return this->is_infill() && this->ExtrusionRoleModifiers::has(ExtrusionRoleModifier::Solid); }
     bool is_sparse_infill() const { return this->is_infill() && ! this->ExtrusionRoleModifiers::has(ExtrusionRoleModifier::Solid); }
