@@ -12,7 +12,7 @@ namespace Slic3r::Boss { struct PerimeterPolicyContext; struct OrderingPolicy; }
 namespace Slic3r::Boss {
 
 struct ExternalFirstHolesFeature {
-    static constexpr int id = 10102;
+    static constexpr int id = 10510;
     static constexpr std::string_view key = "external-first-holes";
     static constexpr std::string_view label = "External perimeters first for holes";
 
