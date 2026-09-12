@@ -25,6 +25,7 @@
 #include "boss/generated/BossFillPatternKey.hpp"
 #include "boss/generated/BossFills.hpp"
 #include "boss/generated/BossSolidFillPolicy.hpp"
+#include "boss/generated/BossFillExtraIncludes.hpp"
 #include "libslic3r/boss/surface/SolidFillPolicyContext.hpp"
 #include "libslic3r/Fill/Fill.hpp"
 #include "libslic3r/Fill/FillBase.hpp"
