@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 REQUIRED_MANIFEST_KEYS = {"name", "id", "key", "trait", "header", "components"}
-OPTIONAL_MANIFEST_KEYS = {"vendored", "label", "config_options"}
+OPTIONAL_MANIFEST_KEYS = {"vendored", "label", "config_options", "extra_includes"}
 NAME_PATTERN_CHARS = set("abcdefghijklmnopqrstuvwxyz0123456789-")
 # Config option keys are snake_case, unlike the kebab-case feature name/key.
 CONFIG_OPTION_KEY_CHARS = set("abcdefghijklmnopqrstuvwxyz0123456789_")
@@ -112,6 +112,7 @@ class Manifest:
     components: dict[str, dict]
     vendored: list[dict] = field(default_factory=list)
     config_options: list[dict] = field(default_factory=list)
+    extra_includes: dict[str, list[str]] = field(default_factory=dict)
 
 
 def validate_manifest(path: Path, data: dict) -> Manifest:
@@ -338,6 +339,23 @@ def validate_manifest(path: Path, data: dict) -> Manifest:
                     f"for store.kind 'per_extruder_enum'"
                 )
 
+    extra_includes = data.get("extra_includes", {})
+    if not isinstance(extra_includes, dict):
+        raise ManifestError(f"{path}: 'extra_includes' must be an object if present")
+    for consumer, headers in extra_includes.items():
+        if not isinstance(consumer, str) or not consumer:
+            raise ManifestError(f"{path}: extra_includes keys must be non-empty strings")
+        if not isinstance(headers, list) or not headers:
+            raise ManifestError(
+                f"{path}: extra_includes.{consumer} must be a non-empty list of header paths"
+            )
+        for header_path in headers:
+            if not isinstance(header_path, str) or not header_path or not is_safe_relative_path(header_path):
+                raise ManifestError(
+                    f"{path}: extra_includes.{consumer} entries must be non-empty, repo-relative "
+                    f"paths with no leading '/' and no '..' component, got {header_path!r}"
+                )
+
     return Manifest(
         path=path,
         name=name,
@@ -349,6 +367,7 @@ def validate_manifest(path: Path, data: dict) -> Manifest:
         components=components,
         vendored=vendored,
         config_options=config_options,
+        extra_includes=extra_includes,
     )
 
 
@@ -486,6 +505,29 @@ CAPABILITY_REGISTRIES = {
         "output_header": "BossPerimeterGeometryFeatures.hpp",
     },
 }
+
+# Known consumer files for the extra_includes manifest key. Adding a new
+# consumer file for the first time means adding one entry here (plus one
+# hand-written include of its generated header in that file) -- the same
+# one-time cost as adding a new CAPABILITY_REGISTRIES entry. Any number of
+# features can then add headers to an existing entry with no further
+# generator or consumer-file changes.
+EXTRA_INCLUDE_CONSUMERS = {
+    "gcode": "BossGCodeExtraIncludes.hpp",
+    "fill": "BossFillExtraIncludes.hpp",
+}
+
+
+def check_known_extra_include_consumers(manifests: list[Manifest]) -> None:
+    known = set(EXTRA_INCLUDE_CONSUMERS.keys())
+    for m in manifests:
+        for consumer in m.extra_includes:
+            if consumer not in known:
+                raise ManifestError(
+                    f"{m.path}: extra_includes declares unknown consumer {consumer!r} -- "
+                    f"known consumers are {sorted(known)}"
+                )
+
 
 # Storage homes: BOSS-owned override structs the generator writes and each
 # upstream class embeds once. Each entry is a full contract for the home.
@@ -683,6 +725,30 @@ def emit_composition_header(capability: str, manifests: list[Manifest], include_
     header_dir = include_dir / "boss" / "generated"
     header_dir.mkdir(parents=True, exist_ok=True)
     header_path = header_dir / reg["output_header"]
+    header_path.write_text("\n".join(lines), encoding="utf-8")
+    return header_path
+
+
+def emit_extra_includes_header(consumer: str, manifests: list[Manifest], include_dir: Path) -> Path:
+    output_header = EXTRA_INCLUDE_CONSUMERS[consumer]
+    contributing = sorted(
+        (m for m in manifests if consumer in m.extra_includes),
+        key=lambda m: m.name,
+    )
+    lines = [
+        "// GENERATED FILE -- do not edit. Produced by cmake/boss/generate_boss_features.py",
+        "// from the boss-feature.json manifests under src/boss/include/boss/features/.",
+        "#pragma once",
+        "",
+    ]
+    for m in contributing:
+        for header_path in m.extra_includes[consumer]:
+            lines.append(f'#include "{header_path}"')
+    lines.append("")
+
+    header_dir = include_dir / "boss" / "generated"
+    header_dir.mkdir(parents=True, exist_ok=True)
+    header_path = header_dir / output_header
     header_path.write_text("\n".join(lines), encoding="utf-8")
     return header_path
 
@@ -931,6 +997,7 @@ def generate(features_dir: Path, output_dir: Path) -> int:
         check_known_capabilities(manifests)
         check_capability_targets(manifests)
         check_reserved_keys(manifests)
+        check_known_extra_include_consumers(manifests)
     except ManifestError as exc:
         print(f"boss feature generation failed: {exc}", file=sys.stderr)
         return 1
@@ -939,6 +1006,8 @@ def generate(features_dir: Path, output_dir: Path) -> int:
     try:
         for capability in CAPABILITY_REGISTRIES:
             emit_composition_header(capability, manifests, include_dir)
+        for consumer in EXTRA_INCLUDE_CONSUMERS:
+            emit_extra_includes_header(consumer, manifests, include_dir)
         emit_fill_pattern_key(manifests, include_dir)
         emit_step_invalidations(manifests, output_dir)
         emit_config_option_keys(manifests, output_dir)

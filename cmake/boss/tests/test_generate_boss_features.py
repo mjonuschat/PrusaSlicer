@@ -395,6 +395,83 @@ class ConfigOptionsTests(unittest.TestCase):
                 gbf.check_global_uniqueness(manifests)
 
 
+class ExtraIncludesTests(unittest.TestCase):
+    def _one(self, tmp, extra_includes):
+        path = write_manifest(Path(tmp), "alpha", extra_includes=extra_includes)
+        return path, json.loads(path.read_text(encoding="utf-8"))
+
+    def test_valid_extra_includes_parse(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path, data = self._one(tmp, {"gcode": ["libslic3r/boss/perimeter/small_threshold/SmallPerimeterSpeedRatio.hpp"]})
+            manifest = gbf.validate_manifest(path, data)
+            self.assertEqual(
+                manifest.extra_includes["gcode"],
+                ["libslic3r/boss/perimeter/small_threshold/SmallPerimeterSpeedRatio.hpp"],
+            )
+
+    def test_missing_extra_includes_defaults_to_empty_dict(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = write_manifest(Path(tmp), "alpha")
+            data = json.loads(path.read_text(encoding="utf-8"))
+            manifest = gbf.validate_manifest(path, data)
+            self.assertEqual(manifest.extra_includes, {})
+
+    def test_non_dict_extra_includes_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path, data = self._one(tmp, ["gcode"])
+            with self.assertRaises(gbf.ManifestError):
+                gbf.validate_manifest(path, data)
+
+    def test_empty_header_list_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path, data = self._one(tmp, {"gcode": []})
+            with self.assertRaises(gbf.ManifestError):
+                gbf.validate_manifest(path, data)
+
+    def test_unsafe_header_path_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path, data = self._one(tmp, {"gcode": ["../escape.hpp"]})
+            with self.assertRaises(gbf.ManifestError):
+                gbf.validate_manifest(path, data)
+
+    def test_unknown_consumer_is_rejected_at_check_time_not_validate_time(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path, data = self._one(tmp, {"not-a-real-consumer": ["x.hpp"]})
+            manifest = gbf.validate_manifest(path, data)  # shape is valid...
+            with self.assertRaises(gbf.ManifestError):
+                gbf.check_known_extra_include_consumers([manifest])  # ...but the key isn't known
+
+
+class GCodeExtraIncludesCapabilityTests(unittest.TestCase):
+    def test_generates_one_include_per_contributing_feature_alphabetically(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            features_dir = Path(tmp)
+            write_manifest(features_dir, "zebra", id=1, key="zebra",
+                           extra_includes={"gcode": ["boss/zebra/Zebra.hpp"]})
+            write_manifest(features_dir, "alpha", id=2, key="alpha",
+                           extra_includes={"gcode": ["boss/alpha/Alpha.hpp"]})
+            manifests = gbf.discover_manifests(features_dir)
+
+            include_dir = Path(tmp) / "generated" / "include"
+            header_path = gbf.emit_extra_includes_header("gcode", manifests, include_dir)
+            content = header_path.read_text(encoding="utf-8")
+            alpha_pos = content.index("boss/alpha/Alpha.hpp")
+            zebra_pos = content.index("boss/zebra/Zebra.hpp")
+            self.assertLess(alpha_pos, zebra_pos)
+
+    def test_feature_declaring_a_different_consumer_is_excluded(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            features_dir = Path(tmp)
+            write_manifest(features_dir, "alpha", id=1, key="alpha",
+                           extra_includes={"fill": ["boss/alpha/Alpha.hpp"]})
+            manifests = gbf.discover_manifests(features_dir)
+
+            include_dir = Path(tmp) / "generated" / "include"
+            header_path = gbf.emit_extra_includes_header("gcode", manifests, include_dir)
+            content = header_path.read_text(encoding="utf-8")
+            self.assertNotIn("boss/alpha/Alpha.hpp", content)
+
+
 class StoreValidationTests(unittest.TestCase):
     def _one(self, tmp, store):
         path = write_manifest(Path(tmp), "alpha", config_options=[
