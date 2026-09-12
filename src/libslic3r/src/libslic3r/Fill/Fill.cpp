@@ -375,6 +375,17 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
             }
     }
 
+    // The area inside the innermost perimeters, unaffected by inter-fill
+    // trimming above (which introduces safety-offset micro-gaps). Sparse
+    // infill absorption clips its merges back to this boundary so they
+    // can't grow past it into perimeter territory.
+    ExPolygons total_fill_boundary;
+    for (const LayerRegion *layerm : layer.regions())
+        append(total_fill_boundary, layerm->fill_expolygons());
+    total_fill_boundary = union_ex(total_fill_boundary);
+
+    Slic3r::Boss::SparseInfillAbsorption::absorb(surface_fills, total_fill_boundary);
+
     return surface_fills;
 }
 
