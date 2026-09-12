@@ -8,7 +8,7 @@
 namespace Slic3r::Boss {
 
 struct ExcludeObjectSkirtBrimWipeFeature {
-    static constexpr int id = 10502;
+    static constexpr int id = 10512;
     static constexpr std::string_view key = "exclude-object-skirt-brim-wipe";
     static constexpr std::string_view label = "EXCLUDE_OBJECT for skirt/brim/wipe tower";
 
