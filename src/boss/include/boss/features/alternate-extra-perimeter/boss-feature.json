@@ -1,6 +1,6 @@
 {
   "name": "alternate-extra-perimeter",
-  "id": 10101,
+  "id": 10509,
   "key": "alternate-extra-perimeter",
   "trait": "Slic3r::Boss::AlternateExtraPerimeterFeature",
   "header": "boss/features/alternate-extra-perimeter/AlternateExtraPerimeterFeature.hpp",
