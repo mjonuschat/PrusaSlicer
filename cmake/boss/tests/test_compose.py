@@ -1,4 +1,6 @@
 import json
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -283,7 +285,7 @@ class RunComposeTests(unittest.TestCase):
                     "jj",
                     "describe",
                     "-r",
-                    "@",
+                    "foundation..@",
                     "-m",
                     "build/1.2.3: compose bugfix-a, feature-a",
                 ],
@@ -363,13 +365,79 @@ class RunComposeTests(unittest.TestCase):
                     "jj",
                     "describe",
                     "-r",
-                    "@",
+                    "foundation..@",
                     "-m",
                     "build/1.2.3: compose no additional branches",
                 ],
                 ["jj", "bookmark", "create", "build/1.2.3", "-r", "@"],
             ],
         )
+
+
+@unittest.skipUnless(shutil.which("jj"), "jj binary not available")
+class RunComposeRealJjTests(unittest.TestCase):
+    """Exercises run_compose against a real jj repo.
+
+    Fake-runner tests only check the command list run_compose issues; they
+    can't tell whether `jj describe -r <range>` actually reaches every
+    intermediate commit compose_branches creates. Round 1's fake-runner
+    tests passed while `jj git push` still failed on undescribed commits, so
+    this test proves the fix against real jj instead.
+    """
+
+    def _run_jj(self, cwd, *args):
+        result = subprocess.run(
+            ["jj", *args], cwd=cwd, capture_output=True, text=True
+        )
+        self.assertEqual(
+            result.returncode, 0, msg=f"jj {args} failed: {result.stderr}"
+        )
+        return result.stdout
+
+    def test_composed_range_has_no_undescribed_commits(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            self._run_jj(repo, "git", "init", "--colocate")
+            self._run_jj(repo, "config", "set", "--repo", "user.name", "Test User")
+            self._run_jj(
+                repo, "config", "set", "--repo", "user.email", "test@example.com"
+            )
+
+            # foundation, plus two branches each composed onto it, mirroring
+            # what a real BOSS workspace looks like before composition.
+            self._run_jj(repo, "new", "-m", "foundation", "root()")
+            self._run_jj(repo, "bookmark", "create", "foundation", "-r", "@")
+
+            self._run_jj(repo, "new", "-m", "bugfix a", "foundation")
+            self._run_jj(repo, "bookmark", "create", "bugfix-a", "-r", "@")
+
+            self._run_jj(repo, "new", "-m", "feature a", "foundation")
+            self._run_jj(repo, "bookmark", "create", "feature-a", "-r", "@")
+
+            manifest_path = repo / "manifest.json"
+            manifest_path.write_text(json.dumps({"excluded": []}), encoding="utf-8")
+
+            run = compose.make_subprocess_runner(repo)
+            result = compose.run_compose(run, manifest_path, "foundation", "9.9.9")
+            self.assertEqual(result, 0)
+
+            descriptions = self._run_jj(
+                repo,
+                "log",
+                "--no-graph",
+                "-r",
+                "foundation..build/9.9.9",
+                "-T",
+                'description ++ "\x1f"',
+            )
+            entries = descriptions.split("\x1f")[:-1]
+            # "foundation..@" covers every commit compose_branches created (the
+            # base commit plus one merge per branch) AND the two branch tips
+            # themselves, since they're ancestors of the final merge too.
+            self.assertEqual(len(entries), 5)
+            for entry in entries:
+                self.assertNotEqual(entry.strip(), "", msg=f"empty description in {entries!r}")
+                self.assertIn("build/9.9.9: compose bugfix-a, feature-a", entry)
 
 
 if __name__ == "__main__":

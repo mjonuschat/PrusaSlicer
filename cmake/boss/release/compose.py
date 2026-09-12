@@ -155,7 +155,9 @@ def run_compose(run: Runner, manifest_path: Path, base: str, version: str) -> in
         composed = branch_set.ordered()
         branches_desc = ", ".join(composed) if composed else "no additional branches"
         bookmark = f"build/{version}"
-        run(["jj", "describe", "-r", "@", "-m", f"{bookmark}: compose {branches_desc}"])
+        run(
+            ["jj", "describe", "-r", f"{base}..@", "-m", f"{bookmark}: compose {branches_desc}"]
+        )
         run(["jj", "bookmark", "create", bookmark, "-r", "@"])
 
         print(f"composed {len(composed)} branch(es) onto {bookmark}")
