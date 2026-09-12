@@ -589,6 +589,44 @@ class SolidFillPolicyCapabilityTests(unittest.TestCase):
             )
 
 
+class WipeTowerSpeedCapCapabilityTests(unittest.TestCase):
+    def _one(self, tmp):
+        return write_manifest(
+            Path(tmp), "test-wipe-tower-speed-cap", id=900801, key="test-wipe-tower-speed-cap",
+            trait="Slic3r::Boss::Test::WipeTowerSpeedCapFixtureFeature",
+            header="boss/test-fixtures/wipe-tower-speed-cap-fixture/WipeTowerSpeedCapFixtureFeature.hpp",
+            components={
+                "libslic3r": {
+                    "capabilities": ["wipe_tower_speed_cap"],
+                    "sources": ["libslic3r/src/libslic3r/boss/test_fixtures/WipeTowerSpeedCapFixture.cpp"],
+                }
+            },
+        )
+
+    def test_wipe_tower_speed_cap_capability_is_known(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._one(tmp)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            manifest = gbf.validate_manifest(path, data)
+            gbf.check_known_capabilities([manifest])
+            gbf.check_capability_targets([manifest])
+
+    def test_wipe_tower_speed_cap_generates_component_alias(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._one(tmp)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            manifest = gbf.validate_manifest(path, data)
+
+            include_dir = Path(tmp) / "generated" / "include"
+            header_path = gbf.emit_composition_header("wipe_tower_speed_cap", [manifest], include_dir)
+            content = header_path.read_text(encoding="utf-8")
+            self.assertIn(
+                "using BossWipeTowerSpeedCaps = Slic3r::Boss::BossWipeTowerSpeedCapRegistry<"
+                "Slic3r::Boss::Test::WipeTowerSpeedCapFixtureFeature>;",
+                content,
+            )
+
+
 class SeamVisibilityCapabilityTests(unittest.TestCase):
     def _one(self, tmp):
         return write_manifest(
