@@ -450,6 +450,13 @@ CAPABILITY_REGISTRIES = {
         "template_header": "boss/foundation/BossExtrusionRegistry.hpp",
         "output_header": "BossExtrusionFeatures.hpp",
     },
+    "wipe_tower_speed_cap": {
+        "target": "libslic3r",
+        "alias": "BossWipeTowerSpeedCaps",
+        "template": "Slic3r::Boss::BossWipeTowerSpeedCapRegistry",
+        "template_header": "boss/foundation/BossWipeTowerSpeedCapRegistry.hpp",
+        "output_header": "BossWipeTowerSpeedCaps.hpp",
+    },
     "layer_filters": {
         "target": "libslic3r",
         "alias": "BossActiveLayerFilters",
