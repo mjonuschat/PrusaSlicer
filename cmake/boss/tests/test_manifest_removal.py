@@ -7,25 +7,30 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import generate_boss_features as gbf  # noqa: E402
-from test_generate_boss_features import write_manifest  # noqa: E402
+from test_generate_boss_features import write_header, write_manifest  # noqa: E402
 
 
 class ManifestRemovalTests(unittest.TestCase):
     def test_removing_a_feature_directory_removes_it_from_the_composition(self):
         with tempfile.TemporaryDirectory() as features_tmp, tempfile.TemporaryDirectory() as out_tmp:
-            features_dir = Path(features_tmp)
+            include_dir = Path(features_tmp)
+            features_dir = include_dir / "boss" / "features"
+            alpha_header = "boss/features/alpha/AlphaFeature.hpp"
+            beta_header = "boss/features/beta/BetaFeature.hpp"
             write_manifest(
                 features_dir, "alpha", id=1, key="alpha",
                 trait="Slic3r::Boss::AlphaFeature",
-                header="boss/features/alpha/AlphaFeature.hpp",
+                header=alpha_header,
                 components={"slic3r-domain": {"capabilities": ["fdm_config"], "sources": ["alpha.cpp"]}},
             )
             write_manifest(
                 features_dir, "beta", id=2, key="beta",
                 trait="Slic3r::Boss::BetaFeature",
-                header="boss/features/beta/BetaFeature.hpp",
+                header=beta_header,
                 components={"slic3r-domain": {"capabilities": ["fdm_config"], "sources": ["beta.cpp"]}},
             )
+            write_header(include_dir, alpha_header, 1)
+            write_header(include_dir, beta_header, 2)
             self.assertEqual(gbf.generate(features_dir, Path(out_tmp)), 0)
             header_path = Path(out_tmp, "include", "boss", "generated", "BossFdmFeatures.hpp")
             sources_path = Path(out_tmp, "slic3r-domain", "sources.cmake")
