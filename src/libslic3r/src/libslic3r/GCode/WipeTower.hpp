@@ -15,6 +15,7 @@
 #include "Slic3r/Domain/Types.hpp"
 
 #include "boss/generated/BossWipeTowerOverrides.hpp"
+#include "boss/generated/BossWipeTowerSpeedCaps.hpp"
 
 namespace Slic3r
 {
