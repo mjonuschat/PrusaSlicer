@@ -424,6 +424,29 @@ def check_global_uniqueness(manifests: list[Manifest]) -> None:
         seen_keys[m.key] = m.path
 
 
+HEADER_ID_PATTERN = re.compile(r"static constexpr int id\s*=\s*(\d+)\s*;")
+
+
+def check_header_ids_match_manifest(manifests: list[Manifest], include_dir: Path) -> None:
+    for m in manifests:
+        header_path = include_dir / m.header
+        try:
+            text = header_path.read_text(encoding="utf-8")
+        except OSError as exc:
+            raise ManifestError(f"{m.path}: cannot read header {header_path}: {exc}") from exc
+        match = HEADER_ID_PATTERN.search(text)
+        if not match:
+            raise ManifestError(
+                f"{m.path}: {header_path} has no 'static constexpr int id = ...;' declaration"
+            )
+        header_id = int(match.group(1))
+        if header_id != m.id:
+            raise ManifestError(
+                f"{m.path}: header id {header_id} in {header_path} does not match "
+                f"manifest id {m.id}"
+            )
+
+
 # Known extension families. Adding a ninth (extrusion, seams, ...) in a
 # later phase means adding one more entry here -- not touching any
 # per-feature file. See the spec's "Generated feature composition".
@@ -998,10 +1021,15 @@ def emit_vendored_cmake(manifests: list[Manifest], target: str, output_dir: Path
     return cmake_path
 
 
+def source_include_dir(features_dir: Path) -> Path:
+    return features_dir.parent.parent
+
+
 def generate(features_dir: Path, output_dir: Path) -> int:
     try:
         manifests = discover_manifests(features_dir)
         check_global_uniqueness(manifests)
+        check_header_ids_match_manifest(manifests, source_include_dir(features_dir))
         check_known_capabilities(manifests)
         check_capability_targets(manifests)
         check_reserved_keys(manifests)
