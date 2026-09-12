@@ -1,0 +1,21 @@
+{
+  "name": "aligned-rear-seam",
+  "id": 10506,
+  "key": "aligned-rear-seam",
+  "trait": "Slic3r::Boss::AlignedRearSeamFeature",
+  "header": "boss/features/aligned-rear-seam/AlignedRearSeamFeature.hpp",
+  "label": "Aligned-rear seam placement",
+  "components": {
+    "slic3r-domain": {
+      "capabilities": ["fdm_config"],
+      "sources": ["slic3r-domain/src/Slic3r/Domain/boss/AlignedRearSeamConfig.cpp"]
+    },
+    "libslic3r": {
+      "capabilities": ["seam_visibility"],
+      "sources": ["libslic3r/src/libslic3r/boss/seam/AlignedRearSeamPolicy.cpp"]
+    }
+  },
+  "config_options": [
+    { "key": "seam_position_aligned_rear", "invalidates": ["psGCodeExport"] }
+  ]
+}

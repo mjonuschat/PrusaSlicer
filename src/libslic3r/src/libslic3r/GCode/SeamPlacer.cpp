@@ -6,6 +6,8 @@
 #include "SeamPlacer.hpp"
 
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
+#include "boss/foundation/SeamVisibilityContext.hpp"
+#include "boss/generated/BossSeamVisibilityFeatures.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/GCode/SeamShells.hpp"
 #include "libslic3r/GCode/SeamAligned.hpp"
@@ -86,6 +88,12 @@ ObjectSeams precalculate_seams(
             Slic3r::ModelInfo::Visibility
                 points_visibility{transformation, volumes, params.visibility, throw_if_canceled};
             throw_if_canceled();
+
+            const Domain::ConfigView &object_config = print_object->config();
+            Boss::BossSeamVisibilityFeatures::modify_visibility(Boss::SeamVisibilityContext{
+                points_visibility.mesh_samples_visibility, points_visibility.mesh_samples.normals,
+                &object_config});
+
             const Aligned::VisibilityCalculator visibility_calculator{
                 points_visibility, params.convex_visibility_modifier,
                 params.concave_visibility_modifier};
