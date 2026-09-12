@@ -248,5 +248,129 @@ class ComposeBranchesTests(unittest.TestCase):
         self.assertEqual(calls, [["jj", "new", "foundation"]])
 
 
+class RunComposeTests(unittest.TestCase):
+    def test_successful_run_issues_expected_commands_in_order(self):
+        calls = []
+
+        def fake_run(args):
+            calls.append(list(args))
+            if args[:2] == ["jj", "bookmark"] and args[2] == "list":
+                return (
+                    "bugfix-a: abc123 fix a\n"
+                    "feature-a: def456 add a\n"
+                )
+            if args[:2] == ["jj", "log"]:
+                return "false\n"
+            return ""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest_path = Path(tmp) / "manifest.json"
+            manifest_path.write_text(json.dumps({"excluded": []}), encoding="utf-8")
+
+            result = compose.run_compose(fake_run, manifest_path, "foundation", "1.2.3")
+
+        self.assertEqual(result, 0)
+        self.assertEqual(
+            calls,
+            [
+                ["jj", "bookmark", "list"],
+                ["jj", "new", "foundation"],
+                ["jj", "new", "@", "bugfix-a"],
+                ["jj", "log", "--no-graph", "-r", "@", "-T", "conflict"],
+                ["jj", "new", "@", "feature-a"],
+                ["jj", "log", "--no-graph", "-r", "@", "-T", "conflict"],
+                [
+                    "jj",
+                    "describe",
+                    "-r",
+                    "@",
+                    "-m",
+                    "build/1.2.3: compose bugfix-a, feature-a",
+                ],
+                ["jj", "bookmark", "create", "build/1.2.3", "-r", "@"],
+            ],
+        )
+
+    def test_missing_manifest_returns_error_without_running_jj(self):
+        calls = []
+
+        def fake_run(args):
+            calls.append(list(args))
+            return ""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest_path = Path(tmp) / "missing.json"
+            result = compose.run_compose(fake_run, manifest_path, "foundation", "1.2.3")
+
+        self.assertEqual(result, 1)
+        self.assertEqual(calls, [])
+
+    def test_stale_exclusion_returns_one_instead_of_raising(self):
+        def fake_run(args):
+            if args[:2] == ["jj", "bookmark"]:
+                return "feature-a: abc123 add a\n"
+            return ""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest_path = Path(tmp) / "manifest.json"
+            manifest_path.write_text(
+                json.dumps({"excluded": [{"branch": "feature-gone", "reason": "stale"}]}),
+                encoding="utf-8",
+            )
+
+            result = compose.run_compose(fake_run, manifest_path, "foundation", "1.2.3")
+
+        self.assertEqual(result, 1)
+
+    def test_composition_conflict_returns_one_instead_of_raising(self):
+        def fake_run(args):
+            if args[:2] == ["jj", "bookmark"]:
+                return "feature-a: abc123 add a\n"
+            if args[:2] == ["jj", "log"]:
+                return "true\n"
+            return ""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest_path = Path(tmp) / "manifest.json"
+            manifest_path.write_text(json.dumps({"excluded": []}), encoding="utf-8")
+
+            result = compose.run_compose(fake_run, manifest_path, "foundation", "1.2.3")
+
+        self.assertEqual(result, 1)
+
+    def test_empty_branch_set_still_describes_and_creates_bookmark(self):
+        calls = []
+
+        def fake_run(args):
+            calls.append(list(args))
+            if args[:2] == ["jj", "bookmark"] and args[2] == "list":
+                return "foundation: 111111 base\n"
+            return ""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest_path = Path(tmp) / "manifest.json"
+            manifest_path.write_text(json.dumps({"excluded": []}), encoding="utf-8")
+
+            result = compose.run_compose(fake_run, manifest_path, "foundation", "1.2.3")
+
+        self.assertEqual(result, 0)
+        self.assertEqual(
+            calls,
+            [
+                ["jj", "bookmark", "list"],
+                ["jj", "new", "foundation"],
+                [
+                    "jj",
+                    "describe",
+                    "-r",
+                    "@",
+                    "-m",
+                    "build/1.2.3: compose no additional branches",
+                ],
+                ["jj", "bookmark", "create", "build/1.2.3", "-r", "@"],
+            ],
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
