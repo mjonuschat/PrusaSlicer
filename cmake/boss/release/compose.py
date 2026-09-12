@@ -107,3 +107,10 @@ def list_all_branches(run: Runner) -> list[str]:
         if name.startswith(BUGFIX_PREFIX) or name.startswith(FEATURE_PREFIX):
             names.append(name)
     return names
+
+
+def is_conflicted(run: Runner, revision: str = "@") -> bool:
+    output = run(["jj", "log", "--no-graph", "-r", revision, "-T", "conflict"]).strip()
+    if output not in ("true", "false"):
+        raise ComposeError(f"unexpected conflict-check output: {output!r}")
+    return output == "true"
