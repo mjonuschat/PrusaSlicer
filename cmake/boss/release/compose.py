@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
+from typing import Callable, Sequence
 
 
 class ManifestError(Exception):
@@ -91,3 +91,19 @@ def resolve_branch_set(
     bugfixes = sorted(b for b in included if b.startswith(BUGFIX_PREFIX))
     features = sorted(b for b in included if b.startswith(FEATURE_PREFIX))
     return ComposeSet(bugfixes=bugfixes, features=features)
+
+
+Runner = Callable[[Sequence[str]], str]
+
+
+def list_all_branches(run: Runner) -> list[str]:
+    output = run(["jj", "bookmark", "list"])
+    names: list[str] = []
+    for line in output.splitlines():
+        line = line.strip()
+        if not line or ":" not in line:
+            continue
+        name = line.split(":", 1)[0].strip()
+        if name.startswith(BUGFIX_PREFIX) or name.startswith(FEATURE_PREFIX):
+            names.append(name)
+    return names
