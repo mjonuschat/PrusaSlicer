@@ -12,7 +12,7 @@ namespace Slic3r::Boss { struct PerimeterPolicyContext; }
 namespace Slic3r::Boss {
 
 struct AlternateExtraPerimeterFeature {
-    static constexpr int id = 10101;
+    static constexpr int id = 10509;
     static constexpr std::string_view key = "alternate-extra-perimeter";
     static constexpr std::string_view label = "Alternate extra perimeter";
 
