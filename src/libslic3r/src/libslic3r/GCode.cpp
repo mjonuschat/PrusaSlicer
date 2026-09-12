@@ -1185,7 +1185,7 @@ Domain::ExtraPrintStatistics GCodeGenerator::_do_export(
     this->print_machine_envelope(file, print);
 
     // Label all objects so printer knows about them since the start.
-    m_label_objects.init(print.objects(), print.config().get<Domain::LabelObjectsStyle>("gcode_label_objects"), print.config().get<GCodeFlavor>("gcode_flavor"));
+    m_label_objects.init(print, print.config().get<Domain::LabelObjectsStyle>("gcode_label_objects"), print.config().get<GCodeFlavor>("gcode_flavor"));
     file.write(m_label_objects.all_objects_header());
 
     // Update output variables after the extruders were initialized.

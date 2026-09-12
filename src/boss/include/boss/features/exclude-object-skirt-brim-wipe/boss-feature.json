@@ -1,0 +1,14 @@
+{
+  "name": "exclude-object-skirt-brim-wipe",
+  "id": 10512,
+  "key": "exclude-object-skirt-brim-wipe",
+  "trait": "Slic3r::Boss::ExcludeObjectSkirtBrimWipeFeature",
+  "header": "boss/features/exclude-object-skirt-brim-wipe/ExcludeObjectSkirtBrimWipeFeature.hpp",
+  "label": "EXCLUDE_OBJECT for skirt/brim/wipe tower",
+  "components": {
+    "libslic3r": {
+      "capabilities": ["label_objects"],
+      "sources": ["libslic3r/src/libslic3r/boss/gcode/labeling/ExcludeObjectSkirtBrimWipe.cpp"]
+    }
+  }
+}
