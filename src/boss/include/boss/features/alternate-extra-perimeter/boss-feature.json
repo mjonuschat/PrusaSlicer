@@ -1,0 +1,21 @@
+{
+  "name": "alternate-extra-perimeter",
+  "id": 10509,
+  "key": "alternate-extra-perimeter",
+  "trait": "Slic3r::Boss::AlternateExtraPerimeterFeature",
+  "header": "boss/features/alternate-extra-perimeter/AlternateExtraPerimeterFeature.hpp",
+  "label": "Alternate extra perimeter",
+  "components": {
+    "slic3r-domain": {
+      "capabilities": ["fdm_config"],
+      "sources": ["slic3r-domain/src/Slic3r/Domain/boss/AlternateExtraPerimeterConfig.cpp"]
+    },
+    "libslic3r": {
+      "capabilities": ["perimeter_policy"],
+      "sources": ["libslic3r/src/libslic3r/boss/perimeter/alternate_extra_perimeter/AlternateExtraPerimeterPolicy.cpp"]
+    }
+  },
+  "config_options": [
+    { "key": "alternate_extra_perimeter", "invalidates": ["posPerimeters"] }
+  ]
+}
