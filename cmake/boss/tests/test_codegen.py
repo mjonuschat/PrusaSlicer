@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import generate_boss_features as gbf  # noqa: E402
-from test_generate_boss_features import write_manifest  # noqa: E402
+from test_generate_boss_features import write_header, write_manifest  # noqa: E402
 
 
 class GenerateEndToEndTests(unittest.TestCase):
@@ -26,14 +26,16 @@ class GenerateEndToEndTests(unittest.TestCase):
 
     def test_single_config_feature_appears_in_composition(self):
         with tempfile.TemporaryDirectory() as features_tmp, tempfile.TemporaryDirectory() as out_tmp:
+            header = "boss/features/z-rotate/ZRotateFeature.hpp"
             write_manifest(
-                Path(features_tmp), "z-rotate",
+                Path(features_tmp, "boss", "features"), "z-rotate",
                 id=10001, key="z-rotate",
                 trait="Slic3r::Boss::ZRotateFeature",
-                header="boss/features/z-rotate/ZRotateFeature.hpp",
+                header=header,
                 components={"slic3r-domain": {"capabilities": ["fdm_config"], "sources": ["a.cpp"]}},
             )
-            rc = gbf.generate(Path(features_tmp), Path(out_tmp))
+            write_header(Path(features_tmp), header, 10001)
+            rc = gbf.generate(Path(features_tmp, "boss", "features"), Path(out_tmp))
             self.assertEqual(rc, 0)
             header = Path(out_tmp, "include", "boss", "generated", "BossFdmFeatures.hpp").read_text()
             self.assertIn("Slic3r::Boss::ZRotateFeature", header)
@@ -46,14 +48,16 @@ class GenerateEndToEndTests(unittest.TestCase):
         # its target's generated sources.cmake, and must not appear in any
         # capability's composition header (it joins no registry).
         with tempfile.TemporaryDirectory() as features_tmp, tempfile.TemporaryDirectory() as out_tmp:
+            header = "boss/features/plain-module/PlainModuleFeature.hpp"
             write_manifest(
-                Path(features_tmp), "plain-module",
+                Path(features_tmp, "boss", "features"), "plain-module",
                 id=10002, key="plain-module",
                 trait="Slic3r::Boss::PlainModuleFeature",
-                header="boss/features/plain-module/PlainModuleFeature.hpp",
+                header=header,
                 components={"libslic3r": {"sources": ["libslic3r/src/libslic3r/boss/PlainModule.cpp"]}},
             )
-            rc = gbf.generate(Path(features_tmp), Path(out_tmp))
+            write_header(Path(features_tmp), header, 10002)
+            rc = gbf.generate(Path(features_tmp, "boss", "features"), Path(out_tmp))
             self.assertEqual(rc, 0)
             sources = Path(out_tmp, "libslic3r", "sources.cmake").read_text()
             self.assertIn("libslic3r/src/libslic3r/boss/PlainModule.cpp", sources)
@@ -73,16 +77,18 @@ class GenerateEndToEndTests(unittest.TestCase):
 
     def test_fill_pattern_key_enum_includes_only_fill_features(self):
         with tempfile.TemporaryDirectory() as features_tmp, tempfile.TemporaryDirectory() as out_tmp:
+            header = "boss/features/crosshatch/CrossHatchFeature.hpp"
             write_manifest(
-                Path(features_tmp), "crosshatch",
+                Path(features_tmp, "boss", "features"), "crosshatch",
                 id=20001, key="crosshatch",
                 trait="Slic3r::Boss::CrossHatchFeature",
-                header="boss/features/crosshatch/CrossHatchFeature.hpp",
+                header=header,
                 components={
                     "libslic3r": {"capabilities": ["fill"], "sources": ["b.cpp"]},
                 },
             )
-            rc = gbf.generate(Path(features_tmp), Path(out_tmp))
+            write_header(Path(features_tmp), header, 20001)
+            rc = gbf.generate(Path(features_tmp, "boss", "features"), Path(out_tmp))
             self.assertEqual(rc, 0)
             enum_text = Path(out_tmp, "include", "boss", "generated", "BossFillPatternKey.hpp").read_text()
             self.assertIn("CrossHatch = 20001", enum_text)
@@ -268,11 +274,13 @@ class OverrideStructEmitTests(unittest.TestCase):
 class FullGenerateTests(unittest.TestCase):
     def test_generate_composes_invalidation_and_storage(self):
         with tempfile.TemporaryDirectory() as src, tempfile.TemporaryDirectory() as out:
-            write_manifest(Path(src), "alpha", config_options=[
+            header = "boss/features/alpha/alpha.hpp"
+            write_manifest(Path(src, "boss", "features"), "alpha", config_options=[
                 {"key": "filament_max_speed", "invalidates": ["psWipeTower", "psSkirtBrim"],
                  "store": {"home": "extrude_config", "field": "filament_max_speed",
                            "kind": "per_extruder_double"}}])
-            self.assertEqual(gbf.generate(Path(src), Path(out)), 0)
+            write_header(Path(src), header, 10000)
+            self.assertEqual(gbf.generate(Path(src, "boss", "features"), Path(out)), 0)
             inval = (Path(out) / "libslic3r" / "BossStepInvalidations.cpp").read_text()
             hdr = (Path(out) / "include" / "boss" / "generated" / "BossExtrudeConfigOverrides.hpp").read_text()
             keys = (Path(out) / "slic3r-domain" / "BossConfigOptionKeys.cpp").read_text()
@@ -282,11 +290,13 @@ class FullGenerateTests(unittest.TestCase):
 
     def test_generate_composes_int_storage(self):
         with tempfile.TemporaryDirectory() as src, tempfile.TemporaryDirectory() as out:
-            write_manifest(Path(src), "alpha", config_options=[
+            header = "boss/features/alpha/alpha.hpp"
+            write_manifest(Path(src, "boss", "features"), "alpha", config_options=[
                 {"key": "bridge_jerk", "invalidates": [],
                  "store": {"home": "extrude_config", "field": "bridge_jerk",
                            "kind": "per_extruder_int"}}])
-            self.assertEqual(gbf.generate(Path(src), Path(out)), 0)
+            write_header(Path(src), header, 10000)
+            self.assertEqual(gbf.generate(Path(src, "boss", "features"), Path(out)), 0)
             hdr = (Path(out) / "include" / "boss" / "generated" / "BossExtrudeConfigOverrides.hpp").read_text()
             self.assertIn("std::vector<int> bridge_jerk{};", hdr)
 

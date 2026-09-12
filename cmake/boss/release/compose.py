@@ -11,10 +11,14 @@ import argparse
 import json
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from enum import IntEnum
 from pathlib import Path
 from typing import Callable, Sequence
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import generate_boss_features  # noqa: E402
 
 
 class ManifestError(Exception):
@@ -200,7 +204,16 @@ def make_subprocess_runner(cwd: Path) -> Runner:
     return run
 
 
-def run_compose(run: Runner, manifest_path: Path, base: str, version: str) -> int:
+def validate_boss_features(repo: Path) -> None:
+    features_dir = repo / "src" / "boss" / "include" / "boss" / "features"
+    with tempfile.TemporaryDirectory() as scratch:
+        if generate_boss_features.generate(features_dir, Path(scratch)) != 0:
+            raise ComposeError(
+                "boss feature generation failed for the composed tree (see above)"
+            )
+
+
+def run_compose(run: Runner, manifest_path: Path, base: str, version: str, repo: Path) -> int:
     try:
         if not manifest_path.exists():
             raise ManifestError(f"manifest not found: {manifest_path}")
@@ -217,6 +230,8 @@ def run_compose(run: Runner, manifest_path: Path, base: str, version: str) -> in
         bookmark = f"build/{version}"
         previous_target = bookmark_target(run, bookmark)
         compose_branches(run, base, branch_set, bookmark)
+
+        validate_boss_features(repo)
 
         final_description = format_final_description(compose_title(version), composed)
         run(["jj", "describe", "-r", "@", "-m", final_description])
@@ -260,7 +275,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     run = make_subprocess_runner(args.repo)
-    return run_compose(run, args.manifest, args.base, args.version)
+    return run_compose(run, args.manifest, args.base, args.version, args.repo)
 
 
 if __name__ == "__main__":
