@@ -31,6 +31,7 @@
 #include "libslic3r/Surface.hpp"
 #include "libslic3r/Geometry/ConvexHull.hpp"
 #include "clipper/clipper_z.hpp"
+#include "boss/features/structured-fuzzy-skin/StructuredFuzzySkinFeature.hpp"
 #include "libslic3r/Arachne/PerimeterOrder.hpp"
 #include "libslic3r/Arachne/WallToolPaths.hpp"
 #include "libslic3r/Arachne/utils/ExtrusionLine.hpp"
@@ -247,7 +248,7 @@ static ExtrusionEntityCollection traverse_loops_classic(const PerimeterGenerator
         }
 
         // Apply fuzzy skin if it is enabled for at least some part of the polygon.
-        const Polygon polygon = apply_fuzzy_skin(loop.polygon, params.config, params.perimeter_regions, params.layer_id, loop.depth, loop.is_contour);
+        const Polygon polygon = apply_fuzzy_skin(loop.polygon, params.config, params.perimeter_regions, params.layer_id, loop.depth, loop.is_contour, params.slice_z);
 
         ExtrusionPaths paths;
         if (params.config.get<std::vector<bool>>("overhangs").at(extruder_id) && params.layer_id > params.config.get<int>("raft_layers") &&
@@ -500,7 +501,7 @@ static ExtrusionEntityCollection traverse_extrusions(const PerimeterGenerator::P
         ExtrusionRole role_overhang = role_normal | ExtrusionRoleModifier::Bridge;
 
         // Apply fuzzy skin if it is enabled for at least some part of the ExtrusionLine.
-        extrusion = apply_fuzzy_skin(extrusion, params.config, params.perimeter_regions, params.layer_id, pg_extrusion.extrusion.inset_idx, !pg_extrusion.extrusion.is_closed || pg_extrusion.is_contour());
+        extrusion = apply_fuzzy_skin(extrusion, params.config, params.perimeter_regions, params.layer_id, pg_extrusion.extrusion.inset_idx, !pg_extrusion.extrusion.is_closed || pg_extrusion.is_contour(), params.slice_z);
 
         ExtrusionPaths paths;
         // detect overhanging/bridging perimeters
@@ -1684,7 +1685,11 @@ bool PerimeterRegion::has_compatible_perimeter_regions(const PrintRegionConfigVi
 {
     return config.get<Domain::FuzzySkinType>("fuzzy_skin") == other_config.get<Domain::FuzzySkinType>("fuzzy_skin") &&
            config.get<double>("fuzzy_skin_thickness")  == other_config.get<double>("fuzzy_skin_thickness") &&
-           config.get<double>("fuzzy_skin_point_dist") == other_config.get<double>("fuzzy_skin_point_dist");
+           config.get<double>("fuzzy_skin_point_dist") == other_config.get<double>("fuzzy_skin_point_dist") &&
+           config.get<Domain::Boss::FuzzySkinNoiseType>("fuzzy_skin_noise_type") == other_config.get<Domain::Boss::FuzzySkinNoiseType>("fuzzy_skin_noise_type") &&
+           config.get<double>("fuzzy_skin_feature_size") == other_config.get<double>("fuzzy_skin_feature_size") &&
+           config.get<int>("fuzzy_skin_octaves")          == other_config.get<int>("fuzzy_skin_octaves") &&
+           config.get<double>("fuzzy_skin_persistence")   == other_config.get<double>("fuzzy_skin_persistence");
 }
 
 void PerimeterRegion::merge_compatible_perimeter_regions(PerimeterRegions &perimeter_regions)
