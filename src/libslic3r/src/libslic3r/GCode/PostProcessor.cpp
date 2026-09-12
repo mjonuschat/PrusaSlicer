@@ -500,7 +500,7 @@ private:
 
     WarningCallback m_warning_callback{ nullptr };
     // Backtrace data for Tx gcode lines
-    static const Backtrace s_BACKTRACE_T;
+    const Backtrace m_backtrace_t{ m_config.preheat_time, m_config.preheat_steps };
 
     void apply_config() {
         for (size_t i = 0; i < TIME_MODES_COUNT; ++i) {
@@ -603,7 +603,7 @@ private:
                     }
                     processed = true;
                 }
-                max_backtrace_time = std::max(max_backtrace_time, s_BACKTRACE_T.time);
+                max_backtrace_time = std::max(max_backtrace_time, m_backtrace_t.time);
                 if (processed)
                     continue;
             }
@@ -907,14 +907,14 @@ private:
     void insert_M104_lines(size_t lines_counter, const std::string& cmd,
         std::function<void(size_t, const std::vector<float>&)> line_inserter,
         std::function<void(size_t, const std::string&)> line_replacer) {
-        const float time_step = s_BACKTRACE_T.time_step();
+        const float time_step = m_backtrace_t.time_step();
         const size_t base_rev_it_dist = m_result.gcode().size() - lines_counter; // distance from the current gcode line to the end of gcode
         auto base_gcode_rev_it = m_result.gcode().rbegin() + base_rev_it_dist; // reverse iterator to the current gcode line
         auto base_times_rev_it = m_gcode_times.rbegin() + base_rev_it_dist; // reverse iterator to the current gcode line times
 
         size_t rev_it_dist = 0; // distance from the current gcode line of the starting point of the backtrace
         float last_time_insertion = 0.0f; // used to avoid inserting two lines at the same time
-        for (unsigned int i = 0; i < s_BACKTRACE_T.steps; ++i) {
+        for (unsigned int i = 0; i < m_backtrace_t.steps; ++i) {
             const float backtrace_time_i = float(i + 1) * time_step;
             const float time_threshold_i = m_times[size_t(TimeMode::Normal)] - backtrace_time_i;
             auto gcode_rev_it = base_gcode_rev_it + rev_it_dist;
@@ -951,8 +951,6 @@ private:
         }
     }
 };
-
-const PostProcessor::Backtrace PostProcessor::s_BACKTRACE_T = { 120.0f, 10 };
 
 ProcessorResult post_process(
     const PostProcessorConfig& config,
