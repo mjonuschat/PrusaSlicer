@@ -27,7 +27,6 @@
 #include "boss/generated/BossSolidFillPolicy.hpp"
 #include "libslic3r/boss/surface/SolidFillPolicyContext.hpp"
 #include "boss/generated/BossFillExtraIncludes.hpp"
-#include "libslic3r/boss/surface/absorption/SparseInfillAbsorption.hpp"
 #include "libslic3r/Fill/Fill.hpp"
 #include "libslic3r/Fill/FillBase.hpp"
 #include "libslic3r/Fill/FillRectilinear.hpp"
