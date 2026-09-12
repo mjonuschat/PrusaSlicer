@@ -352,8 +352,9 @@ def validate_manifest(path: Path, data: dict) -> Manifest:
         for header_path in headers:
             if not isinstance(header_path, str) or not header_path or not is_safe_relative_path(header_path):
                 raise ManifestError(
-                    f"{path}: extra_includes.{consumer} entries must be non-empty, repo-relative "
-                    f"paths with no leading '/' and no '..' component, got {header_path!r}"
+                    f"{path}: extra_includes.{consumer} entries must be a non-empty path as the "
+                    f"compiler's include search resolves it, with no leading '/' and no '..' "
+                    f"component, got {header_path!r}"
                 )
 
     return Manifest(
@@ -512,21 +513,17 @@ CAPABILITY_REGISTRIES = {
 # one-time cost as adding a new CAPABILITY_REGISTRIES entry. Any number of
 # features can then add headers to an existing entry with no further
 # generator or consumer-file changes.
+#
+# Unlike CAPABILITY_REGISTRIES, this dict is deliberately not target-scoped:
+# a consumer file has no "owning target" the way a capability's registry
+# does, so there is no equivalent of check_capability_targets() for
+# extra_includes -- a feature with no sources in a consumer file's target
+# can still inject a header there, which fails loudly at compile time
+# instead of silently.
 EXTRA_INCLUDE_CONSUMERS = {
     "gcode": "BossGCodeExtraIncludes.hpp",
     "fill": "BossFillExtraIncludes.hpp",
 }
-
-
-def check_known_extra_include_consumers(manifests: list[Manifest]) -> None:
-    known = set(EXTRA_INCLUDE_CONSUMERS.keys())
-    for m in manifests:
-        for consumer in m.extra_includes:
-            if consumer not in known:
-                raise ManifestError(
-                    f"{m.path}: extra_includes declares unknown consumer {consumer!r} -- "
-                    f"known consumers are {sorted(known)}"
-                )
 
 
 # Storage homes: BOSS-owned override structs the generator writes and each
@@ -690,6 +687,17 @@ def check_capability_targets(manifests: list[Manifest]) -> None:
                         f"{m.path}: capability {cap!r} is declared under components.{target}, "
                         f"but that capability belongs to component {owning_target!r}"
                     )
+
+
+def check_known_extra_include_consumers(manifests: list[Manifest]) -> None:
+    known = set(EXTRA_INCLUDE_CONSUMERS.keys())
+    for m in manifests:
+        for consumer in m.extra_includes:
+            if consumer not in known:
+                raise ManifestError(
+                    f"{m.path}: extra_includes declares unknown consumer {consumer!r} -- "
+                    f"known consumers are {sorted(known)}"
+                )
 
 
 def emit_composition_header(capability: str, manifests: list[Manifest], include_dir: Path) -> Path:

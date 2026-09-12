@@ -442,7 +442,7 @@ class ExtraIncludesTests(unittest.TestCase):
                 gbf.check_known_extra_include_consumers([manifest])  # ...but the key isn't known
 
 
-class GCodeExtraIncludesCapabilityTests(unittest.TestCase):
+class ExtraIncludesEmissionTests(unittest.TestCase):
     def test_generates_one_include_per_contributing_feature_alphabetically(self):
         with tempfile.TemporaryDirectory() as tmp:
             features_dir = Path(tmp)

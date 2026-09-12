@@ -4,8 +4,7 @@
 #include <vector>
 
 #include "boss/foundation/BossWipeTowerSpeedCapRegistry.hpp"
-
-namespace Slic3r { class PrintConfigView; }
+#include "libslic3r/ConfigViews.hpp"
 
 using namespace Slic3r::Boss;
 
@@ -43,38 +42,38 @@ struct FixtureOtherCapFeature {
 
 TEST_CASE("BossWipeTowerSpeedCapRegistry collects every feature's cap", "[boss][wipe_tower]")
 {
-    const Slic3r::PrintConfigView *config = nullptr;
+    const Slic3r::PrintConfigView config;
     const std::vector<unsigned> extruder_candidates{};
 
     SECTION("no features yields an empty vector")
     {
         using Registry = BossWipeTowerSpeedCapRegistry<>;
-        REQUIRE(Registry::collect(*config, extruder_candidates).empty());
+        REQUIRE(Registry::collect(config, extruder_candidates).empty());
     }
 
     SECTION("a feature declining a cap contributes nothing")
     {
         using Registry = BossWipeTowerSpeedCapRegistry<FixtureNoCapFeature>;
-        REQUIRE(Registry::collect(*config, extruder_candidates).empty());
+        REQUIRE(Registry::collect(config, extruder_candidates).empty());
     }
 
     SECTION("a feature with no speed_cap method at all is a no-op")
     {
         using Registry = BossWipeTowerSpeedCapRegistry<FixtureNoopFeature>;
-        REQUIRE(Registry::collect(*config, extruder_candidates).empty());
+        REQUIRE(Registry::collect(config, extruder_candidates).empty());
     }
 
     SECTION("a feature with a cap contributes exactly one value")
     {
         using Registry = BossWipeTowerSpeedCapRegistry<FixtureCapFeature>;
-        REQUIRE(Registry::collect(*config, extruder_candidates) == std::vector<float>{42.f});
+        REQUIRE(Registry::collect(config, extruder_candidates) == std::vector<float>{42.f});
     }
 
     SECTION("multiple features each contribute their own cap")
     {
         using Registry = BossWipeTowerSpeedCapRegistry<
             FixtureCapFeature, FixtureNoCapFeature, FixtureNoopFeature, FixtureOtherCapFeature>;
-        const std::vector<float> caps = Registry::collect(*config, extruder_candidates);
+        const std::vector<float> caps = Registry::collect(config, extruder_candidates);
         REQUIRE(caps.size() == 2);
         REQUIRE(caps[0] == 42.f);
         REQUIRE(caps[1] == 7.f);
