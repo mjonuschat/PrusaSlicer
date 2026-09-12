@@ -3284,18 +3284,46 @@ std::string GCodeGenerator::extrude_perimeters(
     for (const GCode::ExtrusionOrder::Perimeter &perimeter : perimeters) {
         double speed{-1};
         // Apply the small perimeter speed.
-        if (perimeter.extrusion_entity->length() <= SMALL_PERIMETER_LENGTH)
+        if (perimeter.extrusion_entity->length() <= SMALL_PERIMETER_LENGTH) {
+            const bool is_external = perimeter.extrusion_entity->role().is_external_perimeter();
+            const FlowRole flow_role = is_external ? FlowRole::frExternalPerimeter : FlowRole::frPerimeter;
             speed = region
                         .extruder_config_value<Domain::FloatOrPercentage>(
-                            "small_perimeter_speed",
-                            FlowRole::frExternalPerimeter
+                            is_external ? "small_external_perimeter_speed" : "small_perimeter_speed",
+                            flow_role
                         )
-                        .get_abs_value(region.extruder_config_value<double>(
-                            "perimeter_speed",
-                            FlowRole::frExternalPerimeter
-                        ));
+                        .float_value();
+        }
+
+        double small_perimeter_ratio{0.0};
+        if (perimeter.extrusion_entity->role().is_perimeter() && !perimeter.extrusion_entity->role().is_thin_wall()) {
+            small_perimeter_ratio = Boss::SmallPerimeterSpeedRatio::speed_ratio(
+                unscale<double>(perimeter.extrusion_entity->length()),
+                region.config().get<double>("small_perimeter_min_length"),
+                region.config().get<double>("small_perimeter_max_length")
+            );
+        }
+
+        // Direct call, not a registry entry: this is the only feature that modifies
+        // speed at this call site today. Phase 5's extrusion-modifier registry should
+        // absorb this hook once a second feature needs to change speed here too.
+        std::optional<GCode::SmoothPath> small_perimeter_path;
+        if (small_perimeter_ratio > 0.0) {
+            const bool is_external = perimeter.extrusion_entity->role().is_external_perimeter();
+            const double target_speed = region
+                                             .extruder_config_value<Domain::FloatOrPercentage>(
+                                                 is_external ? "small_external_perimeter_speed" : "small_perimeter_speed",
+                                                 is_external ? FlowRole::frExternalPerimeter : FlowRole::frPerimeter
+                                             )
+                                             .float_value();
+            small_perimeter_path = perimeter.smooth_path;
+            for (GCode::SmoothPathElement &element : *small_perimeter_path)
+                element.path_attributes.small_perimeter_speed_blend =
+                    ExtrusionAttributes::SmallPerimeterSpeedBlend{small_perimeter_ratio, target_speed};
+        }
+
         gcode += this->extrude_smooth_path(
-            perimeter.smooth_path,
+            small_perimeter_path ? *small_perimeter_path : perimeter.smooth_path,
             perimeter.extrusion_entity->is_loop(),
             comment_perimeter,
             speed,
@@ -3641,6 +3669,15 @@ std::string GCodeGenerator::_extrude(
     }
     if (m_volumetric_speed.at(extruder_id) != 0. && speed == 0)
         speed = m_volumetric_speed.at(extruder_id) / path_attr.mm3_per_mm;
+
+    // Blend toward small_perimeter_speed, but never on bridging sub-elements
+    // of a perimeter loop (a loop can mix bridging and non-bridging segments).
+    if (path_attr.small_perimeter_speed_blend.has_value() && !path_attr.role.is_bridge()) {
+        const auto &blend = *path_attr.small_perimeter_speed_blend;
+        if (blend.target_speed > 0)
+            speed = speed * (1.0 - blend.ratio) + blend.target_speed * blend.ratio;
+    }
+
     if (this->on_first_layer()) {
         if (path_attr.role == ExtrusionRole::InternalInfill) {
             speed = config.first_layer_infill_speed.at(extruder_id).float_value();
