@@ -160,5 +160,36 @@ class ListAllBranchesTests(unittest.TestCase):
         self.assertEqual(compose.list_all_branches(fake_run), ["feature-a"])
 
 
+class IsConflictedTests(unittest.TestCase):
+    def test_true_output_means_conflicted(self):
+        def fake_run(args):
+            self.assertEqual(
+                args, ["jj", "log", "--no-graph", "-r", "@", "-T", "conflict"]
+            )
+            return "true\n"
+
+        self.assertTrue(compose.is_conflicted(fake_run))
+
+    def test_false_output_means_clean(self):
+        def fake_run(args):
+            return "false\n"
+
+        self.assertFalse(compose.is_conflicted(fake_run))
+
+    def test_custom_revision_is_passed_through(self):
+        def fake_run(args):
+            self.assertEqual(args[4], "some-bookmark")
+            return "false\n"
+
+        compose.is_conflicted(fake_run, revision="some-bookmark")
+
+    def test_unexpected_output_raises(self):
+        def fake_run(args):
+            return "maybe\n"
+
+        with self.assertRaises(compose.ComposeError):
+            compose.is_conflicted(fake_run)
+
+
 if __name__ == "__main__":
     unittest.main()
