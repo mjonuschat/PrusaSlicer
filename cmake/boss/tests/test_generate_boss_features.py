@@ -27,6 +27,18 @@ def write_manifest(features_dir: Path, feature_name: str, **overrides) -> Path:
     return manifest_path
 
 
+def write_header(include_dir: Path, header_rel: str, feature_id: int | None) -> None:
+    header_path = include_dir / header_rel
+    header_path.parent.mkdir(parents=True, exist_ok=True)
+    if feature_id is None:
+        header_path.write_text("struct Foo {};\n", encoding="utf-8")
+    else:
+        header_path.write_text(
+            f"struct Foo {{\n    static constexpr int id = {feature_id};\n}};\n",
+            encoding="utf-8",
+        )
+
+
 class DiscoverManifestsTests(unittest.TestCase):
     def test_empty_directory_returns_no_manifests(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -338,6 +350,46 @@ class GlobalUniquenessTests(unittest.TestCase):
             write_manifest(features_dir, "beta", id=2, key="beta")
             manifests = gbf.discover_manifests(features_dir)
             gbf.check_global_uniqueness(manifests)  # must not raise
+
+
+class CheckHeaderIdsMatchManifestTests(unittest.TestCase):
+    def test_matching_id_passes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            include_dir = Path(tmp)
+            features_dir = include_dir / "boss" / "features"
+            write_manifest(features_dir, "alpha", id=42)
+            manifests = gbf.discover_manifests(features_dir)
+            write_header(include_dir, manifests[0].header, 42)
+            gbf.check_header_ids_match_manifest(manifests, include_dir)  # must not raise
+
+    def test_mismatched_id_raises(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            include_dir = Path(tmp)
+            features_dir = include_dir / "boss" / "features"
+            write_manifest(features_dir, "alpha", id=42)
+            manifests = gbf.discover_manifests(features_dir)
+            write_header(include_dir, manifests[0].header, 99)
+            with self.assertRaises(gbf.ManifestError):
+                gbf.check_header_ids_match_manifest(manifests, include_dir)
+
+    def test_missing_id_constant_raises(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            include_dir = Path(tmp)
+            features_dir = include_dir / "boss" / "features"
+            write_manifest(features_dir, "alpha", id=42)
+            manifests = gbf.discover_manifests(features_dir)
+            write_header(include_dir, manifests[0].header, None)
+            with self.assertRaises(gbf.ManifestError):
+                gbf.check_header_ids_match_manifest(manifests, include_dir)
+
+    def test_missing_header_file_raises(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            include_dir = Path(tmp)
+            features_dir = include_dir / "boss" / "features"
+            write_manifest(features_dir, "alpha", id=42)
+            manifests = gbf.discover_manifests(features_dir)
+            with self.assertRaises(gbf.ManifestError):
+                gbf.check_header_ids_match_manifest(manifests, include_dir)
 
 
 class ConfigOptionsTests(unittest.TestCase):

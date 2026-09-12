@@ -302,7 +302,7 @@ class RunComposeTests(unittest.TestCase):
             manifest_path = Path(tmp) / "manifest.json"
             manifest_path.write_text(json.dumps({"excluded": []}), encoding="utf-8")
 
-            result = compose.run_compose(fake_run, manifest_path, "foundation", "1.2.3")
+            result = compose.run_compose(fake_run, manifest_path, "foundation", "1.2.3", Path(tmp))
 
         self.assertEqual(result, 0)
         description = "build/1.2.3: compose bugfix-a, feature-a"
@@ -331,7 +331,7 @@ class RunComposeTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp:
             manifest_path = Path(tmp) / "missing.json"
-            result = compose.run_compose(fake_run, manifest_path, "foundation", "1.2.3")
+            result = compose.run_compose(fake_run, manifest_path, "foundation", "1.2.3", Path(tmp))
 
         self.assertEqual(result, 1)
         self.assertEqual(calls, [])
@@ -349,7 +349,7 @@ class RunComposeTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            result = compose.run_compose(fake_run, manifest_path, "foundation", "1.2.3")
+            result = compose.run_compose(fake_run, manifest_path, "foundation", "1.2.3", Path(tmp))
 
         self.assertEqual(result, 1)
 
@@ -365,7 +365,7 @@ class RunComposeTests(unittest.TestCase):
             manifest_path = Path(tmp) / "manifest.json"
             manifest_path.write_text(json.dumps({"excluded": []}), encoding="utf-8")
 
-            result = compose.run_compose(fake_run, manifest_path, "foundation", "1.2.3")
+            result = compose.run_compose(fake_run, manifest_path, "foundation", "1.2.3", Path(tmp))
 
         self.assertEqual(result, 1)
 
@@ -382,7 +382,7 @@ class RunComposeTests(unittest.TestCase):
             manifest_path = Path(tmp) / "manifest.json"
             manifest_path.write_text(json.dumps({"excluded": []}), encoding="utf-8")
 
-            result = compose.run_compose(fake_run, manifest_path, "foundation", "1.2.3")
+            result = compose.run_compose(fake_run, manifest_path, "foundation", "1.2.3", Path(tmp))
 
         self.assertEqual(result, 0)
         self.assertEqual(
@@ -401,6 +401,46 @@ class RunComposeTests(unittest.TestCase):
                 ["jj", "bookmark", "create", "build/1.2.3", "-r", "@"],
             ],
         )
+
+    def test_boss_feature_drift_aborts_before_bookmark_creation(self):
+        def fake_run(args):
+            if args[:2] == ["jj", "bookmark"] and args[2] == "list":
+                return ""
+            return ""
+
+        with tempfile.TemporaryDirectory() as manifest_tmp, tempfile.TemporaryDirectory() as repo_tmp:
+            manifest_path = Path(manifest_tmp) / "manifest.json"
+            manifest_path.write_text(json.dumps({"excluded": []}), encoding="utf-8")
+
+            repo = Path(repo_tmp)
+            feature_dir = repo / "src" / "boss" / "include" / "boss" / "features" / "alpha"
+            feature_dir.mkdir(parents=True)
+            (feature_dir / "boss-feature.json").write_text(
+                json.dumps({
+                    "name": "alpha",
+                    "id": 99,
+                    "key": "alpha",
+                    "trait": "Slic3r::Boss::AlphaFeature",
+                    "header": "boss/features/alpha/AlphaFeature.hpp",
+                    "components": {"slic3r-domain": {"capabilities": ["fdm_config"], "sources": []}},
+                }),
+                encoding="utf-8",
+            )
+            (feature_dir / "AlphaFeature.hpp").write_text(
+                "struct AlphaFeature {\n    static constexpr int id = 1;\n};\n",
+                encoding="utf-8",
+            )
+
+            calls = []
+
+            def recording_run(args):
+                calls.append(list(args))
+                return fake_run(args)
+
+            result = compose.run_compose(recording_run, manifest_path, "foundation", "1.2.3", repo)
+
+        self.assertEqual(result, 1)
+        self.assertNotIn(["jj", "bookmark", "create", "build/1.2.3", "-r", "@"], calls)
 
 
 @unittest.skipUnless(shutil.which("jj"), "jj binary not available")
@@ -489,7 +529,7 @@ class RunComposeRealJjTests(unittest.TestCase):
                 )
 
                 run = compose.make_subprocess_runner(repo)
-                result = compose.run_compose(run, manifest_path, "foundation", "9.9.9")
+                result = compose.run_compose(run, manifest_path, "foundation", "9.9.9", repo)
                 self.assertEqual(result, 0)
 
                 # Property (a): every commit compose_branches itself created
