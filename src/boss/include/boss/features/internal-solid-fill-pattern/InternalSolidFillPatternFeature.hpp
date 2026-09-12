@@ -16,7 +16,7 @@ namespace Slic3r::Boss {
 struct SolidFillPolicyContext;
 
 struct InternalSolidFillPatternFeature {
-    static constexpr int id = 10501;
+    static constexpr int id = 10511;
     static constexpr std::string_view key = "internal-solid-fill-pattern";
     static constexpr std::string_view label = "Internal solid-fill pattern";
 
