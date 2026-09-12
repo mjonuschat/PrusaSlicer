@@ -625,6 +625,8 @@ WipeTower::WipeTower(
         float(config.get<Domain::Percentage>("wipe_tower_extra_spacing").get_abs_value(1.0))
     )
 {
+    m_speed_caps = Boss::BossWipeTowerSpeedCaps::collect(config, extruder_candidates);
+
     // Read absolute value of first layer speed, if given as percentage,
     // it is taken over following default. Speeds from config are not
     // easily accessible here.
