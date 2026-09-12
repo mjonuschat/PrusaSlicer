@@ -1,6 +1,6 @@
 {
   "name": "external-first-holes",
-  "id": 10102,
+  "id": 10510,
   "key": "external-first-holes",
   "trait": "Slic3r::Boss::ExternalFirstHolesFeature",
   "header": "boss/features/external-first-holes/ExternalFirstHolesFeature.hpp",
