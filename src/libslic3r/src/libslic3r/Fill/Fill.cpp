@@ -105,15 +105,6 @@ bool SurfaceFillParams::operator==(const SurfaceFillParams &rhs) const {
 			this->role_speed        == rhs.role_speed;
 }
 
-struct SurfaceFill {
-	SurfaceFill(const SurfaceFillParams& params) : region_id(size_t(-1)), surface(stCount, ExPolygon()), params(params) {}
-
-	size_t 				region_id;
-	Surface 			surface;
-	ExPolygons       	expolygons;
-	SurfaceFillParams	params;
-};
-
 static inline bool fill_type_monotonic(Domain::InfillPattern pattern)
 {
 	return pattern == Domain::InfillPattern::ipMonotonic || pattern == Domain::InfillPattern::ipMonotonicLines;
