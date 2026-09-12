@@ -102,5 +102,36 @@ class LoadManifestTests(unittest.TestCase):
                 compose.load_manifest(path)
 
 
+class ResolveBranchSetTests(unittest.TestCase):
+    def test_no_exclusions_splits_by_prefix_and_sorts(self):
+        result = compose.resolve_branch_set(
+            ["feature-b", "bugfix-b", "feature-a", "bugfix-a"], []
+        )
+        self.assertEqual(result.bugfixes, ["bugfix-a", "bugfix-b"])
+        self.assertEqual(result.features, ["feature-a", "feature-b"])
+
+    def test_ordered_puts_bugfixes_before_features(self):
+        result = compose.resolve_branch_set(["feature-a", "bugfix-a"], [])
+        self.assertEqual(result.ordered(), ["bugfix-a", "feature-a"])
+
+    def test_excluded_branch_is_removed(self):
+        result = compose.resolve_branch_set(
+            ["feature-a", "feature-b"],
+            [compose.ExcludedEntry(branch="feature-a", reason="not ready")],
+        )
+        self.assertEqual(result.features, ["feature-b"])
+
+    def test_non_matching_prefix_is_dropped(self):
+        result = compose.resolve_branch_set(["foundation", "feature-a"], [])
+        self.assertEqual(result.ordered(), ["feature-a"])
+
+    def test_stale_exclusion_raises(self):
+        with self.assertRaises(compose.ComposeError):
+            compose.resolve_branch_set(
+                ["feature-a"],
+                [compose.ExcludedEntry(branch="feature-gone", reason="stale")],
+            )
+
+
 if __name__ == "__main__":
     unittest.main()
