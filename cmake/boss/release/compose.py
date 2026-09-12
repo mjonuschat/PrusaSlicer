@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Sequence
 
 
 class ManifestError(Exception):
@@ -57,3 +58,36 @@ def load_manifest(path: Path) -> list[ExcludedEntry]:
         seen.add(branch)
         entries.append(ExcludedEntry(branch=branch, reason=reason))
     return entries
+
+
+BUGFIX_PREFIX = "bugfix-"
+FEATURE_PREFIX = "feature-"
+
+
+class ComposeError(Exception):
+    """Raised when composition cannot proceed."""
+
+
+@dataclass(frozen=True)
+class ComposeSet:
+    bugfixes: list[str]
+    features: list[str]
+
+    def ordered(self) -> list[str]:
+        return [*self.bugfixes, *self.features]
+
+
+def resolve_branch_set(
+    all_branches: Sequence[str], excluded: Sequence[ExcludedEntry]
+) -> ComposeSet:
+    excluded_names = {entry.branch for entry in excluded}
+    stale = excluded_names - set(all_branches)
+    if stale:
+        raise ComposeError(
+            "manifest excludes branch(es) that no longer exist: "
+            + ", ".join(sorted(stale))
+        )
+    included = [b for b in all_branches if b not in excluded_names]
+    bugfixes = sorted(b for b in included if b.startswith(BUGFIX_PREFIX))
+    features = sorted(b for b in included if b.startswith(FEATURE_PREFIX))
+    return ComposeSet(bugfixes=bugfixes, features=features)
