@@ -1,0 +1,25 @@
+{
+  "name": "wipe-tower-max-purge-speed",
+  "id": 10005,
+  "key": "wipe-tower-max-purge-speed",
+  "trait": "Slic3r::Boss::WipeTowerMaxPurgeSpeedFeature",
+  "header": "boss/features/wipe-tower-max-purge-speed/WipeTowerMaxPurgeSpeedFeature.hpp",
+  "label": "Wipe tower maximum purge speed",
+  "components": {
+    "slic3r-domain": {
+      "capabilities": ["fdm_config"],
+      "sources": ["slic3r-domain/src/Slic3r/Domain/boss/WipeTowerMaxPurgeSpeedConfig.cpp"]
+    },
+    "libslic3r": {
+      "capabilities": ["wipe_tower_speed_cap"],
+      "sources": ["libslic3r/src/libslic3r/boss/wipe_tower/WipeTowerMaxPurgeSpeedCap.cpp"]
+    }
+  },
+  "config_options": [
+    {
+      "key": "wipe_tower_max_purge_speed",
+      "invalidates": ["psWipeTower", "psSkirtBrim"],
+      "store": {"home": "wipe_tower", "field": "max_purge_speed", "kind": "scalar_double"}
+    }
+  ]
+}
