@@ -191,6 +191,13 @@ private:
     void process_M702(const GCodeReader::GCodeReader::GCodeLine& line);
 
     //
+    // Process Klipper extended macros
+    //
+
+    // Klipper: SET_VELOCITY_LIMIT ACCEL=<value> SQUARE_CORNER_VELOCITY=<value>
+    void process_SET_VELOCITY_LIMIT(const GCodeReader::GCodeReader::GCodeLine& line);
+
+    //
     // Process T commands
     // 
 

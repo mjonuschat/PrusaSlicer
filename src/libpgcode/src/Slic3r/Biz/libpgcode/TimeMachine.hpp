@@ -58,6 +58,8 @@ struct TimeMachine
     float travel_acceleration{ 0.0f }; // mm/s^2
     // hard limit for the travel acceleration, to which the firmware will clamp.
     float max_travel_acceleration{ 0.0f }; // mm/s^2
+    // Klipper SCV -- used to recompute junction deviation when ACCEL changes mid-print.
+    float square_corner_velocity{ 0.0f }; // mm/s
     float first_layer_time{ 0.0f };
     // We accumulate total print time in doubles to reduce the loss of precision
     // while adding big floating numbers with small float numbers.

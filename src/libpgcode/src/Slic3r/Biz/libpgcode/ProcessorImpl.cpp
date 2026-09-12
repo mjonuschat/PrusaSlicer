@@ -1,6 +1,7 @@
 
 #include "ProcessorImpl.hpp"
 #include "Slic3r/Biz/libpgcode/Utils.hpp"
+#include "Slic3r/Biz/libpgcode/boss/KlipperCorneringModel.hpp"
 #include "Slic3r/Domain/Constants.hpp"
 #include "Slic3r/Math.hpp"
 
@@ -8,6 +9,7 @@
 #include <boost/algorithm/string/classification.hpp>
 
 #include <assert.h>
+#include <cstdlib>
 #include <numbers>
 
 #if __has_include(<charconv>)
@@ -288,6 +290,11 @@ void ProcessorImpl::process_gcode_line(const GCodeReader::GCodeLine& line)
     m_start_position = m_end_position;
 
     const std::string_view cmd = line.cmd();
+    if (m_config.flavor == GCodeFlavor::gcfKlipper && cmd == "SET_VELOCITY_LIMIT") {
+        process_SET_VELOCITY_LIMIT(line);
+        return;
+    }
+
     if (cmd.length() > 1) {
         // process command lines
         switch (cmd[0])
@@ -752,8 +759,13 @@ void ProcessorImpl::process_G1(const std::array<std::optional<float>, 4>& axes, 
 
                     float vmax_junction_sqr = (junction_acceleration * junction_deviation * sin_theta_d2) / (1.f - sin_theta_d2);
 
-                    // For small moves with >135° junction (octagon) find speed for approximate arc
-                    if (block.distance < 1 && junction_cos_theta < -0.7071067812f) {
+                    if (m_config.flavor == GCodeFlavor::gcfKlipper) {
+                        const float cos_half_theta = std::sqrt(0.5f * (1.f + junction_cos_theta));
+                        const float centripetal_v = Slic3r::Boss::KlipperCorneringModel::centripetal_velocity_limit(
+                            block.distance, junction_acceleration, cos_half_theta);
+                        vmax_junction_sqr = std::min(vmax_junction_sqr, centripetal_v * centripetal_v);
+                    } else if (block.distance < 1 && junction_cos_theta < -0.7071067812f) {
+                        // For small moves with >135° junction (octagon) find speed for approximate arc
                         // Fast acos(-t) approximation (max. error +-0.033rad = 1.89°)
                         // Based on MinMax polynomial published by W. Randolph Franklin, see
                         // https://wrf.ecse.rpi.edu/Research/Short_Notes/arcsin/onlyelem.html
@@ -1673,6 +1685,46 @@ void ProcessorImpl::process_M702(const GCodeReader::GCodeLine& line)
 
         // Estimate the unload time as half of the toolchange time
         simulate_st_synchronize(m_config.filament_change_time / 2.0);
+    }
+}
+
+void ProcessorImpl::process_SET_VELOCITY_LIMIT(const GCodeReader::GCodeLine& line)
+{
+    // Klipper macro, not a G/M command -- no letter/number axis tokens to key off,
+    // so scan the raw text directly.
+    const std::string& raw = line.raw();
+
+    for (size_t i = 0; i < TIME_MODES_COUNT; ++i) {
+        if (TimeMode(i) != TimeMode::Normal && !m_time_processor.machine_envelope_processing_enabled)
+            continue;
+
+        TimeMachine& machine = m_time_processor.machines[i];
+
+        if (size_t pos = raw.find("ACCEL="); pos != std::string::npos) {
+            char* end = nullptr;
+            float value = std::strtof(raw.c_str() + pos + 6, &end);
+            if (end != raw.c_str() + pos + 6 && value > 0.f) {
+                machine.max_acceleration = value;
+                machine.max_travel_acceleration = value;
+                machine.set_acceleration(value);
+                machine.set_travel_acceleration(value);
+                float jd = Slic3r::Boss::KlipperCorneringModel::junction_deviation_from_scv(
+                    machine.square_corner_velocity, value);
+                if (jd > 0.f && i < m_time_processor.machine_limits.max_junction_deviation.size())
+                    m_time_processor.machine_limits.max_junction_deviation[i] = jd;
+            }
+        }
+
+        if (size_t pos = raw.find("SQUARE_CORNER_VELOCITY="); pos != std::string::npos) {
+            char* end = nullptr;
+            float scv = std::strtof(raw.c_str() + pos + 23, &end);
+            if (end != raw.c_str() + pos + 23 && scv > 0.f) {
+                machine.square_corner_velocity = scv;
+                float jd = Slic3r::Boss::KlipperCorneringModel::junction_deviation_from_scv(scv, machine.max_acceleration);
+                if (jd > 0.f && i < m_time_processor.machine_limits.max_junction_deviation.size())
+                    m_time_processor.machine_limits.max_junction_deviation[i] = jd;
+            }
+        }
     }
 }
 
