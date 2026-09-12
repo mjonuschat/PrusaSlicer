@@ -191,5 +191,62 @@ class IsConflictedTests(unittest.TestCase):
             compose.is_conflicted(fake_run)
 
 
+class ComposeBranchesTests(unittest.TestCase):
+    def test_merges_bugfixes_then_features_in_order(self):
+        calls = []
+
+        def fake_run(args):
+            calls.append(list(args))
+            if args[:2] == ["jj", "log"]:
+                return "false\n"
+            return ""
+
+        branch_set = compose.ComposeSet(
+            bugfixes=["bugfix-a", "bugfix-b"], features=["feature-a"]
+        )
+        compose.compose_branches(fake_run, "foundation", branch_set)
+
+        new_calls = [c for c in calls if c[:2] == ["jj", "new"]]
+        self.assertEqual(
+            new_calls,
+            [
+                ["jj", "new", "foundation"],
+                ["jj", "new", "@", "bugfix-a"],
+                ["jj", "new", "@", "bugfix-b"],
+                ["jj", "new", "@", "feature-a"],
+            ],
+        )
+
+    def test_stops_on_first_conflict_and_does_not_continue(self):
+        calls = []
+
+        def fake_run(args):
+            calls.append(list(args))
+            if args[:2] == ["jj", "log"]:
+                # Conflict on the first branch merge (bugfix-a); bugfix-b
+                # and feature-a must never be attempted.
+                return "true\n"
+            return ""
+
+        branch_set = compose.ComposeSet(
+            bugfixes=["bugfix-a", "bugfix-b"], features=["feature-a"]
+        )
+        with self.assertRaisesRegex(compose.ComposeError, "bugfix-a"):
+            compose.compose_branches(fake_run, "foundation", branch_set)
+
+        merged_branches = [c[3] for c in calls if c[:3] == ["jj", "new", "@"]]
+        self.assertEqual(merged_branches, ["bugfix-a"])
+
+    def test_empty_branch_set_still_creates_base_commit(self):
+        calls = []
+
+        def fake_run(args):
+            calls.append(list(args))
+            return ""
+
+        compose.compose_branches(fake_run, "foundation", compose.ComposeSet([], []))
+        self.assertEqual(calls, [["jj", "new", "foundation"]])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -7,7 +7,10 @@ for the same constraint and its rationale.
 """
 from __future__ import annotations
 
+import argparse
 import json
+import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Sequence
@@ -114,3 +117,64 @@ def is_conflicted(run: Runner, revision: str = "@") -> bool:
     if output not in ("true", "false"):
         raise ComposeError(f"unexpected conflict-check output: {output!r}")
     return output == "true"
+
+
+def compose_branches(run: Runner, base: str, branch_set: ComposeSet) -> None:
+    run(["jj", "new", base])
+    for branch in branch_set.ordered():
+        run(["jj", "new", "@", branch])
+        if is_conflicted(run):
+            raise ComposeError(
+                f"composition conflict merging {branch!r}; "
+                "workspace left as-is for manual resolution"
+            )
+
+
+def make_subprocess_runner(cwd: Path) -> Runner:
+    def run(args: Sequence[str]) -> str:
+        result = subprocess.run(args, cwd=cwd, capture_output=True, text=True)
+        if result.returncode != 0:
+            raise ComposeError(
+                f"command failed ({' '.join(args)}): {result.stderr.strip()}"
+            )
+        return result.stdout
+
+    return run
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--manifest", type=Path, required=True, help="path to manifest.json"
+    )
+    parser.add_argument(
+        "--base", default="foundation", help="bookmark/revision to compose onto"
+    )
+    parser.add_argument(
+        "--version", required=True, help="version string for the build/<version> bookmark"
+    )
+    parser.add_argument(
+        "--repo", type=Path, default=Path("."), help="path to the jj-colocated repo"
+    )
+    args = parser.parse_args(argv)
+
+    run = make_subprocess_runner(args.repo)
+    excluded = load_manifest(args.manifest)
+    all_branches = list_all_branches(run)
+    branch_set = resolve_branch_set(all_branches, excluded)
+
+    try:
+        compose_branches(run, args.base, branch_set)
+    except ComposeError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
+    bookmark = f"build/{args.version}"
+    run(["jj", "bookmark", "create", bookmark, "-r", "@"])
+    print(f"composed {len(branch_set.ordered())} branch(es) onto {bookmark}")
+    print(f"push with: jj git push --bookmark {bookmark}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
