@@ -627,6 +627,21 @@ std::string GCodeWriter::unretract()
     return gcode;
 }
 
+std::string GCodeWriter::prime()
+{
+    std::string gcode;
+    if (auto [dE, emitE] = m_extruder->prime(); dE != 0) {
+        if (! config.extrusion_axis.empty()) {
+            GCodeG1Formatter w;
+            w.emit_e(config.extrusion_axis, emitE);
+            w.emit_f(m_extruder->deretract_speed() * 60.);
+            w.emit_comment(this->config.gcode_comments, "prime extruder");
+            gcode = w.string();
+        }
+    }
+    return gcode;
+}
+
 void GCodeWriter::update_position(const Domain::Vec3d &new_pos)
 {
     m_pos = new_pos;

@@ -688,6 +688,7 @@ GCodeGenerator::GCodeGenerator(const Print* print) :
     m_last_width(0.0f),
     m_brim_done(false),
     m_second_layer_things_done(false),
+    m_extruder_primed(false),
     m_print(print)
 {
 }
@@ -3451,6 +3452,10 @@ std::string GCodeGenerator::travel_to_first_position(
         gcode += insert_gcode();
         gcode += this->writer().travel_to_xy_force(gcode_point.head<2>(), comment);
         gcode += this->writer().travel_to_z_force(gcode_point.z(), comment);
+        if (! m_extruder_primed) {
+            gcode          += this->writer().prime();
+            m_extruder_primed = true;
+        }
 
         this->m_avoid_crossing_perimeters.reset_once_modifiers();
         this->last_position = point.head<2>();
