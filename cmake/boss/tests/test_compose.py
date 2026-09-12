@@ -133,5 +133,32 @@ class ResolveBranchSetTests(unittest.TestCase):
             )
 
 
+class ListAllBranchesTests(unittest.TestCase):
+    def test_parses_bugfix_and_feature_bookmarks(self):
+        def fake_run(args):
+            self.assertEqual(args, ["jj", "bookmark", "list"])
+            return (
+                "bugfix-wipe-zero: abc123 fix wipe\n"
+                "feature-flowsnake-infill: def456 add flowsnake\n"
+            )
+
+        result = compose.list_all_branches(fake_run)
+        self.assertEqual(
+            sorted(result), ["bugfix-wipe-zero", "feature-flowsnake-infill"]
+        )
+
+    def test_ignores_non_bugfix_feature_bookmarks(self):
+        def fake_run(args):
+            return "foundation: 111111 base\nboss: 222222 legacy\n"
+
+        self.assertEqual(compose.list_all_branches(fake_run), [])
+
+    def test_ignores_blank_lines(self):
+        def fake_run(args):
+            return "\nfeature-a: 333333 msg\n\n"
+
+        self.assertEqual(compose.list_all_branches(fake_run), ["feature-a"])
+
+
 if __name__ == "__main__":
     unittest.main()
