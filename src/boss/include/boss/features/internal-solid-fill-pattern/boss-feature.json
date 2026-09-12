@@ -1,0 +1,21 @@
+{
+  "name": "internal-solid-fill-pattern",
+  "id": 10511,
+  "key": "internal-solid-fill-pattern",
+  "trait": "Slic3r::Boss::InternalSolidFillPatternFeature",
+  "header": "boss/features/internal-solid-fill-pattern/InternalSolidFillPatternFeature.hpp",
+  "label": "Internal solid-fill pattern",
+  "components": {
+    "slic3r-domain": {
+      "capabilities": ["fdm_config"],
+      "sources": ["slic3r-domain/src/Slic3r/Domain/boss/InternalSolidFillPatternConfig.cpp"]
+    },
+    "libslic3r": {
+      "capabilities": ["solid_fill_policy"],
+      "sources": ["libslic3r/src/libslic3r/boss/surface/internal_solid/InternalSolidFillPattern.cpp"]
+    }
+  },
+  "config_options": [
+    { "key": "solid_fill_pattern", "invalidates": ["posInfill"] }
+  ]
+}
