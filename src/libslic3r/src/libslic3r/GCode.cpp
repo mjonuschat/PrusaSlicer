@@ -26,6 +26,9 @@
 #include "Slic3r/Time.hpp"
 #include "libslic3r/CustomParametersHandling.hpp"
 #include "boss/generated/BossActiveLayerFilters.hpp"
+#include "boss/foundation/ExtrusionContext.hpp"
+#include "boss/foundation/MotionDynamics.hpp"
+#include "boss/generated/BossExtrusionFeatures.hpp"
 #include "boss/generated/BossGCodeExtraIncludes.hpp"
 
 #include <algorithm>
