@@ -9,5 +9,8 @@
     "libslic3r": {
       "sources": ["libslic3r/src/libslic3r/boss/surface/absorption/SparseInfillAbsorption.cpp"]
     }
+  },
+  "extra_includes": {
+    "fill": ["libslic3r/boss/surface/absorption/SparseInfillAbsorption.hpp"]
   }
 }
