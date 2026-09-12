@@ -6,6 +6,7 @@ on:
       - boss
       - foundation
       - release/*
+      - build/**
     paths:
       - "deps/**"
       - "src/**"
