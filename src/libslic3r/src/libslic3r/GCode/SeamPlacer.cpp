@@ -5,6 +5,8 @@
 
 #include "SeamPlacer.hpp"
 
+#include "boss/foundation/BossPerimeterGeometryRegistry.hpp"
+#include "boss/generated/BossPerimeterGeometryFeatures.hpp"
 #include "Slic3r/Biz/Algorithms/Polygon.hpp"
 #include "boss/foundation/SeamVisibilityContext.hpp"
 #include "boss/generated/BossSeamVisibilityFeatures.hpp"
@@ -291,7 +293,15 @@ boost::variant<Point, Scarf::Scarf> finalize_seam_position(
     using Perimeters::PointOnPerimeter;
 
     const Polygon loop_polygon{Geometry::to_polygon(loop)};
-    const bool do_staggering{staggered_inner_seams && loop.role() == ExtrusionRole::Perimeter};
+    const std::optional<uint16_t> loop_perimeter_index{
+        loop.paths.empty() ? std::nullopt : loop.paths.front().attributes().perimeter_index};
+    const std::optional<int> perimeter_index{
+        loop_perimeter_index ? std::optional<int>{*loop_perimeter_index} : std::nullopt};
+    const bool perimeter_geometry_suppresses_staggering{
+        Boss::BossPerimeterGeometryFeatures::suppress_staggering(region->config(), perimeter_index)};
+    const bool do_staggering{
+        staggered_inner_seams && loop.role() == ExtrusionRole::Perimeter
+        && !perimeter_geometry_suppresses_staggering};
     const double loop_width{loop.paths.empty() ? 0.0 : loop.paths.front().width()};
 
     const ExPolygon perimeter_polygon{Geometry::scaled(perimeter.positions)};
