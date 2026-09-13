@@ -9,125 +9,135 @@ lost during the rebase and squash based workflow.
 
 ### Added
 
-- Small solid-infill areas can now compensate flow with a 10-point curve
-  that scales extrusion by segment length. Short solid-infill and top-
-  solid-infill segments print with less over-extrusion. The feature is
-  off by default.
-- External bridges can now use a configurable density, from 10% to 120%,
-  instead of always printing solid. Higher densities can smooth the
-  bridge surface. The default also changes. Bridge fill no longer evens
-  out line spacing for full coverage at 100% density, so bridge spacing
-  can differ slightly from stock PrusaSlicer even when you do not change
-  the setting.
-- The first layer and the top solid layer can now each use their own flow
-  ratio, from 0.5 to 1.5. Lower the first layer ratio to fix a rough or
-  sticking first layer, or raise the top layer ratio to smooth the top
-  surface.
-- Skirt/brim and the wipe tower are now declared to Klipper hosts
-  (Mainsail/Fluidd) via `EXCLUDE_OBJECT_DEFINE`, so their outlines show up
-  in the object list, but their G-code is never wrapped as excludable, so
-  "Cancel Object" can never remove them and break the print.
-- The filament type list now includes more material presets, so a profile
-  can name the exact material you print with.
-- Output filenames can now use the `bed_number` G-code placeholder, so
-  multi-bed print jobs can be named and organized automatically.
-- Each object can now set its own extrusion multiplier, so you can adjust
-  flow for a single part without changing the filament profile.
-- Each filament profile can now set a maximum print speed, so the printer
-  never exceeds a speed that filament cannot handle.
-- Imported models can now apply a configurable Z-axis rotation
-  automatically, so parts that always need reorienting load already
-  turned the right way.
-- Added the CrossHatch infill pattern, which alternates line direction
-  between layers for stronger, quieter prints at high speed.
-- Added the Flowsnake infill pattern, with its own bridging-angle
-  handling for cleaner bridges over the pattern.
-- Fuzzy skin can now use a structured noise type (Perlin, Billow, Ridged
-  Multifractal, or Voronoi) instead of the original uniform-random jitter,
-  with its own feature size, octave count, and persistence settings. The
-  noise flows vertically across layers for a more consistent texture. The
-  original jitter stays available as the "Classic" noise type and remains
-  the default, so existing profiles are unaffected.
-- The wipe tower can now disable filament ramming, cooling moves, or
-  both, so a tuned setup is not overridden by the default purge behavior.
-- The wipe tower now supports a configurable maximum purge speed, so
-  purge moves stay within a speed the setup can handle.
-- Linear advance can now be force-disabled at wipe tower purge points, so
-  purge extrusion does not fight pressure advance tuning.
-- Automatic toolchange command emission can now be disabled, so custom
-  toolchange G-code is not duplicated by the automatic sequence.
-- The first extruder can now prime at the start of the print, so filament
-  is flowing before the first layer begins.
-- All toolchangers can now be force-preheated together, so every tool is
-  ready before the print reaches its first toolchange.
-- Added an alternate extra perimeter option, which adds one extra wall
-  every other layer for stronger prints with fill.
-- Added an "External perimeters first for holes" option, so holes can
-  print their outer wall first independently of contours, with a minimum
-  hole size and a first-layers disable so it does not affect fillets or
-  chamfers.
-- Added configurable perimeter overlap. Two new options,
-  "Ext. perimeter/perimeter overlap" and "Perimeter/perimeter overlap",
-  control how much adjacent walls overlap, so you can tune wall bonding
-  and total wall thickness independently of extrusion width.
-- Added a configurable small perimeter speed threshold. Two new options,
-  "Lower" and "Upper" small perimeter length, set the length range over
-  which a perimeter's speed ramps between the small perimeter speed and
-  the normal perimeter speed, instead of switching at a fixed length.
-- Added three options to reverse extrusion direction on odd layers, for
-  internal perimeters, overhang perimeters, and infill separately, to
-  reduce stress and warping and improve steep overhangs.
-- Added narrow solid-infill erosion detection. When enabled, narrow
-  internal solid infill areas switch to Arachne's variable-width fill
-  instead of the configured pattern, so thin solid regions do not print
-  with zigzag artifacts or gaps.
-- Added a "Solid fill pattern" option, which sets the pattern for internal
-  solid infill separately from the top and bottom fill patterns. The
-  default is Monotonic.
-- Each print role (perimeters, infill, bridges, the first layer, travel,
-  and the wipe tower) can now set its own jerk and minimum cruise ratio,
-  in addition to its own acceleration. Minimum cruise ratio applies only
-  on Klipper. Set a value to 0 to leave that role's jerk or minimum cruise
-  ratio at the printer's own default.
-- Added a "Z-hop allowed" option, which restricts the Z-hop lift to top
-  surfaces, the first layer, both, or everywhere (the default). Use it to
-  keep the nozzle closer to the print except where a lift actually helps.
-- Added a "Bias aligned seam to the back" option. When Seam position is
-  Aligned, it biases the seam search toward the back of the model,
-  similar to Rear, while keeping Aligned's cross-layer smoothing. Off by
-  default.
-- When Seam position is Aligned, the seam now follows a painted seam
-  enforcer region across layers, blending smoothly from layer to layer
-  and staying aligned from the start of the shell. No new option: this
-  applies whenever a shell has painted enforcer points.
-- Added a "Nip/Tuck seams" option. It cuts a small V-shaped notch at the
-  seam on the external perimeter and trims the first inner perimeter to
-  match, so start/stop blobs hide inside the notch instead of showing on
-  the surface. Choose Nip, Tuck, Nip/Tuck, or Alternating (flips per
-  layer); off by default. Requires at least 2 perimeters and is skipped
-  in spiral vase mode.
-
 ### Changed
-
-- The `{month}`, `{day}`, `{hour}`, `{minute}`, and `{second}` G-code
-  placeholders now zero-pad single-digit values, so generated filenames
-  and timestamps sort and line up correctly.
-- Seam moves now show in the G-code preview by default, so you can
-  review seam placement without changing a setting first.
 
 ### Fixed
 
-- Flowsnake infill now uses wider line spacing and a thinner bead, so the
-  pattern reads as a visible lattice instead of a dense, squished blob.
-- 3D Honeycomb infill now bridges with the correct geometry and
-  direction, fixing gaps and misaligned bridges over open spans. (#24)
-- Small sparse infill pockets fully enclosed by solid infill are now
-  absorbed into the solid fill instead of printing their own sparse
-  pattern too small to be useful, small holes in solid infill too narrow
-  for any fill to cover are now removed, and solid regions split into
-  fragments by bridge angle are now consolidated into one region.
-
 ### Ported
+
+Every entry below already shipped in BOSS 2.9.x. These are listed as
+ported to the 3.0 architecture, not as new work.
+
+#### Infill
+
+- Small-area Infill Flow Compensation: reduces flow on short solid-infill
+  segments to avoid over-extrusion and rough surfaces.
+- Configurable Bridge Density: bridge fill density from 10–120%,
+  improving bridging quality and visual appearance.
+- First/Top Layer Flow Ratio: independent flow control for the first
+  layer and top surface, fixing poor bed adhesion or a rough top.
+- CrossHatch Infill Pattern: a faster, quieter alternative to Gyroid
+  that maintains strength and avoids nozzle collisions on large grid
+  infills.
+- Flowsnake Infill Pattern: Gosper-curve-based infill with a visually
+  distinctive top/bottom surface.
+- Structured Fuzzy Skin: structured noise (Perlin, Billow, Ridged
+  Multifractal, Voronoi) for a more natural-looking textured surface
+  compared to uniform jitter.
+- Internal Solid-Fill Pattern: sets the internal solid-infill type
+  independent of the top/bottom pattern, for finer control over
+  internal strength.
+- Narrow Solid-Infill Erosion Detection: switches narrow solid areas
+  to Arachne's variable-width fill, avoiding zigzag artifacts and gaps.
+- Sparse Infill Absorption: merges small sparse-infill pockets enclosed
+  by solid infill, avoiding tiny, ineffective patches.
+
+#### Perimeters / walls
+
+- Alternate Extra Perimeter: adds one extra wall every other layer,
+  for stronger prints, with fill and walls interlocking.
+- External Perimeters First for Holes: controls if a hole's outer wall
+  prints first, for better print quality and more accurate holes.
+- Configurable Perimeter Overlap: adjusts overlap between adjacent
+  walls, for finer control over wall bonding and thickness.
+- Configurable Small Perimeter Threshold: controls the length below
+  which the small-perimeter speed applies to a perimeter.
+- Reverse Extrusion Direction on Odd Layers: alternates perimeter/infill
+  direction, reducing warping and stress buildup.
+
+#### Seams
+
+- Aligned-Rear Seam Placement: biases the aligned seam mode toward the
+  back of the model, to hide seams from view.
+- Painted Seam Alignment/Blending: keeps the seam inside the area you
+  paint, even across layers, instead of drifting outside it.
+- Nip/Tuck (V-Notch) Seam Hiding: cuts a small notch at the seam,
+  hiding start/stop blobs for less visible seams.
+- Seam Visible in Preview by Default: shows seam markers in the G-code
+  preview by default, so placement can be checked without an extra
+  setting change.
+
+#### Wipe tower / toolchange
+
+- Disable Wipe Tower Ramming/Cooling: independent switches for ramming
+  and cooling moves, allowing more granular control for filament
+  changer setups.
+- Wipe Tower Maximum Purge Speed: caps purge move speed for more
+  reliable purging in tall wipe towers.
+- Force Wipe Tower Linear Advance Suppression: prevents pressure
+  advance from being silently disabled for the rest of the print,
+  PrusaSlicer's default behavior at purge points on Klipper.
+- Disable Automatic Tool-Change Commands: turns off automatic emission
+  of Tx commands, allowing for fully customized toolchange G-code.
+- Prime Length at Start: primes the first extruder before printing
+  begins, avoiding small gaps at the start of the first layer.
+- Toolchange Preheat: every multi-tool printer gets it, not only the Prusa
+  XL, so a tool change no longer waits for the new tool to reach
+  temperature. Printers that do not understand the Prusa M104.1 command get
+  a plain temperature command, and their ooze prevention cooldowns stay in
+  place. Set the preheat time to 0 to turn it off.
+
+#### Motion / Klipper
+
+- Per-Feature Jerk, SCV, and Minimum Cruise Ratio: sets jerk, cornering
+  speed, and minimum cruise ratio separately for perimeters, infill,
+  bridges, and other print roles.
+- Klipper Print Time Estimation: estimates print time using Klipper's
+  own cornering math, instead of a generic approximation.
+- Merge Klipper Velocity-Limit Commands: merges consecutive
+  SET_VELOCITY_LIMIT lines, avoiding redundant commands in the G-code.
+- Exclude Object for Skirt/Brim/Wipe Tower: reports skirt, brim, and
+  wipe tower to Klipper without making them cancelable, so the print's
+  size and bounding box stay accurate.
+- Z-Hop Surface Filtering: restricts Z-hop to specific surfaces,
+  improving print time while avoiding the stringing, blobs, or surface
+  blemishes that disabling Z-hop everywhere would cause.
+
+#### Filament / extrusion config
+
+- Filament Maximum Speed: caps print speed per filament, avoiding
+  speeds that the material cannot handle.
+- Per-Object Extrusion Multiplier: sets flow per object, for
+  fine-tuning a single part without editing the filament profile.
+- Expanded Filament Type List: adds more specific filament types,
+  matching the wide range of modern filament materials.
+
+#### Misc
+
+- Bed Number Placeholder: adds a `bed_number` filename placeholder,
+  for organizing output across multi-bed print jobs.
+- Zero-Padded Date/Time Placeholders: zero-pads filename values,
+  keeping generated filenames sorting correctly.
+- Z-Rotate on Import: rotates imported models automatically on the Z
+  axis, avoiding a manual reorientation step.
+
+#### Bugfixes
+
+- 3D Honeycomb Infill Bridge Direction: fixes incorrect bridge
+  geometry and direction over open spans.
+- Arachne Duplicate Thin Wall Segments: fixes duplicate overlapping
+  wall segments near the 1-to-2 bead transition.
+- Auto-Arrange Nesting: restores nesting of small objects inside the
+  holes of larger ones during auto-arrange.
+- Modifier Bridge/Infill Speeds: fixes fill grouping so modifier
+  volumes respect both bridge- and infill-speed overrides.
+- Solid Infill/Perimeter Gap: fixes a gap between solid infill and the
+  perimeter that weakened top layers.
+- Unique Labeled Object Names: fixes duplicate labels for same-named
+  objects on Klipper, which could let Cancel Object target the wrong
+  one.
+- Wipe Tower Divide-by-Zero: fixes invalid speed values in the G-code
+  caused by dividing by a zero loading distance or speed.
 
 ### Notes
 
