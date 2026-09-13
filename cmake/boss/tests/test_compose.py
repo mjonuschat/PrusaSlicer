@@ -138,6 +138,8 @@ class ResolveBranchSetTests(unittest.TestCase):
 class ListAllBranchesTests(unittest.TestCase):
     def test_parses_bugfix_and_feature_bookmarks(self):
         def fake_run(args):
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             self.assertEqual(args, ["jj", "bookmark", "list"])
             return (
                 "bugfix-wipe-zero: abc123 fix wipe\n"
@@ -151,12 +153,16 @@ class ListAllBranchesTests(unittest.TestCase):
 
     def test_ignores_non_bugfix_feature_bookmarks(self):
         def fake_run(args):
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             return "foundation: 111111 base\nboss: 222222 legacy\n"
 
         self.assertEqual(compose.list_all_branches(fake_run), [])
 
     def test_ignores_blank_lines(self):
         def fake_run(args):
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             return "\nfeature-a: 333333 msg\n\n"
 
         self.assertEqual(compose.list_all_branches(fake_run), ["feature-a"])
@@ -165,6 +171,8 @@ class ListAllBranchesTests(unittest.TestCase):
 class IsConflictedTests(unittest.TestCase):
     def test_true_output_means_conflicted(self):
         def fake_run(args):
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             self.assertEqual(
                 args, ["jj", "log", "--no-graph", "-r", "@", "-T", "conflict"]
             )
@@ -174,12 +182,16 @@ class IsConflictedTests(unittest.TestCase):
 
     def test_false_output_means_clean(self):
         def fake_run(args):
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             return "false\n"
 
         self.assertFalse(compose.is_conflicted(fake_run))
 
     def test_custom_revision_is_passed_through(self):
         def fake_run(args):
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             self.assertEqual(args[4], "some-bookmark")
             return "false\n"
 
@@ -187,10 +199,54 @@ class IsConflictedTests(unittest.TestCase):
 
     def test_unexpected_output_raises(self):
         def fake_run(args):
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             return "maybe\n"
 
         with self.assertRaises(compose.ComposeError):
             compose.is_conflicted(fake_run)
+
+
+class BookmarkTargetTests(unittest.TestCase):
+    def test_returns_commit_id_when_bookmark_exists(self):
+        def fake_run(args):
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
+            self.assertEqual(
+                args, ["jj", "log", "--no-graph", "-r", "build/nightly", "-T", "commit_id"]
+            )
+            return "abc123\n"
+
+        self.assertEqual(compose.bookmark_target(fake_run, "build/nightly"), "abc123")
+
+    def test_returns_none_when_bookmark_does_not_exist(self):
+        def fake_run(args):
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
+            raise compose.ComposeError("revision `build/nightly` doesn't exist")
+
+        self.assertIsNone(compose.bookmark_target(fake_run, "build/nightly"))
+
+
+class ComposeTitleTests(unittest.TestCase):
+    def test_nightly_gets_fixed_title(self):
+        self.assertEqual(compose.compose_title("nightly"), "PrusaSlicer (BOSS) Nightly Build")
+
+    def test_versioned_release_names_the_version(self):
+        self.assertEqual(
+            compose.compose_title("3.0.0-alpha11"), "PrusaSlicer 3.0.0-alpha11 (BOSS)"
+        )
+
+
+class FormatFinalDescriptionTests(unittest.TestCase):
+    def test_lists_branches_as_bullets(self):
+        self.assertEqual(
+            compose.format_final_description("Title", ["bugfix-a", "feature-a"]),
+            "Title\n\n- bugfix-a\n- feature-a",
+        )
+
+    def test_no_branches_is_just_the_title(self):
+        self.assertEqual(compose.format_final_description("Title", []), "Title")
 
 
 class ComposeBranchesTests(unittest.TestCase):
@@ -199,6 +255,8 @@ class ComposeBranchesTests(unittest.TestCase):
 
         def fake_run(args):
             calls.append(list(args))
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             if args[:2] == ["jj", "log"]:
                 return "false\n"
             return ""
@@ -206,7 +264,7 @@ class ComposeBranchesTests(unittest.TestCase):
         branch_set = compose.ComposeSet(
             bugfixes=["bugfix-a", "bugfix-b"], features=["feature-a"]
         )
-        compose.compose_branches(fake_run, "foundation", branch_set, "compose msg")
+        compose.compose_branches(fake_run, "foundation", branch_set, "build/1.2.3")
 
         new_or_describe_calls = [
             c for c in calls if c[:2] == ["jj", "new"] or c[:2] == ["jj", "describe"]
@@ -215,13 +273,13 @@ class ComposeBranchesTests(unittest.TestCase):
             new_or_describe_calls,
             [
                 ["jj", "new", "foundation"],
-                ["jj", "describe", "-r", "@", "-m", "compose msg"],
+                ["jj", "describe", "-r", "@", "-m", "build/1.2.3: base"],
                 ["jj", "new", "@", "bugfix-a"],
-                ["jj", "describe", "-r", "@", "-m", "compose msg"],
+                ["jj", "describe", "-r", "@", "-m", "build/1.2.3: merge bugfix-a"],
                 ["jj", "new", "@", "bugfix-b"],
-                ["jj", "describe", "-r", "@", "-m", "compose msg"],
+                ["jj", "describe", "-r", "@", "-m", "build/1.2.3: merge bugfix-b"],
                 ["jj", "new", "@", "feature-a"],
-                ["jj", "describe", "-r", "@", "-m", "compose msg"],
+                ["jj", "describe", "-r", "@", "-m", "build/1.2.3: merge feature-a"],
             ],
         )
 
@@ -230,6 +288,8 @@ class ComposeBranchesTests(unittest.TestCase):
 
         def fake_run(args):
             calls.append(list(args))
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             if args[:2] == ["jj", "log"]:
                 # Conflict on the first branch merge (bugfix-a); bugfix-b
                 # and feature-a must never be attempted.
@@ -240,7 +300,7 @@ class ComposeBranchesTests(unittest.TestCase):
             bugfixes=["bugfix-a", "bugfix-b"], features=["feature-a"]
         )
         with self.assertRaisesRegex(compose.ComposeError, "bugfix-a"):
-            compose.compose_branches(fake_run, "foundation", branch_set, "compose msg")
+            compose.compose_branches(fake_run, "foundation", branch_set, "build/1.2.3")
 
         merged_branches = [c[3] for c in calls if c[:3] == ["jj", "new", "@"]]
         self.assertEqual(merged_branches, ["bugfix-a"])
@@ -250,16 +310,18 @@ class ComposeBranchesTests(unittest.TestCase):
 
         def fake_run(args):
             calls.append(list(args))
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             return ""
 
         compose.compose_branches(
-            fake_run, "foundation", compose.ComposeSet([], []), "compose msg"
+            fake_run, "foundation", compose.ComposeSet([], []), "build/1.2.3"
         )
         self.assertEqual(
             calls,
             [
                 ["jj", "new", "foundation"],
-                ["jj", "describe", "-r", "@", "-m", "compose msg"],
+                ["jj", "describe", "-r", "@", "-m", "build/1.2.3: base"],
             ],
         )
 
@@ -271,16 +333,20 @@ class ComposeBranchesTests(unittest.TestCase):
 
         def fake_run(args):
             calls.append(list(args))
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             if args[:2] == ["jj", "log"]:
                 return "false\n"
             return ""
 
         branch_set = compose.ComposeSet(bugfixes=["bugfix-a"], features=[])
-        compose.compose_branches(fake_run, "foundation", branch_set, "compose msg")
+        compose.compose_branches(fake_run, "foundation", branch_set, "build/1.2.3")
 
         describe_calls = [c for c in calls if c[:2] == ["jj", "describe"]]
+        self.assertEqual(len(describe_calls), 2)
         for call in describe_calls:
-            self.assertEqual(call, ["jj", "describe", "-r", "@", "-m", "compose msg"])
+            self.assertEqual(call[:4], ["jj", "describe", "-r", "@"])
+            self.assertTrue(call[5].startswith("build/1.2.3:"))
 
 
 class RunComposeTests(unittest.TestCase):
@@ -288,7 +354,11 @@ class RunComposeTests(unittest.TestCase):
         calls = []
 
         def fake_run(args):
+            if args == ["jj", "log", "--no-graph", "-r", "build/1.2.3", "-T", "commit_id"]:
+                raise compose.ComposeError("revision `build/1.2.3` doesn't exist")
             calls.append(list(args))
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             if args[:2] == ["jj", "bookmark"] and args[2] == "list":
                 return (
                     "bugfix-a: abc123 fix a\n"
@@ -305,20 +375,23 @@ class RunComposeTests(unittest.TestCase):
             result = compose.run_compose(fake_run, manifest_path, "foundation", "1.2.3", Path(tmp))
 
         self.assertEqual(result, 0)
-        description = "build/1.2.3: compose bugfix-a, feature-a"
+        final_description = "PrusaSlicer 1.2.3 (BOSS)\n\n- bugfix-a\n- feature-a"
         self.assertEqual(
             calls,
             [
+                ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS,
+                 "-T", 'commit_id.short() ++ "\\n"'],
                 ["jj", "bookmark", "list"],
                 ["jj", "new", "foundation"],
-                ["jj", "describe", "-r", "@", "-m", description],
+                ["jj", "describe", "-r", "@", "-m", "build/1.2.3: base"],
                 ["jj", "new", "@", "bugfix-a"],
-                ["jj", "describe", "-r", "@", "-m", description],
+                ["jj", "describe", "-r", "@", "-m", "build/1.2.3: merge bugfix-a"],
                 ["jj", "log", "--no-graph", "-r", "@", "-T", "conflict"],
                 ["jj", "new", "@", "feature-a"],
-                ["jj", "describe", "-r", "@", "-m", description],
+                ["jj", "describe", "-r", "@", "-m", "build/1.2.3: merge feature-a"],
                 ["jj", "log", "--no-graph", "-r", "@", "-T", "conflict"],
-                ["jj", "bookmark", "create", "build/1.2.3", "-r", "@"],
+                ["jj", "describe", "-r", "@", "-m", final_description],
+                ["jj", "bookmark", "set", "build/1.2.3", "-r", "@", "--allow-backwards"],
             ],
         )
 
@@ -327,6 +400,8 @@ class RunComposeTests(unittest.TestCase):
 
         def fake_run(args):
             calls.append(list(args))
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             return ""
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -338,6 +413,8 @@ class RunComposeTests(unittest.TestCase):
 
     def test_stale_exclusion_returns_one_instead_of_raising(self):
         def fake_run(args):
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             if args[:2] == ["jj", "bookmark"]:
                 return "feature-a: abc123 add a\n"
             return ""
@@ -353,8 +430,10 @@ class RunComposeTests(unittest.TestCase):
 
         self.assertEqual(result, 1)
 
-    def test_composition_conflict_returns_one_instead_of_raising(self):
+    def test_composition_conflict_returns_its_own_exit_code(self):
         def fake_run(args):
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             if args[:2] == ["jj", "bookmark"]:
                 return "feature-a: abc123 add a\n"
             if args[:2] == ["jj", "log"]:
@@ -367,13 +446,17 @@ class RunComposeTests(unittest.TestCase):
 
             result = compose.run_compose(fake_run, manifest_path, "foundation", "1.2.3", Path(tmp))
 
-        self.assertEqual(result, 1)
+        self.assertEqual(result, compose.ComposeResult.CONFLICT)
 
     def test_empty_branch_set_still_describes_and_creates_bookmark(self):
         calls = []
 
         def fake_run(args):
+            if args == ["jj", "log", "--no-graph", "-r", "build/1.2.3", "-T", "commit_id"]:
+                raise compose.ComposeError("revision `build/1.2.3` doesn't exist")
             calls.append(list(args))
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             if args[:2] == ["jj", "bookmark"] and args[2] == "list":
                 return "foundation: 111111 base\n"
             return ""
@@ -388,22 +471,77 @@ class RunComposeTests(unittest.TestCase):
         self.assertEqual(
             calls,
             [
+                ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS,
+                 "-T", 'commit_id.short() ++ "\\n"'],
                 ["jj", "bookmark", "list"],
                 ["jj", "new", "foundation"],
-                [
-                    "jj",
-                    "describe",
-                    "-r",
-                    "@",
-                    "-m",
-                    "build/1.2.3: compose no additional branches",
-                ],
-                ["jj", "bookmark", "create", "build/1.2.3", "-r", "@"],
+                ["jj", "describe", "-r", "@", "-m", "build/1.2.3: base"],
+                ["jj", "describe", "-r", "@", "-m", "PrusaSlicer 1.2.3 (BOSS)"],
+                ["jj", "bookmark", "set", "build/1.2.3", "-r", "@", "--allow-backwards"],
             ],
+        )
+
+    def test_first_compose_uses_bookmark_set_and_skips_abandon(self):
+        calls = []
+
+        def fake_run(args):
+            if args == ["jj", "log", "--no-graph", "-r", "build/1.2.3", "-T", "commit_id"]:
+                raise compose.ComposeError("revision `build/1.2.3` doesn't exist")
+            calls.append(list(args))
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
+            if args[:2] == ["jj", "bookmark"] and args[2] == "list":
+                return "feature-a: abc123 add a\n"
+            if args[:2] == ["jj", "log"]:
+                return "false\n"
+            return ""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest_path = Path(tmp) / "manifest.json"
+            manifest_path.write_text(json.dumps({"excluded": []}), encoding="utf-8")
+
+            result = compose.run_compose(fake_run, manifest_path, "foundation", "1.2.3", Path(tmp))
+
+        self.assertEqual(result, 0)
+        self.assertIn(
+            ["jj", "bookmark", "set", "build/1.2.3", "-r", "@", "--allow-backwards"], calls
+        )
+        self.assertFalse(any(c[:2] == ["jj", "abandon"] for c in calls))
+
+    def test_recompose_abandons_previous_chain(self):
+        calls = []
+
+        def fake_run(args):
+            calls.append(list(args))
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
+            if args == ["jj", "log", "--no-graph", "-r", "build/1.2.3", "-T", "commit_id"]:
+                return "oldtarget123\n"
+            if args[:2] == ["jj", "bookmark"] and args[2] == "list":
+                return "feature-a: abc123 add a\n"
+            if args[:2] == ["jj", "log"]:
+                return "false\n"
+            return ""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest_path = Path(tmp) / "manifest.json"
+            manifest_path.write_text(json.dumps({"excluded": []}), encoding="utf-8")
+
+            result = compose.run_compose(fake_run, manifest_path, "foundation", "1.2.3", Path(tmp))
+
+        self.assertEqual(result, 0)
+        set_index = calls.index(
+            ["jj", "bookmark", "set", "build/1.2.3", "-r", "@", "--allow-backwards"]
+        )
+        self.assertEqual(
+            calls[set_index + 1],
+            ["jj", "abandon", "-r", "::oldtarget123 ~ ::bookmarks()"],
         )
 
     def test_boss_feature_drift_aborts_before_bookmark_creation(self):
         def fake_run(args):
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             if args[:2] == ["jj", "bookmark"] and args[2] == "list":
                 return ""
             return ""
@@ -440,7 +578,7 @@ class RunComposeTests(unittest.TestCase):
             result = compose.run_compose(recording_run, manifest_path, "foundation", "1.2.3", repo)
 
         self.assertEqual(result, 1)
-        self.assertNotIn(["jj", "bookmark", "create", "build/1.2.3", "-r", "@"], calls)
+        self.assertFalse(any(c[:2] == ["jj", "bookmark"] and c[2] == "set" for c in calls))
 
 
 @unittest.skipUnless(shutil.which("jj"), "jj binary not available")
@@ -552,7 +690,12 @@ class RunComposeRealJjTests(unittest.TestCase):
                     self.assertNotEqual(
                         entry.strip(), "", msg=f"empty description in {entries!r}"
                     )
-                    self.assertIn("build/9.9.9: compose bugfix-a, feature-a", entry)
+                joined = "\n---\n".join(entries)
+                self.assertIn("build/9.9.9: base", joined)
+                self.assertIn("build/9.9.9: merge bugfix-a", joined)
+                self.assertIn("PrusaSlicer 9.9.9 (BOSS)", joined)
+                self.assertIn("- bugfix-a", joined)
+                self.assertIn("- feature-a", joined)
 
                 # Property (b): each branch's own commit id, description,
                 # and bookmark target are completely unchanged after
@@ -566,6 +709,77 @@ class RunComposeRealJjTests(unittest.TestCase):
                     self.assertEqual(commit_before, commit_after, msg=branch)
                     self.assertEqual(desc_before, desc_after, msg=branch)
                     self.assertEqual(bookmark_before, bookmark_after, msg=branch)
+
+    def test_recomposing_same_bookmark_abandons_first_runs_commits(self):
+        with tempfile.TemporaryDirectory() as manifest_tmp:
+            with tempfile.TemporaryDirectory() as tmp:
+                repo = Path(tmp)
+                self._run_jj(repo, "git", "init", "--colocate")
+                self._run_jj(repo, "config", "set", "--repo", "user.name", "Test User")
+                self._run_jj(
+                    repo, "config", "set", "--repo", "user.email", "test@example.com"
+                )
+
+                self._run_jj(repo, "new", "-m", "foundation", "root()")
+                self._run_jj(repo, "bookmark", "create", "foundation", "-r", "@")
+                self._run_jj(repo, "new", "-m", "feature a", "foundation")
+                self._run_jj(repo, "bookmark", "create", "feature-a", "-r", "@")
+
+                manifest_path = Path(manifest_tmp) / "manifest.json"
+                manifest_path.write_text(json.dumps({"excluded": []}), encoding="utf-8")
+                run = compose.make_subprocess_runner(repo)
+
+                result = compose.run_compose(run, manifest_path, "foundation", "9.9.9", repo)
+                self.assertEqual(result, 0)
+                first_run_target = self._commit_id(repo, "build/9.9.9")
+
+                result = compose.run_compose(run, manifest_path, "foundation", "9.9.9", repo)
+                self.assertEqual(result, 0)
+                second_run_target = self._commit_id(repo, "build/9.9.9")
+                self.assertNotEqual(first_run_target, second_run_target)
+
+                visible_heads = self._run_jj(
+                    repo, "log", "--no-graph", "-r", "heads(all())", "-T", "commit_id ++ \"\\n\""
+                ).split()
+                self.assertNotIn(first_run_target, visible_heads)
+
+
+
+
+class PruneOrphanedChainsTests(unittest.TestCase):
+    PRUNE_LOG = [
+        "jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS,
+        "-T", 'commit_id.short() ++ "\\n"',
+    ]
+
+    def test_no_orphans_issues_no_abandon(self):
+        calls = []
+
+        def fake_run(args):
+            calls.append(list(args))
+            return ""
+
+        self.assertEqual(compose.prune_orphaned_chains(fake_run), 0)
+        self.assertEqual(calls, [self.PRUNE_LOG])
+
+    def test_orphans_are_counted_and_abandoned(self):
+        calls = []
+
+        def fake_run(args):
+            calls.append(list(args))
+            if args[:2] == ["jj", "log"]:
+                return "abc123\ndef456\n"
+            return ""
+
+        self.assertEqual(compose.prune_orphaned_chains(fake_run), 2)
+        self.assertEqual(
+            calls,
+            [self.PRUNE_LOG, ["jj", "abandon", "-r", compose.ORPHANED_CHAINS]],
+        )
+
+    def test_revset_spares_bookmarked_chains_and_working_copies(self):
+        self.assertIn("~ ::bookmarks()", compose.ORPHANED_CHAINS)
+        self.assertIn("~ ::working_copies()", compose.ORPHANED_CHAINS)
 
 
 if __name__ == "__main__":

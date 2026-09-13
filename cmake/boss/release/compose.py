@@ -13,6 +13,7 @@ import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass
+from enum import IntEnum
 from pathlib import Path
 from typing import Callable, Sequence
 
@@ -75,6 +76,38 @@ class ComposeError(Exception):
     """Raised when composition cannot proceed."""
 
 
+class ConflictError(ComposeError):
+    """Raised when merging a branch leaves the workspace conflicted."""
+
+
+class ComposeResult(IntEnum):
+    OK = 0
+    ERROR = 1
+    CONFLICT = 2
+
+
+# Every merge in a composed chain holds a feature branch head as a parent, so a
+# chain that outlives its bookmark keeps those commits visible after the branch
+# is amended, and jj then reports the change as divergent.
+CHAIN_ROOTS = 'description(glob:"build/*: base*")'
+ORPHANED_CHAINS = f"({CHAIN_ROOTS}::) ~ ::bookmarks() ~ ::working_copies()"
+
+
+def orphaned_chain_commits(run: Runner) -> list[str]:
+    output = run(
+        ["jj", "log", "--no-graph", "-r", ORPHANED_CHAINS, "-T", 'commit_id.short() ++ "\\n"']
+    )
+    return [line.strip() for line in output.splitlines() if line.strip()]
+
+
+def prune_orphaned_chains(run: Runner) -> int:
+    """Abandons composed chains nothing points at. Returns the commit count."""
+    commits = orphaned_chain_commits(run)
+    if commits:
+        run(["jj", "abandon", "-r", ORPHANED_CHAINS])
+    return len(commits)
+
+
 @dataclass(frozen=True)
 class ComposeSet:
     bugfixes: list[str]
@@ -123,16 +156,37 @@ def is_conflicted(run: Runner, revision: str = "@") -> bool:
     return output == "true"
 
 
+def bookmark_target(run: Runner, bookmark: str) -> str | None:
+    try:
+        output = run(["jj", "log", "--no-graph", "-r", bookmark, "-T", "commit_id"])
+    except ComposeError:
+        return None
+    return output.strip() or None
+
+
+def compose_title(version: str) -> str:
+    if version == "nightly":
+        return "PrusaSlicer (BOSS) Nightly Build"
+    return f"PrusaSlicer {version} (BOSS)"
+
+
+def format_final_description(title: str, branches: Sequence[str]) -> str:
+    if not branches:
+        return title
+    bullets = "\n".join(f"- {branch}" for branch in branches)
+    return f"{title}\n\n{bullets}"
+
+
 def compose_branches(
-    run: Runner, base: str, branch_set: ComposeSet, description: str
+    run: Runner, base: str, branch_set: ComposeSet, bookmark: str
 ) -> None:
     run(["jj", "new", base])
-    run(["jj", "describe", "-r", "@", "-m", description])
+    run(["jj", "describe", "-r", "@", "-m", f"{bookmark}: base"])
     for branch in branch_set.ordered():
         run(["jj", "new", "@", branch])
-        run(["jj", "describe", "-r", "@", "-m", description])
+        run(["jj", "describe", "-r", "@", "-m", f"{bookmark}: merge {branch}"])
         if is_conflicted(run):
-            raise ComposeError(
+            raise ConflictError(
                 f"composition conflict merging {branch!r}; "
                 "workspace left as-is for manual resolution"
             )
@@ -164,26 +218,36 @@ def run_compose(run: Runner, manifest_path: Path, base: str, version: str, repo:
         if not manifest_path.exists():
             raise ManifestError(f"manifest not found: {manifest_path}")
 
+        pruned = prune_orphaned_chains(run)
+        if pruned:
+            print(f"pruned {pruned} commit(s) from orphaned composed chains")
+
         excluded = load_manifest(manifest_path)
         all_branches = list_all_branches(run)
         branch_set = resolve_branch_set(all_branches, excluded)
 
         composed = branch_set.ordered()
-        branches_desc = ", ".join(composed) if composed else "no additional branches"
         bookmark = f"build/{version}"
-        description = f"{bookmark}: compose {branches_desc}"
-        compose_branches(run, base, branch_set, description)
+        previous_target = bookmark_target(run, bookmark)
+        compose_branches(run, base, branch_set, bookmark)
 
         validate_boss_features(repo)
 
-        run(["jj", "bookmark", "create", bookmark, "-r", "@"])
+        final_description = format_final_description(compose_title(version), composed)
+        run(["jj", "describe", "-r", "@", "-m", final_description])
+        run(["jj", "bookmark", "set", bookmark, "-r", "@", "--allow-backwards"])
+        if previous_target is not None:
+            run(["jj", "abandon", "-r", f"::{previous_target} ~ ::bookmarks()"])
 
         print(f"composed {len(composed)} branch(es) onto {bookmark}")
         print(f"push with: jj git push --bookmark {bookmark}")
-        return 0
+        return ComposeResult.OK
+    except ConflictError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return ComposeResult.CONFLICT
     except (ManifestError, ComposeError, FileNotFoundError) as exc:
         print(f"error: {exc}", file=sys.stderr)
-        return 1
+        return ComposeResult.ERROR
 
 
 def main(argv: Sequence[str] | None = None) -> int:
