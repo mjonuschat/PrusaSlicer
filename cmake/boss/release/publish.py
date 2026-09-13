@@ -73,6 +73,8 @@ def run_publish(
 
         run(["jj", "git", "push", "--bookmark", f"build/{version}"], workspace_dir)
         print(f"pushed build/{version}")
+
+        run(["jj", "bookmark", "delete", f"build/{version}"], repo)
         return 0
     except PublishError as exc:
         print(f"error: {exc}", file=sys.stderr)

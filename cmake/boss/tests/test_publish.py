@@ -122,6 +122,26 @@ class RunPublishRealJjTests(unittest.TestCase):
             self.assertNotIn("build/nightly", remote_bookmarks)
             self.assertEqual(list(Path(repo_tmp, ".worktrees").glob("*")), [])
 
+    def test_successful_push_deletes_local_bookmark(self):
+        with tempfile.TemporaryDirectory() as repo_tmp, \
+             tempfile.TemporaryDirectory() as remote_tmp, \
+             tempfile.TemporaryDirectory() as manifest_tmp:
+            repo = self._make_repo_with_remote(repo_tmp, remote_tmp)
+            manifest_path = Path(manifest_tmp) / "manifest.json"
+            manifest_path.write_text(json.dumps({"excluded": []}), encoding="utf-8")
+
+            run = publish.make_subprocess_runner()
+            result = publish.run_publish(
+                run, repo, manifest_path, "foundation", publish.resolve_version(None)
+            )
+
+            self.assertEqual(result, 0)
+            resolved = self._run(
+                repo, "log", "--no-graph", "-r", 'bookmarks(exact:"build/nightly")',
+                "-T", "commit_id",
+            )
+            self.assertEqual(resolved, "")
+
     def test_keep_workspace_leaves_it_on_disk(self):
         with tempfile.TemporaryDirectory() as repo_tmp, \
              tempfile.TemporaryDirectory() as remote_tmp, \
