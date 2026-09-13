@@ -123,6 +123,14 @@ def is_conflicted(run: Runner, revision: str = "@") -> bool:
     return output == "true"
 
 
+def bookmark_target(run: Runner, bookmark: str) -> str | None:
+    try:
+        output = run(["jj", "log", "--no-graph", "-r", bookmark, "-T", "commit_id"])
+    except ComposeError:
+        return None
+    return output.strip() or None
+
+
 def compose_title(version: str) -> str:
     if version == "nightly":
         return "PrusaSlicer (BOSS) Nightly Build"
@@ -183,13 +191,16 @@ def run_compose(run: Runner, manifest_path: Path, base: str, version: str, repo:
 
         composed = branch_set.ordered()
         bookmark = f"build/{version}"
+        previous_target = bookmark_target(run, bookmark)
         compose_branches(run, base, branch_set, bookmark)
 
         validate_boss_features(repo)
 
         final_description = format_final_description(compose_title(version), composed)
         run(["jj", "describe", "-r", "@", "-m", final_description])
-        run(["jj", "bookmark", "create", bookmark, "-r", "@"])
+        run(["jj", "bookmark", "set", bookmark, "-r", "@", "--allow-backwards"])
+        if previous_target is not None:
+            run(["jj", "abandon", "-r", f"::{previous_target} ~ ::bookmarks()"])
 
         print(f"composed {len(composed)} branch(es) onto {bookmark}")
         print(f"push with: jj git push --bookmark {bookmark}")
