@@ -71,10 +71,15 @@ def run_publish(
         if result != 0:
             return result
 
+        target = run(
+            ["jj", "log", "--no-graph", "-r", f"build/{version}", "-T", "commit_id"], repo
+        ).strip()
+
         run(["jj", "git", "push", "--bookmark", f"build/{version}"], workspace_dir)
         print(f"pushed build/{version}")
 
         run(["jj", "bookmark", "delete", f"build/{version}"], repo)
+        run(["jj", "abandon", "-r", f"::{target} ~ ::bookmarks()"], repo)
         return 0
     except PublishError as exc:
         print(f"error: {exc}", file=sys.stderr)

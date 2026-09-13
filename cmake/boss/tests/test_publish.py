@@ -142,6 +142,25 @@ class RunPublishRealJjTests(unittest.TestCase):
             )
             self.assertEqual(resolved, "")
 
+    def test_successful_push_leaves_no_orphaned_heads(self):
+        with tempfile.TemporaryDirectory() as repo_tmp, \
+             tempfile.TemporaryDirectory() as remote_tmp, \
+             tempfile.TemporaryDirectory() as manifest_tmp:
+            repo = self._make_repo_with_remote(repo_tmp, remote_tmp)
+            manifest_path = Path(manifest_tmp) / "manifest.json"
+            manifest_path.write_text(json.dumps({"excluded": []}), encoding="utf-8")
+
+            run = publish.make_subprocess_runner()
+            result = publish.run_publish(
+                run, repo, manifest_path, "foundation", publish.resolve_version(None)
+            )
+
+            self.assertEqual(result, 0)
+            orphans = self._run(
+                repo, "log", "--no-graph", "-r", "heads(all()) ~ bookmarks()", "-T", "commit_id",
+            )
+            self.assertEqual(orphans, "")
+
     def test_keep_workspace_leaves_it_on_disk(self):
         with tempfile.TemporaryDirectory() as repo_tmp, \
              tempfile.TemporaryDirectory() as remote_tmp, \
