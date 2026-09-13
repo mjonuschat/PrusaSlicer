@@ -123,14 +123,27 @@ def is_conflicted(run: Runner, revision: str = "@") -> bool:
     return output == "true"
 
 
+def compose_title(version: str) -> str:
+    if version == "nightly":
+        return "PrusaSlicer (BOSS) Nightly Build"
+    return f"PrusaSlicer {version} (BOSS)"
+
+
+def format_final_description(title: str, branches: Sequence[str]) -> str:
+    if not branches:
+        return title
+    bullets = "\n".join(f"- {branch}" for branch in branches)
+    return f"{title}\n\n{bullets}"
+
+
 def compose_branches(
-    run: Runner, base: str, branch_set: ComposeSet, description: str
+    run: Runner, base: str, branch_set: ComposeSet, bookmark: str
 ) -> None:
     run(["jj", "new", base])
-    run(["jj", "describe", "-r", "@", "-m", description])
+    run(["jj", "describe", "-r", "@", "-m", f"{bookmark}: base"])
     for branch in branch_set.ordered():
         run(["jj", "new", "@", branch])
-        run(["jj", "describe", "-r", "@", "-m", description])
+        run(["jj", "describe", "-r", "@", "-m", f"{bookmark}: merge {branch}"])
         if is_conflicted(run):
             raise ComposeError(
                 f"composition conflict merging {branch!r}; "
@@ -169,13 +182,13 @@ def run_compose(run: Runner, manifest_path: Path, base: str, version: str, repo:
         branch_set = resolve_branch_set(all_branches, excluded)
 
         composed = branch_set.ordered()
-        branches_desc = ", ".join(composed) if composed else "no additional branches"
         bookmark = f"build/{version}"
-        description = f"{bookmark}: compose {branches_desc}"
-        compose_branches(run, base, branch_set, description)
+        compose_branches(run, base, branch_set, bookmark)
 
         validate_boss_features(repo)
 
+        final_description = format_final_description(compose_title(version), composed)
+        run(["jj", "describe", "-r", "@", "-m", final_description])
         run(["jj", "bookmark", "create", bookmark, "-r", "@"])
 
         print(f"composed {len(composed)} branch(es) onto {bookmark}")

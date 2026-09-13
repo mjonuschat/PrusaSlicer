@@ -193,6 +193,27 @@ class IsConflictedTests(unittest.TestCase):
             compose.is_conflicted(fake_run)
 
 
+class ComposeTitleTests(unittest.TestCase):
+    def test_nightly_gets_fixed_title(self):
+        self.assertEqual(compose.compose_title("nightly"), "PrusaSlicer (BOSS) Nightly Build")
+
+    def test_versioned_release_names_the_version(self):
+        self.assertEqual(
+            compose.compose_title("3.0.0-alpha11"), "PrusaSlicer 3.0.0-alpha11 (BOSS)"
+        )
+
+
+class FormatFinalDescriptionTests(unittest.TestCase):
+    def test_lists_branches_as_bullets(self):
+        self.assertEqual(
+            compose.format_final_description("Title", ["bugfix-a", "feature-a"]),
+            "Title\n\n- bugfix-a\n- feature-a",
+        )
+
+    def test_no_branches_is_just_the_title(self):
+        self.assertEqual(compose.format_final_description("Title", []), "Title")
+
+
 class ComposeBranchesTests(unittest.TestCase):
     def test_merges_bugfixes_then_features_in_order(self):
         calls = []
@@ -206,7 +227,7 @@ class ComposeBranchesTests(unittest.TestCase):
         branch_set = compose.ComposeSet(
             bugfixes=["bugfix-a", "bugfix-b"], features=["feature-a"]
         )
-        compose.compose_branches(fake_run, "foundation", branch_set, "compose msg")
+        compose.compose_branches(fake_run, "foundation", branch_set, "build/1.2.3")
 
         new_or_describe_calls = [
             c for c in calls if c[:2] == ["jj", "new"] or c[:2] == ["jj", "describe"]
@@ -215,13 +236,13 @@ class ComposeBranchesTests(unittest.TestCase):
             new_or_describe_calls,
             [
                 ["jj", "new", "foundation"],
-                ["jj", "describe", "-r", "@", "-m", "compose msg"],
+                ["jj", "describe", "-r", "@", "-m", "build/1.2.3: base"],
                 ["jj", "new", "@", "bugfix-a"],
-                ["jj", "describe", "-r", "@", "-m", "compose msg"],
+                ["jj", "describe", "-r", "@", "-m", "build/1.2.3: merge bugfix-a"],
                 ["jj", "new", "@", "bugfix-b"],
-                ["jj", "describe", "-r", "@", "-m", "compose msg"],
+                ["jj", "describe", "-r", "@", "-m", "build/1.2.3: merge bugfix-b"],
                 ["jj", "new", "@", "feature-a"],
-                ["jj", "describe", "-r", "@", "-m", "compose msg"],
+                ["jj", "describe", "-r", "@", "-m", "build/1.2.3: merge feature-a"],
             ],
         )
 
@@ -240,7 +261,7 @@ class ComposeBranchesTests(unittest.TestCase):
             bugfixes=["bugfix-a", "bugfix-b"], features=["feature-a"]
         )
         with self.assertRaisesRegex(compose.ComposeError, "bugfix-a"):
-            compose.compose_branches(fake_run, "foundation", branch_set, "compose msg")
+            compose.compose_branches(fake_run, "foundation", branch_set, "build/1.2.3")
 
         merged_branches = [c[3] for c in calls if c[:3] == ["jj", "new", "@"]]
         self.assertEqual(merged_branches, ["bugfix-a"])
@@ -253,13 +274,13 @@ class ComposeBranchesTests(unittest.TestCase):
             return ""
 
         compose.compose_branches(
-            fake_run, "foundation", compose.ComposeSet([], []), "compose msg"
+            fake_run, "foundation", compose.ComposeSet([], []), "build/1.2.3"
         )
         self.assertEqual(
             calls,
             [
                 ["jj", "new", "foundation"],
-                ["jj", "describe", "-r", "@", "-m", "compose msg"],
+                ["jj", "describe", "-r", "@", "-m", "build/1.2.3: base"],
             ],
         )
 
@@ -276,11 +297,13 @@ class ComposeBranchesTests(unittest.TestCase):
             return ""
 
         branch_set = compose.ComposeSet(bugfixes=["bugfix-a"], features=[])
-        compose.compose_branches(fake_run, "foundation", branch_set, "compose msg")
+        compose.compose_branches(fake_run, "foundation", branch_set, "build/1.2.3")
 
         describe_calls = [c for c in calls if c[:2] == ["jj", "describe"]]
+        self.assertEqual(len(describe_calls), 2)
         for call in describe_calls:
-            self.assertEqual(call, ["jj", "describe", "-r", "@", "-m", "compose msg"])
+            self.assertEqual(call[:4], ["jj", "describe", "-r", "@"])
+            self.assertTrue(call[5].startswith("build/1.2.3:"))
 
 
 class RunComposeTests(unittest.TestCase):
@@ -305,19 +328,20 @@ class RunComposeTests(unittest.TestCase):
             result = compose.run_compose(fake_run, manifest_path, "foundation", "1.2.3", Path(tmp))
 
         self.assertEqual(result, 0)
-        description = "build/1.2.3: compose bugfix-a, feature-a"
+        final_description = "PrusaSlicer 1.2.3 (BOSS)\n\n- bugfix-a\n- feature-a"
         self.assertEqual(
             calls,
             [
                 ["jj", "bookmark", "list"],
                 ["jj", "new", "foundation"],
-                ["jj", "describe", "-r", "@", "-m", description],
+                ["jj", "describe", "-r", "@", "-m", "build/1.2.3: base"],
                 ["jj", "new", "@", "bugfix-a"],
-                ["jj", "describe", "-r", "@", "-m", description],
+                ["jj", "describe", "-r", "@", "-m", "build/1.2.3: merge bugfix-a"],
                 ["jj", "log", "--no-graph", "-r", "@", "-T", "conflict"],
                 ["jj", "new", "@", "feature-a"],
-                ["jj", "describe", "-r", "@", "-m", description],
+                ["jj", "describe", "-r", "@", "-m", "build/1.2.3: merge feature-a"],
                 ["jj", "log", "--no-graph", "-r", "@", "-T", "conflict"],
+                ["jj", "describe", "-r", "@", "-m", final_description],
                 ["jj", "bookmark", "create", "build/1.2.3", "-r", "@"],
             ],
         )
@@ -390,14 +414,8 @@ class RunComposeTests(unittest.TestCase):
             [
                 ["jj", "bookmark", "list"],
                 ["jj", "new", "foundation"],
-                [
-                    "jj",
-                    "describe",
-                    "-r",
-                    "@",
-                    "-m",
-                    "build/1.2.3: compose no additional branches",
-                ],
+                ["jj", "describe", "-r", "@", "-m", "build/1.2.3: base"],
+                ["jj", "describe", "-r", "@", "-m", "PrusaSlicer 1.2.3 (BOSS)"],
                 ["jj", "bookmark", "create", "build/1.2.3", "-r", "@"],
             ],
         )
@@ -552,7 +570,12 @@ class RunComposeRealJjTests(unittest.TestCase):
                     self.assertNotEqual(
                         entry.strip(), "", msg=f"empty description in {entries!r}"
                     )
-                    self.assertIn("build/9.9.9: compose bugfix-a, feature-a", entry)
+                joined = "\n---\n".join(entries)
+                self.assertIn("build/9.9.9: base", joined)
+                self.assertIn("build/9.9.9: merge bugfix-a", joined)
+                self.assertIn("PrusaSlicer 9.9.9 (BOSS)", joined)
+                self.assertIn("- bugfix-a", joined)
+                self.assertIn("- feature-a", joined)
 
                 # Property (b): each branch's own commit id, description,
                 # and bookmark target are completely unchanged after
