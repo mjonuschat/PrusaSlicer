@@ -134,12 +134,9 @@ def validate_manifest(path: Path, data: dict) -> Manifest:
         )
 
     feature_id = data["id"]
-    # 0 is reserved for the generated "None" choice in every enum-backed
-    # BOSS option (see BossFillRegistry::register_config in Task 3) -- a
-    # feature claiming it would silently collide with that sentinel.
-    # The upper bound matches int32_t, the underlying type the generator
-    # emits FillPatternKey as (see emit_fill_pattern_key) -- an id outside
-    # that range would truncate or fail to compile as a generated enumerator.
+    # A fill feature's id doubles as its InfillPattern value, so it has to fit
+    # that enum's underlying int and stay clear of the native patterns, which
+    # occupy the low values. Ids are assigned in the 10000s, well above them.
     if (
         not isinstance(feature_id, int) or isinstance(feature_id, bool)
         or not (0 < feature_id <= 2**31 - 1)
@@ -591,8 +588,6 @@ STORAGE_KINDS = {
     },
 }
 
-ENUM_MEMBER_SUFFIX = "Feature"
-
 # Keys a foundation registry registers on its own, gated on the same predicate
 # as that registration. Empty since fill features stopped owning a key of their
 # own: they append their pattern to the native fill_pattern, whose invalidation
@@ -642,41 +637,6 @@ def features_for_capability(manifests: list[Manifest], capability: str) -> list[
         if any(capability in spec.get("capabilities", []) for spec in m.components.values())
     ]
     return sorted(matching, key=lambda m: m.name)
-
-
-def enum_member_name(manifest: Manifest) -> str:
-    basename = manifest.trait.rsplit("::", 1)[-1]
-    if basename.endswith(ENUM_MEMBER_SUFFIX):
-        basename = basename[: -len(ENUM_MEMBER_SUFFIX)]
-    return basename
-
-
-# "None" is the reserved id-0 sentinel every generated FillPatternKey enum
-# starts with (see emit_fill_pattern_key below) -- no fill feature's derived
-# member name may collide with it, the same way no feature id may be 0.
-RESERVED_ENUM_MEMBER_NAMES = {"None"}
-
-
-def validate_fill_enum_names(fill_features: list[Manifest]) -> None:
-    seen: dict[str, Path] = {}
-    for feature in fill_features:
-        member = enum_member_name(feature)
-        if not member or not is_valid_cpp_identifier(member):
-            raise ManifestError(
-                f"{feature.path}: derived enum member name {member!r} "
-                f"(from trait {feature.trait!r}) is not a valid, non-keyword C++ identifier"
-            )
-        if member in RESERVED_ENUM_MEMBER_NAMES:
-            raise ManifestError(
-                f"{feature.path}: derived enum member name {member!r} is reserved "
-                f"-- rename the feature's trait so it doesn't derive to a reserved name"
-            )
-        if member in seen:
-            raise ManifestError(
-                f"{feature.path}: derived enum member name {member!r} collides with "
-                f"{seen[member]} -- rename one feature's trait"
-            )
-        seen[member] = feature.path
 
 
 def check_known_capabilities(manifests: list[Manifest]) -> None:
@@ -778,34 +738,6 @@ def emit_extra_includes_header(consumer: str, manifests: list[Manifest], include
     header_dir = include_dir / "boss" / "generated"
     header_dir.mkdir(parents=True, exist_ok=True)
     header_path = header_dir / output_header
-    header_path.write_text("\n".join(lines), encoding="utf-8")
-    return header_path
-
-
-def emit_fill_pattern_key(manifests: list[Manifest], include_dir: Path) -> Path:
-    # boss_fill_pattern's enum is generated, not hand-maintained, so a new
-    # fill feature adds an enum member by existing (its manifest is
-    # discovered) rather than by anyone editing a shared enum definition.
-    fill_features = features_for_capability(manifests, "fill")
-    validate_fill_enum_names(fill_features)
-    lines = [
-        "// GENERATED FILE -- do not edit. Produced by cmake/boss/generate_boss_features.py.",
-        "#pragma once",
-        "#include <cstdint>",
-        "",
-        "namespace Slic3r::Domain::Boss {",
-        "enum class FillPatternKey : int32_t {",
-        "    None = 0,",
-    ]
-    for feature in fill_features:
-        lines.append(f"    {enum_member_name(feature)} = {feature.id},")
-    lines.append("};")
-    lines.append("} // namespace Slic3r::Domain::Boss")
-    lines.append("")
-
-    header_dir = include_dir / "boss" / "generated"
-    header_dir.mkdir(parents=True, exist_ok=True)
-    header_path = header_dir / "BossFillPatternKey.hpp"
     header_path.write_text("\n".join(lines), encoding="utf-8")
     return header_path
 
@@ -1042,7 +974,6 @@ def generate(features_dir: Path, output_dir: Path) -> int:
             emit_composition_header(capability, manifests, include_dir)
         for consumer in EXTRA_INCLUDE_CONSUMERS:
             emit_extra_includes_header(consumer, manifests, include_dir)
-        emit_fill_pattern_key(manifests, include_dir)
         emit_step_invalidations(manifests, output_dir)
         emit_config_option_keys(manifests, output_dir)
         for home in HOME_REGISTRIES:
