@@ -389,6 +389,15 @@ ConfigItemDef* ConfigDefinitions::add(const std::string_view name, const std::ty
     return &m_defs.emplace_back(ConfigItemDef{std::string(name), &type});
 }
 
+ConfigItemDef* ConfigDefinitions::find_mutable(const std::string_view name)
+{
+    ASSERT(!m_finalized);
+    for (ConfigItemDef& def : m_defs)
+        if (def.name == name)
+            return &def;
+    return nullptr;
+}
+
 void ConfigDefinitions::check_valid() const
 {
     ASSERT(std::is_sorted(m_defs.begin(), m_defs.end()));

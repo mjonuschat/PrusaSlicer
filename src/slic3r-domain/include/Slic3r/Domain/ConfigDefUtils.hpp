@@ -7,6 +7,19 @@
 namespace Slic3r::Domain {
 std::vector<EnumValueDefsPtr>& get_enum_defs();
 
+class ConfigDefinitions;
+
+// Reads the existing choices back out of the option's init_fn rather than
+// having the caller restate them, which would go stale the moment upstream adds
+// a choice of its own.
+void append_enum_choice(
+    ConfigDefinitions& defs,
+    const std::string_view name,
+    int enum_value,
+    std::string str_serialized,
+    std::string str_ui
+);
+
 template <typename T>
 requires std::is_enum_v<typename T::value_type>
 auto init_with(const T& values, const EnumValueDefs* def) {

@@ -63,7 +63,9 @@ enum class MachineLimitsUsage {
     Count,
 };
 enum class SeamPosition {
-    spRandom, spNearest, spAligned, spRear
+    // check_enum_def() requires the choice list to be sorted by enum value, so
+    // this numbering is also the order the dropdown shows.
+    spRandom, spNearest, spAligned, spAlignedRear, spRear
 };
 enum class ScarfSeamPlacement {
     nowhere,
