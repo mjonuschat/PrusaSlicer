@@ -191,6 +191,12 @@ if(BUILD_TARGET STREQUAL "install")
     # "${CMAKE_INSTALL_BINDIR}") convention, which put the bundle in bin/
     # too.
     if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+        # An earlier run's bundle still owns Contents/Resources, and
+        # file(RENAME) refuses to replace a non-empty directory. The install
+        # above re-stages everything the bundle holds, so drop it and rebuild
+        # it -- otherwise every install after the first one fails.
+        file(REMOVE_RECURSE "${INSTALL_DIR}/bin/PrusaSlicer.app")
+
         set(_bundle_contents "${INSTALL_DIR}/bin/PrusaSlicer.app/Contents")
         file(MAKE_DIRECTORY "${_bundle_contents}/MacOS")
         file(RENAME "${INSTALL_DIR}/bin/slic3r-app-launcher" "${_bundle_contents}/MacOS/PrusaSlicer")
