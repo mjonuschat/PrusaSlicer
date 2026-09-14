@@ -1,4 +1,5 @@
 #include <Slic3r/Log.hpp>
+#include "boss/generated/BossFills.hpp"
 #include <numeric>
 #include <algorithm>
 #include <cmath>
@@ -42,6 +43,11 @@ namespace BB = Biz::Algorithms::BoundingBox;
 
 Fill* Fill::new_from_type(const Domain::InfillPattern type)
 {
+    // A BOSS pattern's Fill subclass lives on its own feature branch, so the
+    // registry constructs it; this switch only knows the native ones.
+    if (Slic3r::Boss::BossFills::is_boss_pattern(int(type)))
+        return Slic3r::Boss::BossFills::create(int(type)).release();
+
     switch (type) {
     case Domain::InfillPattern::ipConcentric:          return new FillConcentric();
     case Domain::InfillPattern::ipHoneycomb:           return new FillHoneycomb();
@@ -71,6 +77,11 @@ Fill* Fill::new_from_type(const Domain::InfillPattern type)
 
 bool Fill::use_bridge_flow(const Domain::InfillPattern type)
 {
+    // The cache below is indexed by pattern and sized to the native count, so
+    // a BOSS pattern has to be answered before it is reached.
+    if (Slic3r::Boss::BossFills::is_boss_pattern(int(type)))
+        return Slic3r::Boss::BossFills::use_bridge_flow(int(type));
+
     auto init_cache = []() -> std::vector<unsigned char> {
         std::vector<unsigned char> out;
         out.assign(size_t(Domain::InfillPattern::ipCount), 0);

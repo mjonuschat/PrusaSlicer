@@ -25,10 +25,6 @@ struct SurfaceFillParams
     unsigned int extruder = 0;
     // Infill pattern, adjusted for the density etc.
     Domain::InfillPattern pattern = Domain::InfillPattern(0);
-    // BOSS fill-dispatch ID (Fill/boss feature registry), or nullopt for
-    // a plain native pattern.
-    std::optional<int> boss_pattern;
-
     // in unscaled coordinates
     double spacing = 0.;
     // Angle as provided by the region config, in radians.

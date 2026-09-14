@@ -22,7 +22,6 @@
 #include "libslic3r/Surface.hpp"
 // for Arachne based infills
 #include "libslic3r/PerimeterGenerator.hpp"
-#include "boss/generated/BossFillPatternKey.hpp"
 #include "boss/generated/BossFills.hpp"
 #include "boss/generated/BossSolidFillPolicy.hpp"
 #include "boss/generated/BossFillExtraIncludes.hpp"
@@ -70,9 +69,6 @@ bool SurfaceFillParams::operator<(const SurfaceFillParams &rhs) const {
 
 	RETURN_COMPARE_NON_EQUAL(extruder);
 	RETURN_COMPARE_NON_EQUAL_TYPED(unsigned, pattern);
-	if (this->boss_pattern.has_value() != rhs.boss_pattern.has_value()) return this->boss_pattern.has_value();
-	if (this->boss_pattern.has_value() && rhs.boss_pattern.has_value() && *this->boss_pattern != *rhs.boss_pattern)
-		return *this->boss_pattern < *rhs.boss_pattern;
 	RETURN_COMPARE_NON_EQUAL(spacing);
 	RETURN_COMPARE_NON_EQUAL(angle);
 	RETURN_COMPARE_NON_EQUAL(density);
@@ -88,7 +84,6 @@ bool SurfaceFillParams::operator<(const SurfaceFillParams &rhs) const {
 bool SurfaceFillParams::operator==(const SurfaceFillParams &rhs) const {
 	return  this->extruder 			== rhs.extruder 		&&
 			this->pattern 			== rhs.pattern 			&&
-			this->boss_pattern      == rhs.boss_pattern       &&
 			this->spacing 			== rhs.spacing 			&&
 			this->angle   			== rhs.angle   			&&
 			this->bridge   			== rhs.bridge   		&&
@@ -135,15 +130,6 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 		        bool     is_bridge 	    = layer.id() > 0 && surface.is_bridge();
 		        params.extruder 	 = layerm.region().extruder(extrusion_role);
 		        params.pattern 		 = layerm.region().extruder_config_value<Domain::InfillPattern>("fill_pattern", extrusion_role);
-		        // The registry adds boss_fill_pattern only when a fill feature is compiled in,
-		        // and ConfigView::get<T>() asserts on a missing key.
-		        if (Slic3r::Boss::BossFills::has_any_features) {
-		            const Domain::Boss::FillPatternKey boss_key =
-		                layerm.region().extruder_config_value<Domain::Boss::FillPatternKey>("boss_fill_pattern", extrusion_role);
-		            params.boss_pattern = Slic3r::Boss::BossFills::id_for_key(boss_key);
-		            assert((boss_key == Domain::Boss::FillPatternKey::None || params.boss_pattern.has_value())
-		                && "boss_fill_pattern resolved to a known enum value with no matching feature in this build's registry");
-		        }
 		        params.density       = float(region.extruder_config_value<Domain::Percentage>("fill_density", FlowRole::frInfill).value);
 
 		        if (surface.is_solid()) {
@@ -166,8 +152,6 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 		            continue;
 
 		        // BOSS fill patterns are sparse-only, so a forced solid pattern always wins.
-		        if (surface.is_solid())
-		            params.boss_pattern.reset();
 
 		        if (is_bridge) {
 		            params.extrusion_role = ExtrusionRole::BridgeInfill;
@@ -188,8 +172,8 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 		        params.angle 		= float(deg2rad(region_config.get<double>("fill_angle")));
 
 		        // Calculate the actual flow we'll be using for this infill.
-		        params.bridge = is_bridge || (params.boss_pattern
-		            ? Slic3r::Boss::BossFills::use_bridge_flow(*params.boss_pattern)
+		        params.bridge = is_bridge || (Slic3r::Boss::BossFills::is_boss_pattern(int(params.pattern))
+		            ? Slic3r::Boss::BossFills::use_bridge_flow(int(params.pattern))
 		            : Fill::use_bridge_flow(params.pattern));
 				params.flow   = params.bridge ?
 					// Always enable thick bridges for internal bridges.
@@ -334,19 +318,6 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 		}
     }
 
-    // The pattern is already final by this point (set at each entry's creation
-    // site). boss_pattern still needs clearing here: params is a reused
-    // function-scope variable, so this is the only reliable reset point for
-    // the synthetic void-fill-extension entry.
-    {
-        for (size_t surface_fill_id = 0; surface_fill_id < surface_fills.size(); ++surface_fill_id)
-            if (SurfaceFill &fill = surface_fills[surface_fill_id];
-                    fill.surface.surface_type == stInternalSolid
-                    || fill.surface.surface_type == stSolidOverBridge) {
-                fill.params.boss_pattern.reset();
-            }
-    }
-
     return surface_fills;
 }
 
@@ -488,9 +459,9 @@ void Layer::make_fills(FillAdaptive::Octree* adaptive_fill_octree, FillAdaptive:
 
         // Create the filler object.
         std::unique_ptr<Fill> f;
-        if (surface_fill.params.boss_pattern) {
-            f = Slic3r::Boss::BossFills::create(*surface_fill.params.boss_pattern);
-            assert(f && "boss_pattern was valid at config-parse time but missing from this build's registry");
+        if (Slic3r::Boss::BossFills::is_boss_pattern(int(surface_fill.params.pattern))) {
+            f = Slic3r::Boss::BossFills::create(int(surface_fill.params.pattern));
+            assert(f && "fill_pattern held a BOSS pattern missing from this build's registry");
         } else {
             f.reset(Fill::new_from_type(surface_fill.params.pattern));
         }
@@ -504,12 +475,10 @@ void Layer::make_fills(FillAdaptive::Octree* adaptive_fill_octree, FillAdaptive:
         f->adapt_fill_octree   = (surface_fill.params.pattern == Domain::InfillPattern::ipSupportCubic) ? support_fill_octree : adaptive_fill_octree;
         f->region_config = layerm.region().config();
 
-        // fill_pattern and boss_fill_pattern are independent options, so params.pattern can still
-        // name a native type while f is a BOSS-dispatched Fill. The casts below assume otherwise.
-        if (! surface_fill.params.boss_pattern && surface_fill.params.pattern == Domain::InfillPattern::ipLightning)
+        if (surface_fill.params.pattern == Domain::InfillPattern::ipLightning)
             dynamic_cast<FillLightning::Filler*>(f.get())->generator = lightning_generator;
 
-        if (! surface_fill.params.boss_pattern && surface_fill.params.pattern == Domain::InfillPattern::ipEnsuring) {
+        if (surface_fill.params.pattern == Domain::InfillPattern::ipEnsuring) {
             auto *fill_ensuring = dynamic_cast<FillEnsuring *>(f.get());
             assert(fill_ensuring != nullptr);
             fill_ensuring->print_region_config = m_regions[surface_fill.region_id]->region().config();
@@ -540,7 +509,7 @@ void Layer::make_fills(FillAdaptive::Octree* adaptive_fill_octree, FillAdaptive:
         params.anchor_length              = surface_fill.params.anchor_length;
         params.anchor_length_max          = surface_fill.params.anchor_length_max;
         params.resolution                 = resolution;
-        params.use_arachne                = ! surface_fill.params.boss_pattern
+        params.use_arachne                = ! Slic3r::Boss::BossFills::is_boss_pattern(int(surface_fill.params.pattern))
             && ((perimeter_generator == Domain::PerimeterGeneratorType::Arachne && surface_fill.params.pattern == Domain::InfillPattern::ipConcentric)
                 || surface_fill.params.pattern == Domain::InfillPattern::ipEnsuring);
         params.layer_height               = layerm.layer()->height;
@@ -672,8 +641,8 @@ Polylines Layer::generate_sparse_infill_polylines_for_anchoring(FillAdaptive::Oc
 			continue;
 		}
 
-        if (surface_fill.params.boss_pattern) {
-            if (! Slic3r::Boss::BossFills::anchoring_eligible(*surface_fill.params.boss_pattern))
+        if (Slic3r::Boss::BossFills::is_boss_pattern(int(surface_fill.params.pattern))) {
+            if (! Slic3r::Boss::BossFills::anchoring_eligible(int(surface_fill.params.pattern)))
                 continue;
         } else {
             switch (surface_fill.params.pattern) {
@@ -708,9 +677,9 @@ Polylines Layer::generate_sparse_infill_polylines_for_anchoring(FillAdaptive::Oc
 
         // Create the filler object.
         std::unique_ptr<Fill> f;
-        if (surface_fill.params.boss_pattern) {
-            f = Slic3r::Boss::BossFills::create(*surface_fill.params.boss_pattern);
-            assert(f && "boss_pattern was valid at config-parse time but missing from this build's registry");
+        if (Slic3r::Boss::BossFills::is_boss_pattern(int(surface_fill.params.pattern))) {
+            f = Slic3r::Boss::BossFills::create(int(surface_fill.params.pattern));
+            assert(f && "fill_pattern held a BOSS pattern missing from this build's registry");
         } else {
             f.reset(Fill::new_from_type(surface_fill.params.pattern));
         }
@@ -721,7 +690,7 @@ Polylines Layer::generate_sparse_infill_polylines_for_anchoring(FillAdaptive::Oc
         f->adapt_fill_octree   = (surface_fill.params.pattern == Domain::InfillPattern::ipSupportCubic) ? support_fill_octree : adaptive_fill_octree;
         f->region_config = layerm.region().config();
 
-        if (! surface_fill.params.boss_pattern && surface_fill.params.pattern == Domain::InfillPattern::ipLightning)
+        if (surface_fill.params.pattern == Domain::InfillPattern::ipLightning)
             dynamic_cast<FillLightning::Filler *>(f.get())->generator = lightning_generator;
 
         // calculate flow spacing for infill pattern generation
