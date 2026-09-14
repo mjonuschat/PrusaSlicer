@@ -43,7 +43,8 @@ PrintToolSubcategoryItem::PrintToolSubcategoryItem(
     m_rows_filter_list->set_filter_fn(
         [this](const Biz::PrintToolItem& item) -> bool
         {
-            return item.print_item->def().option_group == m_option_group
+            return item.print_item->def().shows_on_settings_page()
+                && item.print_item->def().option_group == m_option_group
                 && item.print_item->def().category == m_category;
         }
     );
