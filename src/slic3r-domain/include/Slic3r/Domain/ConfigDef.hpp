@@ -433,6 +433,9 @@ public:
     // Add a config definition. Calling this after ctr finishes is an error.
     ConfigItemDef* add(const std::string_view name, const std::type_info& type);
 
+    // add() cannot reach an existing option: names must stay unique.
+    ConfigItemDef* find_mutable(const std::string_view name);
+
 private:
     void check_valid() const;
     std::vector<ConfigItemDef> m_defs;
