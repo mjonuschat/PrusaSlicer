@@ -7,6 +7,7 @@
 #   cmake -P build.cmake -- --target install     # Build slicer + assemble .app (macOS)
 #   cmake -P build.cmake -- --arch x86_64        # Override architecture
 #   cmake -P build.cmake -- --build-type Debug   # Override build type
+#   cmake -P build.cmake -- --no-tests           # Skip building unit tests
 
 cmake_minimum_required(VERSION 3.20)
 
@@ -14,6 +15,7 @@ cmake_minimum_required(VERSION 3.20)
 set(BUILD_TARGET "all")
 set(BUILD_ARCH "")
 set(BUILD_TYPE "Release")
+set(BUILD_TESTS "ON")
 
 set(_i 0)
 while(_i LESS ${CMAKE_ARGC})
@@ -27,6 +29,8 @@ while(_i LESS ${CMAKE_ARGC})
     elseif(_arg STREQUAL "--build-type")
         math(EXPR _i "${_i} + 1")
         set(BUILD_TYPE "${CMAKE_ARGV${_i}}")
+    elseif(_arg STREQUAL "--no-tests")
+        set(BUILD_TESTS "OFF")
     endif()
     math(EXPR _i "${_i} + 1")
 endwhile()
@@ -147,7 +151,11 @@ if(BUILD_TARGET STREQUAL "all" OR BUILD_TARGET STREQUAL "slicer" OR BUILD_TARGET
     # "${CMAKE_INSTALL_PREFIX}/..." rather than a relative path, which bakes
     # in an absolute destination at configure time that --install --prefix
     # cannot relocate afterward.
-    run_command(${CMAKE_COMMAND} --preset ${PRESET} "-DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}")
+    run_command(
+        ${CMAKE_COMMAND} --preset ${PRESET}
+        "-DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}"
+        "-DSLIC3R_BUILD_TESTS=${BUILD_TESTS}"
+    )
 
     # Build
     message(STATUS "Building slicer...")
