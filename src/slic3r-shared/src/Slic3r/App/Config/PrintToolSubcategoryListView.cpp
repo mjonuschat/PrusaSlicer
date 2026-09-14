@@ -38,7 +38,10 @@ PrintToolSubcategoryListView::PrintToolSubcategoryListView(
 
     m_category_filter->set_filter_fn(
         [this](const Biz::PrintToolItem& tool_print_item)
-        { return tool_print_item.print_item->def().category == m_category; }
+        {
+            return tool_print_item.print_item->def().shows_on_settings_page()
+                && tool_print_item.print_item->def().category == m_category;
+        }
     );
     m_category_filter->set_group_by_fn(
         [](const Biz::PrintToolItem& tool_print_item,

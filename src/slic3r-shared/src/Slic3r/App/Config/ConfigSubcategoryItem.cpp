@@ -41,7 +41,8 @@ ConfigSubcategoryItem::ConfigSubcategoryItem(
     m_rows_filter_list->set_filter_fn(
         [this](const Biz::ConfigItemContext& item) -> bool
         {
-            return item.config_item->def().option_group == m_option_group
+            return item.config_item->def().shows_on_settings_page()
+                && item.config_item->def().option_group == m_option_group
                 && item.config_item->def().category == m_category;
         }
     );

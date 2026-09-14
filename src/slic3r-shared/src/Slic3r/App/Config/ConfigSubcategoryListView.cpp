@@ -36,8 +36,13 @@ ConfigSubcategoryListView::ConfigSubcategoryListView(
     set_flex_grow(1);
     set_min_height(100);
 
-    m_category_filter->set_filter_fn([this](const Biz::ConfigItemContext& data)
-                                     { return data.config_item->def().category == m_category; });
+    m_category_filter->set_filter_fn(
+        [this](const Biz::ConfigItemContext& data)
+        {
+            return data.config_item->def().shows_on_settings_page()
+                && data.config_item->def().category == m_category;
+        }
+    );
     m_category_filter->set_group_by_fn(
         [](const Biz::ConfigItemContext& data,
            std::unordered_set<Domain::ConfigItemDef::OptionGroup>& seen_keys)

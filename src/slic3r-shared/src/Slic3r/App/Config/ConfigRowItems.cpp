@@ -2,6 +2,8 @@
 
 #include "Slic3r/App/Yoga/Text.hpp"
 
+#include <Slic3r/Biz/I18N/I18N.hpp>
+
 using namespace Slic3r::App::Yoga;
 
 namespace Slic3r::App {
@@ -81,7 +83,7 @@ void ConfigRowItems::on_data_update()
 
             if (m_initialized_type != InitializedType::Multiple) {
                 m_initialized_type = InitializedType::Multiple;
-                m_label            = emplace_back<Text>(m_state->config_item->def().row_group);
+                m_label = emplace_back<Text>(Biz::_u8(m_state->config_item->def().row_group));
                 m_label->set_width(150);
                 m_label->set_self_align(YGAlignCenter);
 
