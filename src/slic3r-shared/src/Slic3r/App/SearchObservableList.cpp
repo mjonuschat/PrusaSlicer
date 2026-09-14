@@ -114,7 +114,9 @@ void SearchObservableList::invalidate_source_items()
         for (size_t index = 0; index < cbol_size; ++index) {
             const Domain::ConfigItem* item = cbol->at(index).config_item;
 
-            if (item->def().category == Domain::ConfigItemDef::Category::Hidden) {
+            if (item->def().category == Domain::ConfigItemDef::Category::Hidden
+                || item->def().override_only)
+            {
                 continue;
             }
             m_source_items.push_back(item);
@@ -129,7 +131,9 @@ void SearchObservableList::invalidate_source_items()
         for (size_t index = 0; index < cbol_size; ++index) {
             const Biz::PrintToolItem& item = cbol->at(index);
 
-            if (item.print_item->def().category == Domain::ConfigItemDef::Category::Hidden) {
+            if (item.print_item->def().category == Domain::ConfigItemDef::Category::Hidden
+                || item.print_item->def().override_only)
+            {
                 continue;
             }
 
@@ -147,7 +151,9 @@ void SearchObservableList::invalidate_source_items()
         for (size_t index = 0; index < cbol_size; ++index) {
             const Biz::OverrideItem* item = &cbol->at(index);
 
-            if (item->config_item->def().category == Domain::ConfigItemDef::Category::Hidden) {
+            if (item->config_item->def().category == Domain::ConfigItemDef::Category::Hidden
+                || item->config_item->def().override_only)
+            {
                 continue;
             }
             m_source_items.push_back(item->config_item);

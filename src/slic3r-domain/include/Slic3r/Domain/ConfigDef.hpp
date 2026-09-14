@@ -189,6 +189,7 @@ struct ConfigItemDef
         Print_LayerSurfaces_SurfacePatterns  = 102,
         Print_LayerSurfaces_OnlyOnePerimeter = 103,
         Print_LayerSurfaces_Ironing          = 104,
+        Print_LayerSurfaces_Flow             = 105,
 
         Print_WallsPerimeters_Perimeters   = 200,
         Print_WallsPerimeters_Seams        = 201,
@@ -200,6 +201,7 @@ struct ConfigItemDef
         Print_Infill_Overlap           = 302,
         Print_Infill_WallAnchoring     = 303,
         Print_Infill_Advanced          = 304,
+        Print_Infill_FlowCompensation  = 305,
 
         Print_BedAdhesion_Brim  = 400,
         Print_BedAdhesion_Skirt = 401,
@@ -339,6 +341,10 @@ struct ConfigItemDef
     OptionGroup option_group = OptionGroup::Unknown;
     int order                = 0;
     std::string row_group;
+    // Settings pages and settings search skip this item; the override lists
+    // still show it, under its own category. For options that exist only to be
+    // overridden per object or per tool and have no meaningful global value.
+    bool override_only = false;
     std::string tooltip; // A tooltip text shown in the GUI.
     std::vector<std::string> units; // Text right from the input field.
     std::string cli; // Format of this parameter on a command line.

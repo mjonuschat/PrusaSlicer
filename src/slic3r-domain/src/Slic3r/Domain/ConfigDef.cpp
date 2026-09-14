@@ -110,6 +110,8 @@ std::string ConfigItemDef::translate_option_group(OptionGroup option_group)
         return L("Only one perimeter");
     case ConfigItemDef::OptionGroup::Print_LayerSurfaces_Ironing:
         return L("Ironing");
+    case ConfigItemDef::OptionGroup::Print_LayerSurfaces_Flow:
+        return L("Flow");
     case ConfigItemDef::OptionGroup::Print_WallsPerimeters_Perimeters:
         return L("Perimeters");
     case ConfigItemDef::OptionGroup::Print_WallsPerimeters_Seams:
@@ -128,6 +130,8 @@ std::string ConfigItemDef::translate_option_group(OptionGroup option_group)
         return L("Walls anchoring");
     case ConfigItemDef::OptionGroup::Print_Infill_Advanced:
         return L("Advanced");
+    case ConfigItemDef::OptionGroup::Print_Infill_FlowCompensation:
+        return L("Small area flow compensation");
     case ConfigItemDef::OptionGroup::Print_BedAdhesion_Brim:
         return L("Brim");
     case ConfigItemDef::OptionGroup::Print_BedAdhesion_Skirt:
