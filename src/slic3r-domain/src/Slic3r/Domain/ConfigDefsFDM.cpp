@@ -332,7 +332,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Bridge flow ratio");
     def->option_group = ConfigItemDef::OptionGroup::Print_Infill_Advanced;
     def->category = ConfigItemDef::Category::Print_Infill;
-    def->order = 3;
+    def->order = 6;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("This factor affects the amount of plastic for bridging. "
                    "You can decrease it slightly to pull the extrudates and prevent sagging, "
@@ -1567,7 +1567,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Fill angle");
     def->option_group = ConfigItemDef::OptionGroup::Print_Infill_Advanced;
     def->category = ConfigItemDef::Category::Print_Infill;
-    def->order = 4;
+    def->order = 3;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Default base angle for infill orientation. Cross-hatching will be applied to this. "
                    "Bridges will be infilled using the best direction Slic3r can detect, so this setting "
@@ -2864,7 +2864,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Only retract when crossing perimeters");
     def->option_group = ConfigItemDef::OptionGroup::Print_Infill_Advanced;
     def->category = ConfigItemDef::Category::Print_Infill;
-    def->order = 5;
+    def->order = 4;
     def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Disables retraction when the travel path does not exceed the upper layer's perimeters "
                    "(and thus any ooze will be probably invisible).");
@@ -3640,7 +3640,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Solid infill threshold area");
     def->option_group = ConfigItemDef::OptionGroup::Print_Infill_Advanced;
     def->category = ConfigItemDef::Category::Print_Infill;
-    def->order = 6;
+    def->order = 5;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Force solid infill for regions having a smaller area than the specified threshold.");
     def->units = {L("mm²")};
