@@ -3,6 +3,7 @@ import json
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -192,12 +193,13 @@ class StepInvalidationEmitTests(unittest.TestCase):
             text = (Path(out) / "libslic3r" / "BossStepInvalidations.cpp").read_text()
             self.assertIn('{"filament_max_speed", steps({propagate(psSkirtBrim), propagate(psWipeTower)})}', text)
 
-    def test_fill_feature_gates_boss_fill_pattern(self):
+    def test_fill_feature_owns_no_implied_key(self):
+        # Fill features append their pattern to the native fill_pattern, whose
+        # invalidation is upstream's, so they imply no BOSS-owned key.
         with tempfile.TemporaryDirectory() as src:
             fill = self._parse(src, "crosshatch", id=10001, key="crosshatch",
                                components={"libslic3r": {"capabilities": ["fill"], "sources": []}})
-            self.assertIn("boss_fill_pattern", gbf.boss_owned_keys([fill]))
-            self.assertNotIn("boss_fill_pattern", gbf.boss_owned_keys([]))
+            self.assertEqual(gbf.boss_owned_keys([fill]), gbf.boss_owned_keys([]))
 
     def test_config_option_keys_header_and_impl(self):
         with tempfile.TemporaryDirectory() as src, tempfile.TemporaryDirectory() as out:
@@ -210,9 +212,13 @@ class StepInvalidationEmitTests(unittest.TestCase):
             self.assertIn("boss_config_option_keys();", hdr)
 
     def test_registry_owned_key_in_manifest_is_rejected(self):
-        with tempfile.TemporaryDirectory() as src:
+        # No registry currently owns a key, so reserve one for the duration to
+        # keep the guard itself covered.
+        with tempfile.TemporaryDirectory() as src, \
+             unittest.mock.patch.object(
+                 gbf, "REGISTRY_OWNED_KEYS", {"boss_demo_key"}):
             m = self._parse(src, "alpha", config_options=[
-                {"key": "boss_fill_pattern", "invalidates": ["posPrepareInfill"]}])
+                {"key": "boss_demo_key", "invalidates": ["posInfill"]}])
             with self.assertRaises(gbf.ManifestError):
                 gbf.check_reserved_keys([m])
 

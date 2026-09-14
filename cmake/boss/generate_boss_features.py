@@ -594,12 +594,10 @@ STORAGE_KINDS = {
 ENUM_MEMBER_SUFFIX = "Feature"
 
 # Keys a foundation registry registers on its own, gated on the same predicate
-# as that registration. BossFillRegistry registers boss_fill_pattern only when
-# its pack is non-empty (`if constexpr (sizeof...(Features) == 0) return;`,
-# BossFillRegistry.hpp), so emit it only when the fill capability has >= 1 feature.
-REGISTRY_OWNED_INVALIDATIONS = {
-    "fill": {"key": "boss_fill_pattern", "invalidates": ["posPrepareInfill"]},
-}
+# as that registration. Empty since fill features stopped owning a key of their
+# own: they append their pattern to the native fill_pattern, whose invalidation
+# is upstream's, and a feature may not declare an upstream key.
+REGISTRY_OWNED_INVALIDATIONS: dict[str, dict] = {}
 
 
 def boss_owned_keys(manifests: list[Manifest]) -> list[str]:
