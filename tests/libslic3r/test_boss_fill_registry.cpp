@@ -11,9 +11,11 @@ TEST_CASE("BossFillRegistry<> (explicitly empty) registers no config option", "[
             Slic3r::Boss::BossFillRegistry<>::register_config(defs);
         }
     );
+    // An empty composition must leave fill_pattern exactly as upstream has it,
+    // so register_config() adds nothing at all rather than a no-choice option.
     const bool found = std::any_of(
         defs.defs().begin(), defs.defs().end(),
-        [](const Slic3r::Domain::ConfigItemDef &def) { return def.name == "boss_fill_pattern"; }
+        [](const Slic3r::Domain::ConfigItemDef &def) { return def.name == "fill_pattern"; }
     );
     REQUIRE_FALSE(found);
 }
