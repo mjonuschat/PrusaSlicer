@@ -4,9 +4,11 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "release"))
+import compose  # noqa: E402
 import publish  # noqa: E402
 
 
@@ -178,6 +180,70 @@ class RunPublishRealJjTests(unittest.TestCase):
             self.assertEqual(result, 0)
             self.assertEqual(len(list(Path(repo_tmp, ".worktrees").glob("*"))), 1)
 
+
+
+    def test_failed_push_leaves_no_chain_and_no_bookmark(self):
+        with tempfile.TemporaryDirectory() as repo_tmp, \
+             tempfile.TemporaryDirectory() as remote_tmp, \
+             tempfile.TemporaryDirectory() as manifest_tmp:
+            repo = self._make_repo_with_remote(repo_tmp, remote_tmp)
+            manifest_path = Path(manifest_tmp) / "manifest.json"
+            manifest_path.write_text(json.dumps({"excluded": []}), encoding="utf-8")
+
+            shutil.rmtree(remote_tmp)
+
+            run = publish.make_subprocess_runner()
+            result = publish.run_publish(
+                run, repo, manifest_path, "foundation", publish.resolve_version(None)
+            )
+
+            self.assertEqual(result, 1)
+            bookmarks = self._run(repo, "bookmark", "list")
+            self.assertNotIn("build/nightly", bookmarks)
+            orphaned = self._run(
+                repo, "log", "--no-graph", "-r", compose.ORPHANED_CHAINS, "-T", "commit_id"
+            ).strip()
+            self.assertEqual(orphaned, "")
+
+    def test_composition_conflict_keeps_the_workspace(self):
+        with tempfile.TemporaryDirectory() as repo_tmp, \
+             tempfile.TemporaryDirectory() as remote_tmp, \
+             tempfile.TemporaryDirectory() as manifest_tmp:
+            repo = self._make_repo_with_remote(repo_tmp, remote_tmp)
+            manifest_path = Path(manifest_tmp) / "manifest.json"
+            manifest_path.write_text(json.dumps({"excluded": []}), encoding="utf-8")
+
+            run = publish.make_subprocess_runner()
+            with mock.patch.object(compose, "run_compose", return_value=compose.ComposeResult.CONFLICT):
+                result = publish.run_publish(
+                    run, repo, manifest_path, "foundation", publish.resolve_version(None)
+                )
+
+            self.assertEqual(result, compose.ComposeResult.CONFLICT)
+            self.assertEqual(len(list(Path(repo_tmp, ".worktrees").glob("*"))), 1)
+
+
+class RunCleanupTests(unittest.TestCase):
+    def test_reports_when_nothing_is_orphaned(self):
+        self.assertEqual(publish.run_cleanup(Path("."), lambda args: ""), 0)
+
+    def test_abandons_what_it_finds(self):
+        calls = []
+
+        def fake_run(args):
+            calls.append(list(args))
+            if args[:2] == ["jj", "log"]:
+                return "abc123\n"
+            return ""
+
+        self.assertEqual(publish.run_cleanup(Path("."), fake_run), 0)
+        self.assertIn(["jj", "abandon", "-r", compose.ORPHANED_CHAINS], calls)
+
+    def test_reports_failure(self):
+        def fake_run(args):
+            raise compose.ComposeError("boom")
+
+        self.assertEqual(publish.run_cleanup(Path("."), fake_run), 1)
 
 if __name__ == "__main__":
     unittest.main()

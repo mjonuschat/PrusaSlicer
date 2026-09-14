@@ -13,6 +13,7 @@ import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass
+from enum import IntEnum
 from pathlib import Path
 from typing import Callable, Sequence
 
@@ -73,6 +74,38 @@ FEATURE_PREFIX = "feature-"
 
 class ComposeError(Exception):
     """Raised when composition cannot proceed."""
+
+
+class ConflictError(ComposeError):
+    """Raised when merging a branch leaves the workspace conflicted."""
+
+
+class ComposeResult(IntEnum):
+    OK = 0
+    ERROR = 1
+    CONFLICT = 2
+
+
+# Every merge in a composed chain holds a feature branch head as a parent, so a
+# chain that outlives its bookmark keeps those commits visible after the branch
+# is amended, and jj then reports the change as divergent.
+CHAIN_ROOTS = 'description(glob:"build/*: base*")'
+ORPHANED_CHAINS = f"({CHAIN_ROOTS}::) ~ ::bookmarks() ~ ::working_copies()"
+
+
+def orphaned_chain_commits(run: Runner) -> list[str]:
+    output = run(
+        ["jj", "log", "--no-graph", "-r", ORPHANED_CHAINS, "-T", 'commit_id.short() ++ "\\n"']
+    )
+    return [line.strip() for line in output.splitlines() if line.strip()]
+
+
+def prune_orphaned_chains(run: Runner) -> int:
+    """Abandons composed chains nothing points at. Returns the commit count."""
+    commits = orphaned_chain_commits(run)
+    if commits:
+        run(["jj", "abandon", "-r", ORPHANED_CHAINS])
+    return len(commits)
 
 
 @dataclass(frozen=True)
@@ -153,7 +186,7 @@ def compose_branches(
         run(["jj", "new", "@", branch])
         run(["jj", "describe", "-r", "@", "-m", f"{bookmark}: merge {branch}"])
         if is_conflicted(run):
-            raise ComposeError(
+            raise ConflictError(
                 f"composition conflict merging {branch!r}; "
                 "workspace left as-is for manual resolution"
             )
@@ -185,6 +218,10 @@ def run_compose(run: Runner, manifest_path: Path, base: str, version: str, repo:
         if not manifest_path.exists():
             raise ManifestError(f"manifest not found: {manifest_path}")
 
+        pruned = prune_orphaned_chains(run)
+        if pruned:
+            print(f"pruned {pruned} commit(s) from orphaned composed chains")
+
         excluded = load_manifest(manifest_path)
         all_branches = list_all_branches(run)
         branch_set = resolve_branch_set(all_branches, excluded)
@@ -204,10 +241,13 @@ def run_compose(run: Runner, manifest_path: Path, base: str, version: str, repo:
 
         print(f"composed {len(composed)} branch(es) onto {bookmark}")
         print(f"push with: jj git push --bookmark {bookmark}")
-        return 0
+        return ComposeResult.OK
+    except ConflictError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return ComposeResult.CONFLICT
     except (ManifestError, ComposeError, FileNotFoundError) as exc:
         print(f"error: {exc}", file=sys.stderr)
-        return 1
+        return ComposeResult.ERROR
 
 
 def main(argv: Sequence[str] | None = None) -> int:

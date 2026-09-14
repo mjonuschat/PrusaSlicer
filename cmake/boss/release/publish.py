@@ -47,6 +47,28 @@ def workspace_dir_for(repo: Path, version: str) -> Path:
     return repo / ".worktrees" / f"compose-{version}-{uuid.uuid4().hex[:8]}"
 
 
+def discard_chain(run: Runner, repo: Path, version: str, target: str) -> None:
+    """Drops the composed bookmark and the chain it named, pushed or not."""
+    run(["jj", "bookmark", "delete", f"build/{version}"], repo)
+    run(["jj", "abandon", "-r", f"::{target} ~ ::bookmarks()"], repo)
+
+
+def run_cleanup(repo: Path, compose_run: compose.Runner | None = None) -> int:
+    """Abandons composed chains left by an interrupted or hand-run compose."""
+    if compose_run is None:
+        compose_run = compose.make_subprocess_runner(repo)
+    try:
+        pruned = compose.prune_orphaned_chains(compose_run)
+    except compose.ComposeError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    print(
+        f"pruned {pruned} commit(s) from orphaned composed chains"
+        if pruned else "no orphaned composed chains"
+    )
+    return 0
+
+
 def run_publish(
     run: Runner,
     repo: Path,
@@ -69,24 +91,42 @@ def run_publish(
             workspace_run, manifest_path, base, version, workspace_dir
         )
         if result != 0:
+            if result == compose.ComposeResult.CONFLICT:
+                keep_workspace = True
             return result
 
         target = run(
             ["jj", "log", "--no-graph", "-r", f"build/{version}", "-T", "commit_id"], repo
         ).strip()
 
-        run(["jj", "git", "push", "--bookmark", f"build/{version}"], workspace_dir)
+        try:
+            run(["jj", "git", "push", "--bookmark", f"build/{version}"], workspace_dir)
+        except PublishError:
+            try:
+                discard_chain(run, repo, version, target)
+            except PublishError as cleanup_exc:
+                print(f"warning: {cleanup_exc}", file=sys.stderr)
+            else:
+                print(
+                    f"build/{version} was not pushed; its composed chain has "
+                    "been discarded, so re-run to try again",
+                    file=sys.stderr,
+                )
+            raise
         print(f"pushed build/{version}")
 
-        run(["jj", "bookmark", "delete", f"build/{version}"], repo)
-        run(["jj", "abandon", "-r", f"::{target} ~ ::bookmarks()"], repo)
+        discard_chain(run, repo, version, target)
         return 0
     except PublishError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
     finally:
         if not keep_workspace:
-            run(["jj", "workspace", "forget", workspace_dir.name], repo)
+            try:
+                run(["jj", "workspace", "forget", workspace_dir.name], repo)
+            except PublishError as exc:
+                # Never let teardown replace the error that got us here.
+                print(f"warning: {exc}", file=sys.stderr)
             shutil.rmtree(workspace_dir, ignore_errors=True)
 
 
@@ -111,9 +151,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--keep-workspace", action="store_true",
         help="don't remove the throwaway workspace afterward"
     )
+    parser.add_argument(
+        "--cleanup", action="store_true",
+        help="abandon orphaned composed chains and exit without composing"
+    )
     args = parser.parse_args(argv)
 
     run = make_subprocess_runner()
+    if args.cleanup:
+        return run_cleanup(args.repo)
     return run_publish(
         run, args.repo, args.manifest, args.base,
         resolve_version(args.release), args.keep_workspace,

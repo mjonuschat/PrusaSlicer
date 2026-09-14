@@ -138,6 +138,8 @@ class ResolveBranchSetTests(unittest.TestCase):
 class ListAllBranchesTests(unittest.TestCase):
     def test_parses_bugfix_and_feature_bookmarks(self):
         def fake_run(args):
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             self.assertEqual(args, ["jj", "bookmark", "list"])
             return (
                 "bugfix-wipe-zero: abc123 fix wipe\n"
@@ -151,12 +153,16 @@ class ListAllBranchesTests(unittest.TestCase):
 
     def test_ignores_non_bugfix_feature_bookmarks(self):
         def fake_run(args):
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             return "foundation: 111111 base\nboss: 222222 legacy\n"
 
         self.assertEqual(compose.list_all_branches(fake_run), [])
 
     def test_ignores_blank_lines(self):
         def fake_run(args):
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             return "\nfeature-a: 333333 msg\n\n"
 
         self.assertEqual(compose.list_all_branches(fake_run), ["feature-a"])
@@ -165,6 +171,8 @@ class ListAllBranchesTests(unittest.TestCase):
 class IsConflictedTests(unittest.TestCase):
     def test_true_output_means_conflicted(self):
         def fake_run(args):
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             self.assertEqual(
                 args, ["jj", "log", "--no-graph", "-r", "@", "-T", "conflict"]
             )
@@ -174,12 +182,16 @@ class IsConflictedTests(unittest.TestCase):
 
     def test_false_output_means_clean(self):
         def fake_run(args):
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             return "false\n"
 
         self.assertFalse(compose.is_conflicted(fake_run))
 
     def test_custom_revision_is_passed_through(self):
         def fake_run(args):
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             self.assertEqual(args[4], "some-bookmark")
             return "false\n"
 
@@ -187,6 +199,8 @@ class IsConflictedTests(unittest.TestCase):
 
     def test_unexpected_output_raises(self):
         def fake_run(args):
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             return "maybe\n"
 
         with self.assertRaises(compose.ComposeError):
@@ -196,6 +210,8 @@ class IsConflictedTests(unittest.TestCase):
 class BookmarkTargetTests(unittest.TestCase):
     def test_returns_commit_id_when_bookmark_exists(self):
         def fake_run(args):
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             self.assertEqual(
                 args, ["jj", "log", "--no-graph", "-r", "build/nightly", "-T", "commit_id"]
             )
@@ -205,6 +221,8 @@ class BookmarkTargetTests(unittest.TestCase):
 
     def test_returns_none_when_bookmark_does_not_exist(self):
         def fake_run(args):
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             raise compose.ComposeError("revision `build/nightly` doesn't exist")
 
         self.assertIsNone(compose.bookmark_target(fake_run, "build/nightly"))
@@ -237,6 +255,8 @@ class ComposeBranchesTests(unittest.TestCase):
 
         def fake_run(args):
             calls.append(list(args))
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             if args[:2] == ["jj", "log"]:
                 return "false\n"
             return ""
@@ -268,6 +288,8 @@ class ComposeBranchesTests(unittest.TestCase):
 
         def fake_run(args):
             calls.append(list(args))
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             if args[:2] == ["jj", "log"]:
                 # Conflict on the first branch merge (bugfix-a); bugfix-b
                 # and feature-a must never be attempted.
@@ -288,6 +310,8 @@ class ComposeBranchesTests(unittest.TestCase):
 
         def fake_run(args):
             calls.append(list(args))
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             return ""
 
         compose.compose_branches(
@@ -309,6 +333,8 @@ class ComposeBranchesTests(unittest.TestCase):
 
         def fake_run(args):
             calls.append(list(args))
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             if args[:2] == ["jj", "log"]:
                 return "false\n"
             return ""
@@ -331,6 +357,8 @@ class RunComposeTests(unittest.TestCase):
             if args == ["jj", "log", "--no-graph", "-r", "build/1.2.3", "-T", "commit_id"]:
                 raise compose.ComposeError("revision `build/1.2.3` doesn't exist")
             calls.append(list(args))
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             if args[:2] == ["jj", "bookmark"] and args[2] == "list":
                 return (
                     "bugfix-a: abc123 fix a\n"
@@ -351,6 +379,8 @@ class RunComposeTests(unittest.TestCase):
         self.assertEqual(
             calls,
             [
+                ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS,
+                 "-T", 'commit_id.short() ++ "\\n"'],
                 ["jj", "bookmark", "list"],
                 ["jj", "new", "foundation"],
                 ["jj", "describe", "-r", "@", "-m", "build/1.2.3: base"],
@@ -370,6 +400,8 @@ class RunComposeTests(unittest.TestCase):
 
         def fake_run(args):
             calls.append(list(args))
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             return ""
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -381,6 +413,8 @@ class RunComposeTests(unittest.TestCase):
 
     def test_stale_exclusion_returns_one_instead_of_raising(self):
         def fake_run(args):
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             if args[:2] == ["jj", "bookmark"]:
                 return "feature-a: abc123 add a\n"
             return ""
@@ -396,8 +430,10 @@ class RunComposeTests(unittest.TestCase):
 
         self.assertEqual(result, 1)
 
-    def test_composition_conflict_returns_one_instead_of_raising(self):
+    def test_composition_conflict_returns_its_own_exit_code(self):
         def fake_run(args):
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             if args[:2] == ["jj", "bookmark"]:
                 return "feature-a: abc123 add a\n"
             if args[:2] == ["jj", "log"]:
@@ -410,7 +446,7 @@ class RunComposeTests(unittest.TestCase):
 
             result = compose.run_compose(fake_run, manifest_path, "foundation", "1.2.3", Path(tmp))
 
-        self.assertEqual(result, 1)
+        self.assertEqual(result, compose.ComposeResult.CONFLICT)
 
     def test_empty_branch_set_still_describes_and_creates_bookmark(self):
         calls = []
@@ -419,6 +455,8 @@ class RunComposeTests(unittest.TestCase):
             if args == ["jj", "log", "--no-graph", "-r", "build/1.2.3", "-T", "commit_id"]:
                 raise compose.ComposeError("revision `build/1.2.3` doesn't exist")
             calls.append(list(args))
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             if args[:2] == ["jj", "bookmark"] and args[2] == "list":
                 return "foundation: 111111 base\n"
             return ""
@@ -433,6 +471,8 @@ class RunComposeTests(unittest.TestCase):
         self.assertEqual(
             calls,
             [
+                ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS,
+                 "-T", 'commit_id.short() ++ "\\n"'],
                 ["jj", "bookmark", "list"],
                 ["jj", "new", "foundation"],
                 ["jj", "describe", "-r", "@", "-m", "build/1.2.3: base"],
@@ -448,6 +488,8 @@ class RunComposeTests(unittest.TestCase):
             if args == ["jj", "log", "--no-graph", "-r", "build/1.2.3", "-T", "commit_id"]:
                 raise compose.ComposeError("revision `build/1.2.3` doesn't exist")
             calls.append(list(args))
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             if args[:2] == ["jj", "bookmark"] and args[2] == "list":
                 return "feature-a: abc123 add a\n"
             if args[:2] == ["jj", "log"]:
@@ -471,6 +513,8 @@ class RunComposeTests(unittest.TestCase):
 
         def fake_run(args):
             calls.append(list(args))
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             if args == ["jj", "log", "--no-graph", "-r", "build/1.2.3", "-T", "commit_id"]:
                 return "oldtarget123\n"
             if args[:2] == ["jj", "bookmark"] and args[2] == "list":
@@ -496,6 +540,8 @@ class RunComposeTests(unittest.TestCase):
 
     def test_boss_feature_drift_aborts_before_bookmark_creation(self):
         def fake_run(args):
+            if args[:5] == ["jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS]:
+                return ""
             if args[:2] == ["jj", "bookmark"] and args[2] == "list":
                 return ""
             return ""
@@ -696,6 +742,44 @@ class RunComposeRealJjTests(unittest.TestCase):
                     repo, "log", "--no-graph", "-r", "heads(all())", "-T", "commit_id ++ \"\\n\""
                 ).split()
                 self.assertNotIn(first_run_target, visible_heads)
+
+
+
+
+class PruneOrphanedChainsTests(unittest.TestCase):
+    PRUNE_LOG = [
+        "jj", "log", "--no-graph", "-r", compose.ORPHANED_CHAINS,
+        "-T", 'commit_id.short() ++ "\\n"',
+    ]
+
+    def test_no_orphans_issues_no_abandon(self):
+        calls = []
+
+        def fake_run(args):
+            calls.append(list(args))
+            return ""
+
+        self.assertEqual(compose.prune_orphaned_chains(fake_run), 0)
+        self.assertEqual(calls, [self.PRUNE_LOG])
+
+    def test_orphans_are_counted_and_abandoned(self):
+        calls = []
+
+        def fake_run(args):
+            calls.append(list(args))
+            if args[:2] == ["jj", "log"]:
+                return "abc123\ndef456\n"
+            return ""
+
+        self.assertEqual(compose.prune_orphaned_chains(fake_run), 2)
+        self.assertEqual(
+            calls,
+            [self.PRUNE_LOG, ["jj", "abandon", "-r", compose.ORPHANED_CHAINS]],
+        )
+
+    def test_revset_spares_bookmarked_chains_and_working_copies(self):
+        self.assertIn("~ ::bookmarks()", compose.ORPHANED_CHAINS)
+        self.assertIn("~ ::working_copies()", compose.ORPHANED_CHAINS)
 
 
 if __name__ == "__main__":
