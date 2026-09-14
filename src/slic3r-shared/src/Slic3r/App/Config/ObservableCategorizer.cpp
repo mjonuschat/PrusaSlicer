@@ -6,10 +6,7 @@ ObservableCategorizer::ObservableCategorizer()
 {
     set_filter_fn(
         [](const Biz::ConfigItemContext& data)
-        {
-            return data.config_item->def().category != Domain::ConfigItemDef::Category::Hidden
-                && !data.config_item->def().override_only;
-        }
+        { return data.config_item->def().shows_on_settings_page(); }
     );
     set_group_by_fn(
         [](const Biz::ConfigItemContext& data,

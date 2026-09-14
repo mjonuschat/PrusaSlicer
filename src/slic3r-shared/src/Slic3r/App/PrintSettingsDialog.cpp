@@ -70,10 +70,7 @@ PrintSettingsDialog::PrintSettingsDialog(
 
     m_tool_print_categorizer->set_filter_fn(
         [](const Biz::PrintToolItem& item)
-        {
-            return item.print_item->def().category != Domain::ConfigItemDef::Category::Hidden
-                && !item.print_item->def().override_only;
-        }
+        { return item.print_item->def().shows_on_settings_page(); }
     );
     m_tool_print_categorizer->set_group_by_fn(group_by_fn);
     m_tool_print_categorizer->set_sort_fn(

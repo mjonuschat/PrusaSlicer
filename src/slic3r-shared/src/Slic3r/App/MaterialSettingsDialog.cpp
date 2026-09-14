@@ -245,10 +245,7 @@ MaterialSettingsDialog::ConfigTab::ConfigTab(
 
     categorizer->set_filter_fn(
         [](const Biz::OverrideItem& item)
-        {
-            return item.config_item->def().category != Domain::ConfigItemDef::Category::Hidden
-                && !item.config_item->def().override_only;
-        }
+        { return item.config_item->def().shows_on_settings_page(); }
     );
     categorizer->set_group_by_fn(group_by_fn);
     categorizer->set_sort_fn(

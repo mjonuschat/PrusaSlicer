@@ -341,10 +341,13 @@ struct ConfigItemDef
     OptionGroup option_group = OptionGroup::Unknown;
     int order                = 0;
     std::string row_group;
-    // Settings pages and settings search skip this item; the override lists
-    // still show it, under its own category. For options that exist only to be
-    // overridden per object or per tool and have no meaningful global value.
+    // No settings page shows this; the override lists are the only way to set it.
     bool override_only = false;
+
+    bool shows_on_settings_page() const
+    {
+        return category != Category::Hidden && !override_only;
+    }
     std::string tooltip; // A tooltip text shown in the GUI.
     std::vector<std::string> units; // Text right from the input field.
     std::string cli; // Format of this parameter on a command line.
