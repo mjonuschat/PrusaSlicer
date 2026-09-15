@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <numeric>
+#include <set>
 #include <sstream>
 
 #include "libslic3r/ClipperUtils.hpp"
@@ -418,6 +419,48 @@ SCENARIO("Perimeters", "[Perimeters]")
                 const auto num_perimeters = config.print.items.opt("perimeters").get<int>();
                 size_t extra_perimeters = std::count_if(perimeters.begin(), perimeters.end(), [num_perimeters](const std::pair<const coord_t, int> &v){ return (v.second % num_perimeters) > 0; });
                 REQUIRE(extra_perimeters == 0);
+            }
+        }
+    }
+}
+
+SCENARIO("Small perimeter speed resolves against the correct base speed", "[Perimeters]")
+{
+    GIVEN("a small external perimeter with distinct perimeter and external perimeter speeds") {
+        WHEN("small_perimeter_speed is a percentage") {
+            TestConfig config;
+            config.print.items.opt("skirts").set(0);
+            config.print.items.opt("perimeters").set(1);
+            config.filament.at(0).items.opt("cooling").set(false);
+            config.print.items.opt("first_layer_speed").set(FloatOrPercentage{Percentage{100}});
+            config.print.items.opt("perimeter_speed").set(60.0);
+            config.print.items.opt("external_perimeter_speed").set(FloatOrPercentage{30.0});
+            config.print.items.opt("small_perimeter_speed").set(FloatOrPercentage{Percentage{80}});
+
+            const double expected_speed = 0.8 * 30.0 * 60.;
+            const double wrong_speed    = 0.8 * 60.0 * 60.;
+
+            std::string gcode = Slic3r::Test::slice(
+                { Slic3r::Test::mesh(Slic3r::Test::TestMesh::cube_20x20x20, Vec3d(0., 0., 0.), 0.2) },
+                config
+            );
+
+            bool found_expected = false;
+            bool found_wrong    = false;
+            GCodeReader parser;
+            parser.parse_buffer(gcode, [&found_expected, &found_wrong, expected_speed, wrong_speed](GCodeReader &self, const GCodeReader::GCodeLine &line)
+            {
+                if (line.extruding(self) && line.dist_XY(self) > 0) {
+                    if (is_approx<double>(line.new_F(self), expected_speed))
+                        found_expected = true;
+                    if (is_approx<double>(line.new_F(self), wrong_speed))
+                        found_wrong = true;
+                }
+            });
+
+            THEN("the small perimeter speed is resolved against external_perimeter_speed") {
+                REQUIRE(found_expected);
+                REQUIRE_FALSE(found_wrong);
             }
         }
     }

@@ -466,6 +466,7 @@ const std::map<std::string, std::vector<Step>> upstream_invalidated_by{
     {"slice_closing_radius", steps({propagate(posSlice)})},
     {"slicing_mode", steps({propagate(posSlice)})},
     {"slowdown_below_layer_time", steps({propagate(psGCodeExport)})},
+    {"small_external_perimeter_speed", steps({propagate(psGCodeExport)})},
     {"small_perimeter_speed", steps({propagate(psGCodeExport)})},
     {"solid_infill_acceleration", steps({propagate(psGCodeExport)})},
     {"solid_infill_below_area", steps({propagate(posPrepareInfill)})},
