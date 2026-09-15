@@ -14,6 +14,7 @@ void NipTuckSeamFeature::register_config(Domain::ConfigDefinitions &defs)
 
     ConfigItemDef *type = defs.add("seam_type", typeid(EnumWrapper));
     type->location     = FDMConfigLocation::Print;
+    type->overrides_in = std::set<ConfigLocation>{FDMConfigLocation::Object};
     type->category     = ConfigItemDef::Category::Print_WallsPerimeters;
     type->option_group = ConfigItemDef::OptionGroup::Print_WallsPerimeters_Seams;
     type->order        = 11;
@@ -39,6 +40,7 @@ void NipTuckSeamFeature::register_config(Domain::ConfigDefinitions &defs)
 
     ConfigItemDef *width = defs.add("seam_notch_width", typeid(double));
     width->location     = FDMConfigLocation::Print;
+    width->overrides_in = std::set<ConfigLocation>{FDMConfigLocation::Object};
     width->category     = ConfigItemDef::Category::Print_WallsPerimeters;
     width->option_group = ConfigItemDef::OptionGroup::Print_WallsPerimeters_Seams;
     width->order        = 12;
@@ -55,6 +57,7 @@ void NipTuckSeamFeature::register_config(Domain::ConfigDefinitions &defs)
 
     ConfigItemDef *angle = defs.add("seam_notch_angle", typeid(double));
     angle->location     = FDMConfigLocation::Print;
+    angle->overrides_in = std::set<ConfigLocation>{FDMConfigLocation::Object};
     angle->category     = ConfigItemDef::Category::Print_WallsPerimeters;
     angle->option_group = ConfigItemDef::OptionGroup::Print_WallsPerimeters_Seams;
     angle->order        = 13;
