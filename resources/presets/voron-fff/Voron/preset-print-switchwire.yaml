@@ -1,0 +1,905 @@
+kind: print
+id: switchwire
+variants:
+- condition: printer.model=="switchwire" and tool.nozzle_diameter == 0.4 and tool.nozzle_flow_class
+    == "SF"
+  values:
+    deretract_speed: 35
+    retract_before_travel: 2.0
+    retract_before_wipe: 80%
+    retract_layer_change: 0
+    retract_length: 0.5
+    retract_length_toolchange: 0
+    retract_lift: 0.2
+    retract_lift_above: 0.25
+    retract_lift_below: 0
+    retract_restart_extra: 0
+    retract_restart_extra_toolchange: 0
+    retract_speed: 35
+  variants:
+  - name: 0.10mm Detail 0.4 @VORON Switchwire
+    values:
+      bridge_acceleration: 700
+      bridge_speed: 20
+      default_acceleration: 1000
+      external_perimeter_acceleration: 500
+      external_perimeter_extrusion_width: 0.4
+      external_perimeter_speed: 25
+      first_layer_acceleration: 600
+      first_layer_infill_speed: 0
+      first_layer_speed: 20
+      gap_fill_speed: 40
+      gcode_resolution: 0.006
+      infill_acceleration: 1500
+      infill_extrusion_width: 0.4
+      infill_speed: 80
+      max_print_speed: 200
+      over_bridge_speed: 0
+      overhang_speed_0: 15
+      overhang_speed_1: 15
+      overhang_speed_2: 20
+      overhang_speed_3: 25
+      perimeter_acceleration: 700
+      perimeter_extrusion_width: 0.4
+      perimeter_speed: 45
+      skirt_distance: 2
+      skirt_height: 3
+      small_perimeter_speed: 25
+      solid_infill_acceleration: 1250
+      solid_infill_extrusion_width: 0.4
+      solid_infill_speed: 80
+      support_material_extrusion_width: 0.35
+      support_material_interface_pattern: rectilinear
+      support_material_interface_speed: 85%
+      support_material_speed: 40
+      support_material_threshold: 45
+      support_tree_angle_slow: 30
+      support_tree_branch_diameter_angle: 3
+      support_tree_branch_diameter_double_wall: 3
+      top_solid_infill_acceleration: 800
+      top_solid_infill_speed: 35
+      travel_acceleration: 0
+      travel_short_distance_acceleration: 0
+      travel_speed: 200
+      wipe_tower_cone_angle: 0
+      wipe_tower_extra_flow: 100%
+      wipe_tower_extra_spacing: 100%
+      layer_height: 0.1
+    inherits:
+    - corexy-detail-0.10
+    - corexz-04
+  - name: 0.15mm Speed 0.4 @VORON Switchwire
+    values:
+      default_acceleration: 3000
+      external_perimeter_acceleration: 2500
+      infill_acceleration: 4000
+      perimeter_acceleration: 3500
+      solid_infill_acceleration: 3500
+      top_solid_infill_acceleration: 1500
+      travel_acceleration: 4000
+      first_layer_speed: 40
+      bridge_speed: 45
+      support_material_interface_speed: 50
+      max_print_speed: 200
+      travel_speed: 300
+      layer_height: 0.15
+    inherits:
+    - corexy-speed-0.15-04
+    - corexz-04
+  - name: 0.20mm Speed 0.4 @VORON Switchwire
+    values:
+      layer_height: 0.2
+    inherits:
+    - corexy-speed-0.20-04
+    - corexz-04
+  - name: 0.15mm Structural 0.4 @VORON Switchwire
+    values:
+      default_acceleration: 2500
+      external_perimeter_acceleration: 1500
+      perimeter_acceleration: 2500
+      solid_infill_acceleration: 3000
+      top_solid_infill_acceleration: 1200
+      bridge_speed: 45
+      gap_fill_speed: 60
+      external_perimeter_speed: 45
+      infill_speed: 110
+      perimeter_speed: 80
+      small_perimeter_speed: 45
+      support_material_interface_speed: 50
+      top_solid_infill_speed: 80
+      layer_height: 0.15
+    inherits:
+    - corexy-structural-0.15-04
+    - corexz-04
+  - name: 0.20mm Structural 0.4 @VORON Switchwire
+    values:
+      default_acceleration: 2500
+      external_perimeter_acceleration: 1500
+      perimeter_acceleration: 2500
+      solid_infill_acceleration: 3000
+      top_solid_infill_acceleration: 1200
+      external_perimeter_speed: 45
+      gap_fill_speed: 60
+      infill_speed: 120
+      perimeter_speed: 80
+      small_perimeter_speed: 45
+      support_material_interface_speed: 50
+      top_solid_infill_speed: 80
+      layer_height: 0.2
+    inherits:
+    - corexy-structural-0.20-04
+    - corexz-04
+  - name: 0.20mm VORON Printed Parts 0.4 @VORON Switchwire
+    values:
+      layer_height: 0.2
+    inherits:
+    - corexz-structural-0.20-04
+    - voron-printed-parts
+- condition: printer.model=="switchwire" and tool.nozzle_diameter == 0.25 and tool.nozzle_flow_class
+    == "SF"
+  values:
+    deretract_speed: 35
+    retract_before_travel: 2.0
+    retract_before_wipe: 80%
+    retract_layer_change: 0
+    retract_length: 0.5
+    retract_length_toolchange: 0
+    retract_lift: 0.15
+    retract_lift_above: 0.25
+    retract_lift_below: 0
+    retract_restart_extra: 0
+    retract_restart_extra_toolchange: 0
+    retract_speed: 35
+  variants:
+  - name: 0.05mm Detail 0.25 @VORON Switchwire
+    values:
+      layer_height: 0.05
+    inherits:
+    - corexy-detail-0.05
+    - corexz-025
+  - name: 0.07mm Detail 0.25 @VORON Switchwire
+    values:
+      layer_height: 0.07
+    inherits:
+    - corexy-detail-0.07
+    - corexz-025
+  - name: 0.12mm Speed 0.25 @VORON Switchwire
+    values:
+      default_acceleration: 2000
+      external_perimeter_speed: 120
+      gap_fill_speed: 50
+      small_perimeter_speed: 120
+      perimeter_speed: 120
+      layer_height: 0.12
+    inherits:
+    - corexy-speed-0.12
+    - corexz-025
+  - name: 0.15mm Speed 0.25 @VORON Switchwire
+    values:
+      default_acceleration: 2000
+      external_perimeter_speed: 120
+      gap_fill_speed: 50
+      perimeter_speed: 120
+      small_perimeter_speed: 120
+      layer_height: 0.15
+    inherits:
+    - corexy-speed-0.15-025
+    - corexz-025
+  - name: 0.12mm Structural 0.25 @VORON Switchwire
+    values:
+      default_acceleration: 2000
+      gap_fill_speed: 50
+      layer_height: 0.12
+    inherits:
+    - corexy-structural-0.12-025
+    - corexz-025
+  - name: 0.15mm Structural 0.25 @VORON Switchwire
+    values:
+      default_acceleration: 2000
+      gap_fill_speed: 50
+      layer_height: 0.15
+    inherits:
+    - corexy-structural-0.15-025
+    - corexz-025
+- condition: printer.model=="switchwire" and tool.nozzle_diameter == 0.3 and tool.nozzle_flow_class
+    == "SF"
+  values:
+    deretract_speed: 35
+    retract_before_travel: 2.0
+    retract_before_wipe: 80%
+    retract_layer_change: 0
+    retract_length: 0.5
+    retract_length_toolchange: 0
+    retract_lift: 0.2
+    retract_lift_above: 0.25
+    retract_lift_below: 0
+    retract_restart_extra: 0
+    retract_restart_extra_toolchange: 0
+    retract_speed: 35
+  variants:
+  - name: 0.16mm Speed 0.3 @VORON Switchwire
+    values:
+      external_perimeter_acceleration: 2500
+      perimeter_acceleration: 2500
+      solid_infill_acceleration: 3000
+      external_perimeter_speed: 120
+      perimeter_speed: 140
+      small_perimeter_speed: 120
+      support_material_speed: 100
+      layer_height: 0.16
+    inherits:
+    - corexy-speed-0.16
+    - corexz-03
+  - name: 0.20mm Speed 0.3 @VORON Switchwire
+    values:
+      external_perimeter_acceleration: 2500
+      perimeter_acceleration: 2500
+      solid_infill_acceleration: 3000
+      external_perimeter_speed: 120
+      perimeter_speed: 140
+      small_perimeter_speed: 120
+      support_material_speed: 100
+      layer_height: 0.2
+    inherits:
+    - corexy-speed-0.20-03
+    - corexz-03
+  - name: 0.12mm Structural 0.3 @VORON Switchwire
+    values:
+      default_acceleration: 1500
+      external_perimeter_acceleration: 1200
+      solid_infill_acceleration: 2500
+      perimeter_acceleration: 1500
+      infill_acceleration: 3000
+      external_perimeter_speed: 40
+      small_perimeter_speed: 40
+      support_material_interface_speed: 75%
+      layer_height: 0.12
+    inherits:
+    - corexy-structural-0.12-03
+    - corexz-03
+  - name: 0.16mm Structural 0.3 @VORON Switchwire
+    values:
+      support_material_interface_speed: 75%
+      layer_height: 0.16
+    inherits:
+    - corexy-structural-0.16
+    - corexz-03
+  - name: 0.20mm Structural 0.3 @VORON Switchwire
+    values:
+      support_material_interface_speed: 75%
+      layer_height: 0.2
+    inherits:
+    - corexy-structural-0.20-03
+    - corexz-03
+- condition: printer.model=="switchwire" and tool.nozzle_diameter == 0.5 and tool.nozzle_flow_class
+    == "SF"
+  values:
+    deretract_speed: 35
+    retract_before_travel: 2.0
+    retract_before_wipe: 80%
+    retract_layer_change: 0
+    retract_length: 0.5
+    retract_length_toolchange: 0
+    retract_lift: 0.2
+    retract_lift_above: 0.25
+    retract_lift_below: 0
+    retract_restart_extra: 0
+    retract_restart_extra_toolchange: 0
+    retract_speed: 35
+  variants:
+  - name: 0.20mm Speed 0.5 @VORON Switchwire
+    values:
+      default_acceleration: 2500
+      external_perimeter_acceleration: 2500
+      infill_acceleration: 4000
+      perimeter_acceleration: 3500
+      solid_infill_acceleration: 3000
+      top_solid_infill_acceleration: 1000
+      travel_acceleration: 4000
+      layer_height: 0.2
+    inherits:
+    - corexy-speed-0.20-05
+    - corexz-05
+  - name: 0.25mm Speed 0.5 @VORON Switchwire
+    values:
+      default_acceleration: 2500
+      external_perimeter_acceleration: 2500
+      infill_acceleration: 4000
+      perimeter_acceleration: 3500
+      solid_infill_acceleration: 3000
+      top_solid_infill_acceleration: 1000
+      travel_acceleration: 4000
+      layer_height: 0.25
+    inherits:
+    - corexy-speed-0.25-05
+    - corexz-05
+  - name: 0.10mm Structural 0.5 @VORON Switchwire
+    values:
+      default_acceleration: 2000
+      travel_acceleration: 4000
+      external_perimeter_speed: 40
+      small_perimeter_speed: 40
+      layer_height: 0.1
+    inherits:
+    - corexy-structural-0.10
+    - corexz-05
+  - name: 0.15mm Structural 0.5 @VORON Switchwire
+    values:
+      default_acceleration: 2000
+      infill_acceleration: 4000
+      perimeter_acceleration: 2000
+      solid_infill_acceleration: 2500
+      top_solid_infill_acceleration: 1200
+      travel_acceleration: 4000
+      external_perimeter_speed: 45
+      perimeter_speed: 80
+      small_perimeter_speed: 45
+      layer_height: 0.15
+    inherits:
+    - corexy-structural-0.15-05
+    - corexz-05
+  - name: 0.20mm Structural 0.5 @VORON Switchwire
+    values:
+      default_acceleration: 2500
+      infill_acceleration: 4000
+      perimeter_acceleration: 2000
+      solid_infill_acceleration: 2500
+      top_solid_infill_acceleration: 1000
+      travel_acceleration: 4000
+      external_perimeter_speed: 45
+      perimeter_speed: 80
+      small_perimeter_speed: 45
+      layer_height: 0.2
+    inherits:
+    - corexy-structural-0.20-05
+    - corexz-05
+  - name: 0.25mm Structural 0.5 @VORON Switchwire
+    values:
+      default_acceleration: 2500
+      infill_acceleration: 4000
+      perimeter_acceleration: 2000
+      solid_infill_acceleration: 2500
+      top_solid_infill_acceleration: 1000
+      travel_acceleration: 4000
+      external_perimeter_speed: 45
+      perimeter_speed: 80
+      small_perimeter_speed: 45
+      layer_height: 0.25
+    inherits:
+    - corexy-structural-0.25-05
+    - corexz-05
+- condition: printer.model=="switchwire" and tool.nozzle_diameter == 0.6 and tool.nozzle_flow_class
+    == "SF"
+  values:
+    deretract_speed: 35
+    retract_before_travel: 2.0
+    retract_before_wipe: 80%
+    retract_layer_change: 0
+    retract_length: 0.5
+    retract_length_toolchange: 0
+    retract_lift: 0.2
+    retract_lift_above: 0.25
+    retract_lift_below: 0
+    retract_restart_extra: 0
+    retract_restart_extra_toolchange: 0
+    retract_speed: 35
+  variants:
+  - name: 0.20mm Speed 0.6 @VORON Switchwire
+    values:
+      external_perimeter_acceleration: 2500
+      perimeter_acceleration: 3000
+      solid_infill_acceleration: 3000
+      external_perimeter_speed: 125
+      perimeter_speed: 125
+      small_perimeter_speed: 125
+      overhang_speed_2: 40
+      overhang_speed_3: 70%
+      layer_height: 0.2
+    inherits:
+    - corexy-speed-0.20-06
+    - corexz-06
+  - name: 0.25mm Speed 0.6 @VORON Switchwire
+    values:
+      external_perimeter_acceleration: 2000
+      perimeter_acceleration: 3000
+      solid_infill_acceleration: 3000
+      external_perimeter_speed: 80
+      gap_fill_speed: 70
+      perimeter_speed: 90
+      small_perimeter_speed: 80
+      overhang_speed_2: 40
+      overhang_speed_3: 70%
+      layer_height: 0.25
+    inherits:
+    - corexy-speed-0.25-06
+    - corexz-06
+  - name: 0.32mm Speed 0.6 @VORON Switchwire
+    values:
+      external_perimeter_acceleration: 2000
+      perimeter_acceleration: 2500
+      solid_infill_acceleration: 3000
+      external_perimeter_speed: 70
+      gap_fill_speed: 60
+      small_perimeter_speed: 70
+      overhang_speed_2: 40
+      layer_height: 0.32
+    inherits:
+    - corexy-speed-0.32-06
+    - corexz-06
+  - name: 0.15mm Structural 0.6 @VORON Switchwire
+    values:
+      overhang_speed_2: 35
+      overhang_speed_3: 80%
+      layer_height: 0.15
+    inherits:
+    - corexy-structural-0.15-06
+    - corexz-06
+  - name: 0.20mm Structural 0.6 @VORON Switchwire
+    values:
+      perimeter_acceleration: 2000
+      perimeter_speed: 80
+      overhang_speed_2: 35
+      layer_height: 0.2
+    inherits:
+    - corexy-structural-0.20-06
+    - corexz-06
+  - name: 0.25mm Structural 0.6 @VORON Switchwire
+    values:
+      gap_fill_speed: 70
+      perimeter_speed: 80
+      overhang_speed_2: 40
+      solid_infill_acceleration: 3000
+      layer_height: 0.25
+    inherits:
+    - corexy-structural-0.25-06
+    - corexz-06
+  - name: 0.32mm Structural 0.6 @VORON Switchwire
+    values:
+      gap_fill_speed: 60
+      overhang_speed_2: 40
+      perimeter_acceleration: 2000
+      solid_infill_acceleration: 3000
+      layer_height: 0.32
+    inherits:
+    - corexy-structural-0.32-06
+    - corexz-06
+- condition: printer.model=="switchwire" and tool.nozzle_diameter == 0.8 and tool.nozzle_flow_class
+    == "SF"
+  values:
+    deretract_speed: 35
+    retract_before_travel: 2.0
+    retract_before_wipe: 50%
+    retract_layer_change: 0
+    retract_length: 0.5
+    retract_length_toolchange: 0
+    retract_lift: 0.25
+    retract_lift_above: 0.25
+    retract_lift_below: 0
+    retract_restart_extra: 0
+    retract_restart_extra_toolchange: 0
+    retract_speed: 35
+  variants:
+  - name: 0.30mm Detail 0.8 @VORON Switchwire
+    values:
+      gap_fill_speed: 40
+      layer_height: 0.3
+    inherits:
+    - corexy-detail-0.30
+    - corexz-08
+  - name: 0.55mm Draft 0.8 @VORON Switchwire
+    values:
+      perimeter_speed: 40
+      layer_height: 0.55
+    inherits:
+    - corexy-draft-0.55
+    - corexz-08
+  - name: 0.40mm Speed 0.8 @VORON Switchwire
+    values:
+      layer_height: 0.4
+    inherits:
+    - corexy-speed-0.40-08
+    - corexz-08
+- condition: printer.model=="switchwire" and tool.nozzle_diameter == 0.4 and tool.nozzle_flow_class
+    == "HF"
+  values:
+    deretract_speed: 35
+    retract_before_travel: 2.0
+    retract_before_wipe: 80%
+    retract_layer_change: 0
+    retract_length: 0.5
+    retract_length_toolchange: 0
+    retract_lift: 0.2
+    retract_lift_above: 0.25
+    retract_lift_below: 0
+    retract_restart_extra: 0
+    retract_restart_extra_toolchange: 0
+    retract_speed: 35
+  variants:
+  - name: 0.28mm Draft 0.4-hf @VORON Switchwire
+    values:
+      external_perimeter_speed: 180
+      perimeter_speed: 200
+      small_perimeter_speed: 180
+      top_solid_infill_acceleration: 2000
+      support_material_spacing: 2
+      layer_height: 0.28
+    inherits:
+    - corexy-draft-0.28
+    - corexz-04
+  - name: 0.15mm Speed 0.4-hf @VORON Switchwire
+    values:
+      default_acceleration: 3000
+      external_perimeter_acceleration: 2500
+      infill_acceleration: 4000
+      perimeter_acceleration: 3500
+      solid_infill_acceleration: 3500
+      top_solid_infill_acceleration: 2000
+      travel_acceleration: 4000
+      first_layer_speed: 40
+      bridge_speed: 45
+      support_material_interface_speed: 50
+      max_print_speed: 250
+      travel_speed: 300
+      external_perimeter_speed: 200
+      infill_speed: 250
+      over_bridge_speed: 35%
+      overhang_speed_3: 70%
+      perimeter_speed: 250
+      solid_infill_speed: 250
+      layer_height: 0.15
+    inherits:
+    - corexy-speed-0.15-04
+    - corexz-04
+  - name: 0.20mm Speed 0.4-hf @VORON Switchwire
+    values:
+      external_perimeter_speed: 200
+      infill_speed: 250
+      max_print_speed: 250
+      over_bridge_speed: 35%
+      overhang_speed_3: 70%
+      perimeter_speed: 250
+      solid_infill_speed: 250
+      top_solid_infill_acceleration: 2000
+      layer_height: 0.2
+    inherits:
+    - corexy-speed-0.20-04
+    - corexz-04
+  - name: 0.25mm Speed 0.4-hf @VORON Switchwire
+    values:
+      external_perimeter_speed: 200
+      infill_speed: 240
+      perimeter_speed: 220
+      max_print_speed: 250
+      top_solid_infill_acceleration: 2000
+      layer_height: 0.25
+    inherits:
+    - corexy-speed-0.25-04
+    - corexz-04
+  - name: 0.25mm Structural 0.4-hf @VORON Switchwire
+    values:
+      default_acceleration: 2500
+      external_perimeter_acceleration: 1500
+      perimeter_acceleration: 2500
+      solid_infill_acceleration: 3000
+      top_solid_infill_acceleration: 1200
+      external_perimeter_speed: 45
+      gap_fill_speed: 60
+      infill_speed: 120
+      perimeter_speed: 80
+      small_perimeter_speed: 45
+      support_material_interface_speed: 50
+      top_solid_infill_speed: 80
+      layer_height: 0.25
+    inherits:
+    - corexy-structural-0.25-04
+    - corexz-04
+  - name: 0.20mm VORON Printed Parts 0.4-hf @VORON Switchwire
+    values:
+      bridge_speed: 70
+      default_acceleration: 3000
+      external_perimeter_acceleration: 2500
+      external_perimeter_speed: 200
+      first_layer_infill_speed: 150
+      first_layer_speed: 75
+      gap_fill_speed: 170
+      infill_acceleration: 5000
+      infill_speed: 240
+      max_print_speed: 300
+      overhang_speed_3: 70%
+      perimeter_acceleration: 3000
+      perimeter_speed: 220
+      small_perimeter_speed: 170
+      solid_infill_acceleration: 5000
+      solid_infill_speed: 240
+      support_material_interface_speed: 100
+      support_material_speed: 200
+      top_solid_infill_acceleration: 2000
+      top_solid_infill_speed: 125
+      travel_acceleration: 7000
+      travel_speed: 350
+      layer_height: 0.2
+    inherits:
+    - corexz-structural-0.20-04
+    - voron-printed-parts
+- condition: printer.model=="switchwire" and tool.nozzle_diameter == 0.5 and tool.nozzle_flow_class
+    == "HF"
+  values:
+    deretract_speed: 35
+    retract_before_travel: 2.0
+    retract_before_wipe: 80%
+    retract_layer_change: 0
+    retract_length: 0.5
+    retract_length_toolchange: 0
+    retract_lift: 0.2
+    retract_lift_above: 0.25
+    retract_lift_below: 0
+    retract_restart_extra: 0
+    retract_restart_extra_toolchange: 0
+    retract_speed: 35
+  variants:
+  - name: 0.20mm Speed 0.5-hf @VORON Switchwire
+    values:
+      default_acceleration: 2500
+      external_perimeter_acceleration: 4000
+      infill_acceleration: 4000
+      perimeter_acceleration: 4000
+      solid_infill_acceleration: 3000
+      top_solid_infill_acceleration: 2000
+      travel_acceleration: 4000
+      bottom_solid_layers: 3
+      external_perimeter_speed: 200
+      infill_speed: 220
+      over_bridge_speed: 40%
+      perimeter_speed: 200
+      small_perimeter_speed: 170
+      solid_infill_speed: 220
+      layer_height: 0.2
+    inherits:
+    - corexy-speed-0.20-05
+    - corexz-05
+  - name: 0.25mm Speed 0.5-hf @VORON Switchwire
+    values:
+      default_acceleration: 2500
+      external_perimeter_acceleration: 4000
+      infill_acceleration: 4000
+      perimeter_acceleration: 4000
+      solid_infill_acceleration: 3000
+      top_solid_infill_acceleration: 2000
+      travel_acceleration: 4000
+      external_perimeter_speed: 200
+      over_bridge_speed: 40%
+      perimeter_speed: 200
+      small_perimeter_speed: 170
+      solid_infill_speed: 200
+      layer_height: 0.25
+    inherits:
+    - corexy-speed-0.25-05
+    - corexz-05
+  - name: 0.32mm Speed 0.5-hf @VORON Switchwire
+    values:
+      default_acceleration: 2500
+      external_perimeter_acceleration: 4000
+      infill_acceleration: 4000
+      perimeter_acceleration: 4000
+      solid_infill_acceleration: 3000
+      travel_acceleration: 4000
+      support_material_interface_speed: 75%
+      layer_height: 0.32
+    inherits:
+    - corexy-speed-0.32-05
+    - corexz-05
+  - name: 0.32mm Structural 0.5-hf @VORON Switchwire
+    values:
+      default_acceleration: 2500
+      infill_acceleration: 4000
+      perimeter_acceleration: 2000
+      solid_infill_acceleration: 2500
+      top_solid_infill_acceleration: 1000
+      travel_acceleration: 4000
+      external_perimeter_speed: 45
+      perimeter_speed: 80
+      small_perimeter_speed: 45
+      support_material_interface_speed: 75%
+      support_material_speed: 80
+      layer_height: 0.32
+    inherits:
+    - corexy-structural-0.32-05
+    - corexz-05
+- condition: printer.model=="switchwire" and tool.nozzle_diameter == 0.6 and tool.nozzle_flow_class
+    == "HF"
+  values:
+    deretract_speed: 35
+    retract_before_travel: 2.0
+    retract_before_wipe: 80%
+    retract_layer_change: 0
+    retract_length: 0.5
+    retract_length_toolchange: 0
+    retract_lift: 0.2
+    retract_lift_above: 0.25
+    retract_lift_below: 0
+    retract_restart_extra: 0
+    retract_restart_extra_toolchange: 0
+    retract_speed: 35
+  variants:
+  - name: 0.20mm Speed 0.6-hf @VORON Switchwire
+    values:
+      external_perimeter_acceleration: 4000
+      perimeter_acceleration: 4000
+      solid_infill_acceleration: 3000
+      external_perimeter_speed: 200
+      perimeter_speed: 200
+      small_perimeter_speed: 170
+      overhang_speed_2: 40
+      overhang_speed_3: 70%
+      bottom_solid_layers: 3
+      infill_speed: 200
+      solid_infill_speed: 200
+      support_material_interface_speed: 50%
+      support_material_speed: 110
+      layer_height: 0.2
+    inherits:
+    - corexy-speed-0.20-06
+    - corexz-06
+  - name: 0.25mm Speed 0.6-hf @VORON Switchwire
+    values:
+      external_perimeter_acceleration: 4000
+      perimeter_acceleration: 4000
+      solid_infill_acceleration: 3000
+      external_perimeter_speed: 180
+      gap_fill_speed: 70
+      perimeter_speed: 180
+      small_perimeter_speed: 170
+      overhang_speed_2: 40
+      overhang_speed_3: 70%
+      infill_speed: 190
+      solid_infill_speed: 190
+      support_material_interface_speed: 50%
+      support_material_speed: 110
+      top_solid_infill_acceleration: 2000
+      layer_height: 0.25
+    inherits:
+    - corexy-speed-0.25-06
+    - corexz-06
+  - name: 0.32mm Speed 0.6-hf @VORON Switchwire
+    values:
+      external_perimeter_acceleration: 4000
+      perimeter_acceleration: 4000
+      solid_infill_acceleration: 3000
+      external_perimeter_speed: 145
+      gap_fill_speed: 60
+      small_perimeter_speed: 145
+      overhang_speed_2: 40
+      infill_speed: 145
+      perimeter_speed: 145
+      solid_infill_speed: 140
+      support_material_interface_speed: 50%
+      support_material_speed: 110
+      top_solid_infill_acceleration: 2000
+      layer_height: 0.32
+    inherits:
+    - corexy-speed-0.32-06
+    - corexz-06
+  - name: 0.40mm Speed 0.6-hf @VORON Switchwire
+    values:
+      default_acceleration: 2000
+      perimeter_acceleration: 4000
+      solid_infill_acceleration: 3000
+      top_solid_infill_acceleration: 2000
+      external_perimeter_speed: 115
+      gap_fill_speed: 60
+      small_perimeter_speed: 115
+      overhang_speed_2: 40
+      overhang_speed_3: 75%
+      layer_height: 0.4
+    inherits:
+    - corexy-speed-0.40-06
+    - corexz-06
+  - name: 0.32mm Structural 0.6-hf @VORON Switchwire
+    values:
+      gap_fill_speed: 60
+      overhang_speed_2: 40
+      perimeter_acceleration: 2500
+      solid_infill_acceleration: 3000
+      bridge_speed: 40
+      infill_speed: 120
+      overhang_speed_3: 50
+      perimeter_speed: 80
+      layer_height: 0.32
+    inherits:
+    - corexy-structural-0.32-06
+    - corexz-06
+  - name: 0.40mm Structural 0.6-hf @VORON Switchwire
+    values:
+      default_acceleration: 2000
+      infill_acceleration: 3000
+      perimeter_acceleration: 2000
+      gap_fill_speed: 60
+      perimeter_speed: 80
+      overhang_speed_2: 40
+      layer_height: 0.4
+    inherits:
+    - corexy-structural-0.40-06
+    - corexz-06
+- condition: printer.model=="switchwire" and tool.nozzle_diameter == 0.8 and tool.nozzle_flow_class
+    == "HF"
+  values:
+    deretract_speed: 35
+    retract_before_travel: 2.0
+    retract_before_wipe: 50%
+    retract_layer_change: 0
+    retract_length: 0.5
+    retract_length_toolchange: 0
+    retract_lift: 0.25
+    retract_lift_above: 0.25
+    retract_lift_below: 0
+    retract_restart_extra: 0
+    retract_restart_extra_toolchange: 0
+    retract_speed: 35
+  variants:
+  - name: 0.30mm Speed 0.8-hf @VORON Switchwire
+    values:
+      perimeter_acceleration: 3000
+      top_solid_infill_acceleration: 1500
+      layer_height: 0.3
+    inherits:
+    - corexy-speed-0.30
+    - corexz-08
+  - name: 0.40mm Speed 0.8-hf @VORON Switchwire
+    values:
+      external_perimeter_acceleration: 2500
+      external_perimeter_speed: 90
+      gap_fill_speed: 65
+      infill_speed: 105
+      over_bridge_speed: 70%
+      overhang_speed_2: 45
+      perimeter_acceleration: 3000
+      perimeter_speed: 100
+      small_perimeter_speed: 90
+      solid_infill_speed: 100
+      support_material_speed: 90
+      top_solid_infill_acceleration: 1500
+      top_solid_infill_speed: 75
+      layer_height: 0.4
+    inherits:
+    - corexy-speed-0.40-08
+    - corexz-08
+  - name: 0.55mm Speed 0.8-hf @VORON Switchwire
+    values:
+      perimeter_acceleration: 3000
+      top_solid_infill_acceleration: 1500
+      layer_height: 0.55
+    inherits:
+    - corexy-speed-0.55
+    - corexz-08
+  - name: 0.30mm Structural 0.8-hf @VORON Switchwire
+    values:
+      external_perimeter_speed: 45
+      perimeter_speed: 80
+      small_perimeter_speed: 45
+      support_material_interface_speed: 85%
+      support_material_speed: 80
+      top_solid_infill_acceleration: 1200
+      layer_height: 0.3
+    inherits:
+    - corexy-structural-0.30
+    - corexz-08
+  - name: 0.40mm Structural 0.8-hf @VORON Switchwire
+    values:
+      external_perimeter_speed: 45
+      perimeter_speed: 80
+      small_perimeter_speed: 45
+      top_solid_infill_acceleration: 1200
+      layer_height: 0.4
+    inherits:
+    - corexy-structural-0.40-08
+    - corexz-08
+  - name: 0.55mm Structural 0.8-hf @VORON Switchwire
+    values:
+      external_perimeter_speed: 45
+      perimeter_speed: 75
+      small_perimeter_speed: 45
+      top_solid_infill_acceleration: 1200
+      layer_height: 0.55
+    inherits:
+    - corexy-structural-0.55
+    - corexz-08
