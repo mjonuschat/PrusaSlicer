@@ -1088,12 +1088,16 @@ void ProjectInteractor::load_models_to_project(std::vector<boost::filesystem::pa
         proj.find_config_container(selected_bed.config_container_id);
     const Domain::BedInstance& inst = cc->find_bed_instance(selected_bed.instance_id);
     int slot_count             = cc->selected_preset().hw_config.material_slot_count();
+    auto init_z_rotate_item = cc->selected_preset().printer.config_box().find("init_z_rotate");
+    const double init_z_rotate_deg =
+        init_z_rotate_item.item ? init_z_rotate_item.item->value().get<double>() : 0.;
     const Domain::ElementRefs new_instances = FileLoadingLogic::import_files_and_add_to_scene(
         paths,
         slot_count,
         scene_interactor(),
         cc->bed().center() + Biz::Algorithms::Point::to_2d(inst.transformation.get_offset()),
-        m_dialog_provider
+        m_dialog_provider,
+        init_z_rotate_deg
     );
 
     if (new_instances.empty()) {
