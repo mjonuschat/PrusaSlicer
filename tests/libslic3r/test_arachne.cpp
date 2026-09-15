@@ -878,6 +878,141 @@ TEST_CASE("Arachne - SPE-2298 - Missing twin edge - 2", "[ArachneMissingTwinEdge
     REQUIRE(!perimeters.empty());
 }
 
+namespace {
+
+struct Segment {
+    Point  from;
+    Point  to;
+    size_t inset_idx;
+};
+
+bool points_approx_equal(const Point &a, const Point &b, coord_t tolerance)
+{
+    return std::abs(a.x() - b.x()) <= tolerance && std::abs(a.y() - b.y()) <= tolerance;
+}
+
+bool segments_approx_equal(const Segment &a, const Segment &b, coord_t tolerance)
+{
+    if (a.inset_idx != b.inset_idx)
+        return false;
+
+    const bool same_dir = points_approx_equal(a.from, b.from, tolerance) &&
+                          points_approx_equal(a.to, b.to, tolerance);
+    const bool reverse_dir = points_approx_equal(a.from, b.to, tolerance) &&
+                             points_approx_equal(a.to, b.from, tolerance);
+    return same_dir || reverse_dir;
+}
+
+std::vector<Segment> extract_all_segments(const std::vector<VariableWidthLines> &toolpaths)
+{
+    std::vector<Segment> segments;
+
+    for (const VariableWidthLines &inset : toolpaths)
+        for (const ExtrusionLine &line : inset) {
+            if (line.junctions.size() < 2)
+                continue;
+
+            for (size_t i = 0; i + 1 < line.junctions.size(); ++i)
+                segments.push_back({ line.junctions[i].p, line.junctions[i + 1].p, line.inset_idx });
+        }
+
+    return segments;
+}
+
+size_t count_duplicate_segments(const std::vector<Segment> &segments, coord_t tolerance)
+{
+    size_t duplicates = 0;
+
+    for (size_t i = 0; i < segments.size(); ++i)
+        for (size_t j = i + 1; j < segments.size(); ++j)
+            if (segments_approx_equal(segments[i], segments[j], tolerance))
+                ++duplicates;
+
+    return duplicates;
+}
+
+ObjectSettings make_duplicate_wall_settings(double min_bead_width_percent)
+{
+    constexpr double nozzle_diameter = 0.4;
+
+    ObjectSettings object_settings;
+    object_settings.overrides.set("min_bead_width", FloatOrPercentage{Domain::Percentage{min_bead_width_percent}});
+    object_settings.overrides.set("min_feature_size", FloatOrPercentage{Domain::Percentage{25.0}});
+    object_settings.overrides.set("wall_transition_filter_deviation", FloatOrPercentage{Domain::Percentage{25.0}});
+    object_settings.overrides.set("wall_transition_length", FloatOrPercentage{1.0 * nozzle_diameter});
+    object_settings.overrides.set("wall_transition_angle", 10.0);
+    object_settings.overrides.set("wall_distribution_count", 1);
+    return object_settings;
+}
+
+size_t duplicate_wall_segment_count(double min_bead_width_percent)
+{
+    constexpr double layer_height = 0.28;
+    constexpr double ext_perimeter_width_mm = 0.42;
+    constexpr double perimeter_width_mm = 0.45;
+
+    constexpr double spacing_factor = 1.0 - 0.25 * PI;
+    const double ext_perimeter_spacing_mm = ext_perimeter_width_mm - layer_height * spacing_factor;
+    const double perimeter_spacing_mm = perimeter_width_mm - layer_height * spacing_factor;
+
+    const coord_t ext_perimeter_width = scaled<coord_t>(ext_perimeter_width_mm);
+    const coord_t ext_perimeter_spacing = scaled<coord_t>(ext_perimeter_spacing_mm);
+    const coord_t perimeter_spacing = scaled<coord_t>(perimeter_spacing_mm);
+    const size_t  inset_count = 2;
+
+    const float precise_offset = -float(ext_perimeter_width - ext_perimeter_spacing);
+    const coord_t wall_0_inset = -coord_t(ext_perimeter_width / 2 - ext_perimeter_spacing / 2);
+
+    auto new_scale = [](double x, double y) { return Point(scaled<coord_t>(x), scaled<coord_t>(y)); };
+
+    Polygon outer_raw;
+    outer_raw.points.emplace_back(new_scale(0.0, 0.0));
+    outer_raw.points.emplace_back(new_scale(20.0, 0.0));
+    outer_raw.points.emplace_back(new_scale(20.0, 20.0));
+    outer_raw.points.emplace_back(new_scale(0.0, 20.0));
+
+    Polygon inner_raw;
+    inner_raw.points.emplace_back(new_scale(0.5, 0.5));
+    inner_raw.points.emplace_back(new_scale(0.5, 19.5));
+    inner_raw.points.emplace_back(new_scale(19.5, 19.5));
+    inner_raw.points.emplace_back(new_scale(19.5, 0.5));
+
+    ExPolygon input_expolygon;
+    input_expolygon.contour = outer_raw;
+    input_expolygon.holes.push_back(inner_raw);
+
+    ExPolygons offset_result = offset_ex(input_expolygon, precise_offset);
+    Polygons   outline;
+    for (const ExPolygon &expoly : offset_result) {
+        outline.push_back(expoly.contour);
+        for (const Polygon &hole : expoly.holes)
+            outline.push_back(hole);
+    }
+
+    Arachne::WallToolPaths wall_tool_paths(
+        outline,
+        ext_perimeter_spacing,
+        perimeter_spacing,
+        inset_count,
+        wall_0_inset,
+        layer_height,
+        get_region_config_view(make_duplicate_wall_settings(min_bead_width_percent)),
+        0);
+
+    const std::vector<VariableWidthLines> &toolpaths = wall_tool_paths.getToolPaths();
+    return count_duplicate_segments(extract_all_segments(toolpaths), scaled<coord_t>(0.1));
+}
+
+} // namespace
+
+TEST_CASE("Arachne - no duplicate wall segments at 50% min bead width", "[ArachneDuplicateWallSegments]") {
+    REQUIRE(duplicate_wall_segment_count(50) == 0);
+}
+
+TEST_CASE("Arachne - no duplicate wall segments at 60% min bead width", "[ArachneDuplicateWallSegments]") {
+    REQUIRE(duplicate_wall_segment_count(60) == 0);
+}
+
 TEST_CASE("Arachne - SPE-2496 - Negative extrusion width", "[Arachne_Negative_Extrusion_Width_SPE-2496]") {
     Polygon poly_0 = {
         Point(-4982523, -5994247),
