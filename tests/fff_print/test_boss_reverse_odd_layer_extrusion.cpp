@@ -113,7 +113,7 @@ TEST_CASE("BOSS overhangs_reverse flips the odd layer's overhang perimeter start
     // At this layer height, TestMesh::overhang's overhang crosses an
     // odd-numbered layer (Layer::id() % 2 == 1), which this test needs to
     // exercise the odd-layer reversal at all.
-    config.print.items.opt("layer_height").set(0.15);
+    config.print.items.opt("layer_height").set(0.16);
     config.print.items.opt("perimeters").set(1);
     config.print.items.opt("fill_density").set(Percentage{0});
     config.print.items.opt("overhangs").set(true);
