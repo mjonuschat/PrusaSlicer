@@ -1,0 +1,1909 @@
+kind: print
+id: common-025
+values:
+  bottom_solid_layers: 6
+  bridge_speed: 30
+  brim_separation: 0
+  default_acceleration: 2000
+  elefant_foot_compensation: 0
+  external_perimeter_extrusion_width: 0.27
+  extrusion_width: 0.27
+  first_layer_extrusion_width: 0.32
+  first_layer_infill_speed: 35
+  first_layer_speed: 20
+  gap_fill_speed: 50
+  infill_acceleration: 3000
+  infill_anchor: 1
+  infill_extrusion_width: 0.27
+  infill_speed: 100
+  output_filename_format: '{input_filename_base}_0.25n_{layer_height}mm_{printing_filament_types}_{printer_model}_{print_time}.gcode'
+  perimeter_extrusion_width: 0.27
+  perimeters: 3
+  raft_first_layer_density: 95%
+  solid_infill_acceleration: 2500
+  solid_infill_extrusion_width: 0.27
+  solid_infill_speed: 140
+  support_material_contact_distance: 0.15
+  support_material_extrusion_width: 0.25
+  support_material_interface_speed: 75%
+  support_material_spacing: 1
+  support_material_speed: 70
+  support_material_xy_spacing: 150%
+  support_tree_tip_diameter: 0.5
+  top_infill_extrusion_width: 0.27
+  top_solid_infill_acceleration: 1000
+  top_solid_infill_speed: 60
+  top_solid_layers: 9
+  travel_acceleration: 3000
+  wipe_tower: 1
+inherits:
+- common
+---
+kind: print
+id: common-03
+values:
+  bottom_solid_layers: 5
+  bottom_solid_min_thickness: 0.5
+  bridge_speed: 30
+  brim_separation: 0
+  default_acceleration: 2000
+  elefant_foot_compensation: 0
+  external_perimeter_extrusion_width: 0.34
+  extrusion_width: 0.34
+  first_layer_extrusion_width: 0.4
+  first_layer_infill_speed: 60
+  first_layer_speed: 30
+  gap_fill_speed: 50
+  infill_acceleration: 4000
+  infill_anchor: 1
+  infill_extrusion_width: 0.34
+  infill_overlap: 15%
+  output_filename_format: '{input_filename_base}_0.3n_{layer_height}mm_{printing_filament_types}_{printer_model}_{print_time}.gcode'
+  perimeter_extrusion_width: 0.34
+  perimeters: 3
+  raft_first_layer_density: 90%
+  solid_infill_extrusion_width: 0.34
+  support_material_contact_distance: 0.15
+  support_material_extrusion_width: 0.3
+  support_material_interface_speed: 75%
+  support_material_spacing: 1
+  support_material_speed: 70
+  support_material_xy_spacing: 100%
+  support_tree_tip_diameter: 0.6
+  top_infill_extrusion_width: 0.3
+  top_solid_infill_acceleration: 1000
+  top_solid_layers: 6
+  top_solid_min_thickness: 0.7
+inherits:
+- common
+---
+kind: print
+id: common-05
+values:
+  bottom_solid_layers: 3
+  bottom_solid_min_thickness: 0.5
+  default_acceleration: 2500
+  external_perimeter_extrusion_width: 0.55
+  extrusion_width: 0.55
+  first_layer_extrusion_width: 0.55
+  gap_fill_speed: 70
+  gcode_resolution: 0.008
+  infill_acceleration: 4000
+  infill_anchor_max: 15
+  infill_extrusion_width: 0.55
+  output_filename_format: '{input_filename_base}_0.5n_{layer_height}mm_{printing_filament_types}_{printer_model}_{print_time}.gcode'
+  perimeter_extrusion_width: 0.55
+  raft_contact_distance: 0.25
+  solid_infill_extrusion_width: 0.55
+  support_material_contact_distance: 0.25
+  support_material_extrusion_width: 0.4
+  support_material_interface_spacing: 0.22
+  support_material_interface_speed: 75%
+  support_material_xy_spacing: 80%
+  support_tree_tip_diameter: 1
+  top_infill_extrusion_width: 0.5
+  top_solid_layers: 4
+  top_solid_min_thickness: 0.7
+  first_layer_speed: 45
+  support_material_threshold: 40
+inherits:
+- common
+---
+kind: print
+id: common-06
+values:
+  bottom_solid_layers: 3
+  bottom_solid_min_thickness: 0.6
+  external_perimeter_extrusion_width: 0.68
+  extrusion_width: 0.68
+  fill_density: 20%
+  first_layer_extrusion_width: 0.68
+  first_layer_infill_speed: 70
+  gap_fill_speed: 70
+  gcode_resolution: 0.0125
+  infill_anchor: 2.5
+  infill_anchor_max: 20
+  infill_extrusion_width: 0.68
+  output_filename_format: '{input_filename_base}_0.6n_{layer_height}mm_{printing_filament_types}_{printer_model}_{print_time}.gcode'
+  over_bridge_speed: 0
+  overhang_speed_0: 15
+  overhang_speed_1: 20
+  overhang_speed_2: 25
+  overhang_speed_3: 50
+  perimeter_extrusion_width: 0.68
+  raft_contact_distance: 0.25
+  solid_infill_extrusion_width: 0.68
+  support_material_contact_distance: 0.15
+  support_material_extrusion_width: 0.5
+  support_material_interface_spacing: 0.25
+  support_material_interface_speed: 75%
+  support_material_speed: 90
+  support_material_xy_spacing: 80%
+  support_tree_tip_diameter: 1.2
+  top_infill_extrusion_width: 0.55
+  top_solid_layers: 4
+  top_solid_min_thickness: 0.9
+  first_layer_speed: 45
+  support_material_threshold: 40
+inherits:
+- common
+---
+kind: print
+id: common-08
+values:
+  bottom_solid_layers: 3
+  bottom_solid_min_thickness: 0.8
+  external_perimeter_extrusion_width: 0.9
+  extrusion_width: 0.9
+  fill_pattern: rectilinear
+  first_layer_extrusion_width: 1
+  first_layer_infill_speed: 55
+  gap_fill_speed: 40
+  gcode_resolution: 0.0125
+  infill_anchor: 2.5
+  infill_anchor_max: 20
+  infill_extrusion_width: 0.9
+  output_filename_format: '{input_filename_base}_0.8n_{layer_height}mm_{printing_filament_types}_{printer_model}_{print_time}.gcode'
+  over_bridge_speed: 0
+  overhang_speed_1: 20
+  overhang_speed_2: 25
+  overhang_speed_3: 80%
+  perimeter_extrusion_width: 0.9
+  raft_contact_distance: 0.2
+  seam_position: nearest
+  solid_infill_extrusion_width: 0.9
+  support_material_contact_distance: 0.25
+  support_material_extrusion_width: 0.65
+  support_material_interface_spacing: 0.35
+  support_material_interface_speed: 85%
+  support_material_xy_spacing: 80%
+  support_tree_tip_diameter: 1.6
+  thick_bridges: 1
+  top_infill_extrusion_width: 0.8
+  top_solid_layers: 4
+  top_solid_min_thickness: 1.2
+  first_layer_speed: 45
+  support_material_threshold: 40
+inherits:
+- common
+---
+kind: print
+id: common
+values:
+  arc_fitting: disabled
+  bottom_fill_pattern: monotoniclines
+  bottom_solid_layers: 4
+  bottom_solid_min_thickness: 0.5
+  bridge_acceleration: 1500
+  bridge_flow_ratio: 1
+  bridge_speed: 50
+  brim_separation: 0.1
+  default_acceleration: 4000
+  dont_support_bridges: 0
+  elefant_foot_compensation: 0.2
+  enable_dynamic_overhang_speeds: 1
+  ensure_vertical_shell_thickness: 1
+  external_perimeter_acceleration: 4000
+  external_perimeter_extrusion_width: 0.45
+  external_perimeter_speed: 170
+  external_perimeters_first: 0
+  extra_perimeters: 0
+  extrusion_width: 0.45
+  fill_angle: 45
+  fill_density: 15%
+  fill_pattern: grid
+  first_layer_acceleration: 500
+  first_layer_acceleration_over_raft: 0
+  first_layer_extrusion_width: 0.5
+  first_layer_height: 0.2
+  first_layer_infill_speed: 100
+  first_layer_speed: 40
+  first_layer_speed_over_raft: 30
+  gap_fill_enabled: 1
+  gap_fill_speed: 120
+  gcode_comments: 0
+  gcode_label_objects: firmware
+  gcode_resolution: 0.008
+  infill_acceleration: 4000
+  infill_anchor: 2
+  infill_anchor_max: 12
+  infill_every_layers: 1
+  infill_extruder: 1
+  infill_extrusion_width: 0.45
+  infill_first: 0
+  infill_overlap: 15%
+  infill_speed: 200
+  interface_shells: 0
+  ironing_type: top
+  layer_height: 0.2
+  max_print_speed: 300
+  max_volumetric_extrusion_rate_slope_negative: 0
+  max_volumetric_extrusion_rate_slope_positive: 0
+  max_volumetric_speed: 0
+  min_bead_width: 85%
+  min_feature_size: 25%
+  min_skirt_length: 4
+  mmu_segmented_region_max_width: 0
+  only_retract_when_crossing_perimeters: 0
+  ooze_prevention: 0
+  output_filename_format: '{input_filename_base}_0.4n_{layer_height}mm_{printing_filament_types}_{printer_model}_{print_time}.gcode'
+  over_bridge_speed: 50%
+  overhang_speed_0: 15
+  overhang_speed_1: 25
+  overhang_speed_2: 30
+  overhang_speed_3: 80%
+  overhangs: 1
+  perimeter_acceleration: 7000
+  perimeter_extruder: 1
+  perimeter_extrusion_width: 0.45
+  perimeter_generator: arachne
+  perimeter_speed: 170
+  perimeters: 2
+  raft_contact_distance: 0.15
+  raft_expansion: 1.5
+  raft_first_layer_density: 80%
+  raft_first_layer_expansion: 3
+  seam_position: aligned
+  single_extruder_multi_material_priming: 0
+  skirts: 2
+  skirt_height: 2
+  slice_closing_radius: 0.049
+  small_perimeter_speed: 170
+  solid_infill_acceleration: 4000
+  solid_infill_below_area: 0
+  solid_infill_every_layers: 0
+  solid_infill_extruder: 1
+  solid_infill_extrusion_width: 0.45
+  solid_infill_speed: 200
+  support_material: 0
+  support_material_angle: 0
+  support_material_auto: 1
+  support_material_bottom_contact_distance: 0
+  support_material_bottom_interface_layers: 0
+  support_material_buildplate_only: 0
+  support_material_closing_radius: 2
+  support_material_contact_distance: 0.2
+  support_material_enforce_layers: 0
+  support_material_extruder: 0
+  support_material_extrusion_width: 0.4
+  support_material_interface_contact_loops: 0
+  support_material_interface_extruder: 0
+  support_material_interface_layers: 3
+  support_material_interface_pattern: auto
+  support_material_interface_spacing: 0.2
+  support_material_interface_speed: 50%
+  support_material_pattern: rectilinear
+  support_material_spacing: 2
+  support_material_speed: 120
+  support_material_style: snug
+  support_material_synchronize_layers: 0
+  support_material_threshold: 35
+  support_material_with_sheath: 0
+  support_material_xy_spacing: 80%
+  support_tree_angle: 40
+  support_tree_angle_slow: 25
+  support_tree_branch_diameter: 2
+  support_tree_branch_diameter_angle: 5
+  support_tree_branch_diameter_double_wall: 8
+  support_tree_branch_distance: 1
+  support_tree_tip_diameter: 0.8
+  support_tree_top_rate: 30%
+  thick_bridges: 0
+  thin_walls: 0
+  top_fill_pattern: monotoniclines
+  top_infill_extrusion_width: 0.42
+  top_one_perimeter_type: top
+  top_solid_infill_acceleration: 1200
+  top_solid_infill_speed: 100
+  top_solid_layers: 5
+  top_solid_min_thickness: 0.7
+  travel_acceleration: 7000
+  travel_short_distance_acceleration: 250
+  travel_speed: 350
+  travel_speed_z: 12
+  wipe_tower: 1
+  wipe_tower_cone_angle: 25
+  wipe_tower_extra_flow: 250%
+  wipe_tower_extra_spacing: 110%
+---
+kind: print
+id: corexy-025
+values:
+  first_layer_speed: 25
+  first_layer_infill_speed: 45
+  travel_acceleration: 4000
+inherits:
+- corexy
+---
+kind: print
+id: corexy-03
+values:
+  first_layer_infill_speed: 60
+  top_solid_infill_acceleration: 1500
+inherits:
+- corexy
+---
+kind: print
+id: corexy-detail-0.05-layer
+values:
+  layer_height: 0.05
+  bottom_solid_layers: 10
+  top_solid_layers: 13
+  solid_infill_speed: 100
+  top_solid_infill_speed: 60
+  bridge_speed: 25
+inherits:
+- corexy-detail-0.07-layer
+---
+kind: print
+id: corexy-detail-0.07-layer
+values:
+  layer_height: 0.07
+  bottom_solid_layers: 9
+  top_solid_layers: 11
+  support_material_contact_distance: 0.1
+  raft_contact_distance: 0.1
+  perimeter_speed: 60
+  small_perimeter_speed: 40
+  external_perimeter_speed: 40
+  top_solid_infill_speed: 60
+  gap_fill_speed: 40
+  support_material_speed: 60
+  external_perimeter_acceleration: 800
+  perimeter_acceleration: 1200
+  top_solid_infill_acceleration: 1000
+  solid_infill_acceleration: 2000
+  infill_acceleration: 2500
+  bridge_acceleration: 1000
+  default_acceleration: 1500
+  perimeter_extrusion_width: 0.25
+  external_perimeter_extrusion_width: 0.25
+  infill_extrusion_width: 0.25
+  solid_infill_extrusion_width: 0.25
+  solid_infill_speed: 140
+  bridge_speed: 30
+  support_material_threshold: 40
+inherits:
+- common-025
+---
+kind: print
+id: corexy-detail-0.10-layer
+values:
+  layer_height: 0.1
+  top_solid_layers: 8
+  bottom_solid_layers: 7
+  perimeter_speed: 145
+  external_perimeter_speed: 145
+  small_perimeter_speed: 145
+  support_material_contact_distance: 0.17
+  raft_contact_distance: 0.15
+  external_perimeter_acceleration: 2000
+  perimeter_acceleration: 2500
+  infill_speed: 140
+  perimeters: 3
+  top_infill_extrusion_width: 0.4
+  bridge_speed: 40
+inherits:
+- corexy-speed-0.15-04-layer
+---
+kind: print
+id: corexy-detail-0.30-layer
+values:
+  layer_height: 0.3
+  bottom_solid_layers: 3
+  top_solid_layers: 4
+  perimeter_speed: 70
+  external_perimeter_speed: 45
+  small_perimeter_speed: 45
+  infill_speed: 100
+  solid_infill_speed: 50
+  top_solid_infill_speed: 35
+  support_material_speed: 60
+  bridge_speed: 22
+  gap_fill_speed: 40
+  external_perimeter_acceleration: 1500
+  perimeter_acceleration: 2000
+  top_solid_infill_acceleration: 1000
+  solid_infill_acceleration: 5000
+  infill_acceleration: 7000
+  bridge_acceleration: 1000
+  default_acceleration: 3000
+  top_infill_extrusion_width: 0.7
+inherits:
+- common-08
+---
+kind: print
+id: corexy-draft-0.28-layer
+values:
+  layer_height: 0.28
+  top_solid_layers: 4
+  bottom_solid_layers: 3
+  perimeter_speed: 200
+  external_perimeter_speed: 180
+  small_perimeter_speed: 180
+  solid_infill_speed: 200
+  first_layer_extrusion_width: 0.55
+  perimeter_extrusion_width: 0.55
+  external_perimeter_extrusion_width: 0.55
+  infill_extrusion_width: 0.55
+  solid_infill_extrusion_width: 0.55
+  top_infill_extrusion_width: 0.45
+  support_material_extrusion_width: 0.4
+  top_solid_infill_acceleration: 2000
+  support_material_contact_distance: 0.28
+  support_material_interface_layers: 3
+  over_bridge_speed: 50%
+  min_bead_width: 95%
+  default_acceleration: 3000
+  first_layer_speed: 45
+inherits:
+- common
+---
+kind: print
+id: corexy-draft-0.55-layer
+values:
+  layer_height: 0.55
+  bottom_solid_layers: 3
+  top_solid_layers: 4
+  perimeter_speed: 40
+  external_perimeter_speed: 35
+  small_perimeter_speed: 35
+  infill_speed: 60
+  solid_infill_speed: 35
+  top_solid_infill_speed: 30
+  support_material_speed: 35
+  bridge_speed: 22
+  gap_fill_speed: 30
+  external_perimeter_acceleration: 1500
+  perimeter_acceleration: 2000
+  top_solid_infill_acceleration: 1000
+  solid_infill_acceleration: 5000
+  infill_acceleration: 7000
+  bridge_acceleration: 1000
+  default_acceleration: 3000
+  top_infill_extrusion_width: 0.75
+  perimeter_extrusion_width: 1
+  external_perimeter_extrusion_width: 1
+inherits:
+- common-08
+---
+kind: print
+id: corexy-speed-0.12-layer
+values:
+  layer_height: 0.12
+  perimeter_speed: 150
+  external_perimeter_speed: 150
+  small_perimeter_speed: 150
+  external_perimeter_acceleration: 1500
+  perimeter_acceleration: 2000
+  support_material_contact_distance: 0.09
+  raft_contact_distance: 0.08
+  support_material_threshold: 40
+inherits:
+- common-025
+---
+kind: print
+id: corexy-speed-0.15-025-layer
+values:
+  layer_height: 0.15
+  bottom_solid_layers: 7
+  top_solid_layers: 6
+inherits:
+- corexy-speed-0.12-layer
+---
+kind: print
+id: corexy-speed-0.15-04-layer
+values:
+  layer_height: 0.15
+  top_solid_layers: 6
+  bottom_solid_layers: 4
+  support_material_contact_distance: 0.17
+  raft_contact_distance: 0.15
+  perimeter_speed: 170
+  external_perimeter_speed: 170
+  small_perimeter_speed: 170
+  gap_fill_speed: 120
+  support_material_speed: 120
+  support_material_interface_speed: 50
+  external_perimeter_acceleration: 2500
+  perimeter_acceleration: 3500
+  solid_infill_acceleration: 3500
+  top_solid_infill_acceleration: 1500
+  default_acceleration: 3000
+  overhang_speed_3: 80%
+  bridge_speed: 45
+  first_layer_speed: 45
+inherits:
+- common
+---
+kind: print
+id: corexy-speed-0.16-layer
+values:
+  perimeter_speed: 160
+  small_perimeter_speed: 160
+  external_perimeter_speed: 160
+  support_material_speed: 100
+  support_material_interface_speed: 45%
+  external_perimeter_acceleration: 2500
+  perimeter_acceleration: 2500
+  top_solid_infill_acceleration: 1000
+  solid_infill_acceleration: 3000
+  infill_acceleration: 4000
+  bridge_acceleration: 1000
+  default_acceleration: 2000
+inherits:
+- corexy-structural-0.16-layer
+---
+kind: print
+id: corexy-speed-0.20-03-layer
+values:
+  layer_height: 0.2
+  bottom_solid_layers: 3
+  top_solid_layers: 5
+  support_material_contact_distance: 0.2
+  raft_contact_distance: 0.18
+inherits:
+- corexy-speed-0.16-layer
+---
+kind: print
+id: corexy-speed-0.20-04-layer
+values:
+  top_solid_infill_acceleration: 1500
+  bottom_solid_layers: 3
+  first_layer_speed: 45
+  default_acceleration: 3000
+inherits:
+- common
+---
+kind: print
+id: corexy-speed-0.20-05-layer
+values:
+  layer_height: 0.2
+  top_solid_layers: 5
+  bottom_solid_layers: 4
+  perimeter_speed: 140
+  small_perimeter_speed: 140
+  external_perimeter_speed: 140
+  infill_speed: 200
+  solid_infill_speed: 135
+  top_solid_infill_speed: 70
+  bridge_speed: 40
+  gap_fill_speed: 70
+  support_material_speed: 120
+  external_perimeter_acceleration: 2500
+  perimeter_acceleration: 3500
+  top_solid_infill_acceleration: 1000
+  solid_infill_acceleration: 3000
+  infill_acceleration: 4000
+  bridge_acceleration: 1000
+  default_acceleration: 3000
+  support_material_contact_distance: 0.2
+inherits:
+- common-05
+---
+kind: print
+id: corexy-speed-0.20-06-layer
+values:
+  layer_height: 0.2
+  bottom_solid_layers: 4
+  top_solid_layers: 5
+  perimeter_speed: 125
+  external_perimeter_speed: 125
+  small_perimeter_speed: 125
+  solid_infill_speed: 110
+  infill_speed: 110
+  top_solid_infill_speed: 70
+  bridge_speed: 40
+  gap_fill_speed: 80
+  external_perimeter_acceleration: 2500
+  perimeter_acceleration: 3000
+  top_solid_infill_acceleration: 1500
+  solid_infill_acceleration: 3000
+  infill_acceleration: 4000
+  bridge_acceleration: 1500
+  default_acceleration: 3000
+  support_material_contact_distance: 0.22
+  extrusion_width: 0.68
+  perimeter_extrusion_width: 0.62
+  external_perimeter_extrusion_width: 0.62
+  infill_extrusion_width: 0.65
+  solid_infill_extrusion_width: 0.65
+  top_infill_extrusion_width: 0.5
+inherits:
+- common-06
+---
+kind: print
+id: corexy-speed-0.25-04-layer
+values:
+  layer_height: 0.25
+  top_solid_layers: 4
+  bottom_solid_layers: 3
+  perimeter_speed: 220
+  external_perimeter_speed: 200
+  small_perimeter_speed: 170
+  infill_speed: 240
+  solid_infill_speed: 240
+  overhang_speed_3: 70%
+  top_solid_infill_acceleration: 2000
+  max_print_speed: 300
+  perimeter_extrusion_width: 0.5
+  external_perimeter_extrusion_width: 0.5
+  infill_extrusion_width: 0.5
+  solid_infill_extrusion_width: 0.5
+  support_material_extrusion_width: 0.4
+  support_material_contact_distance: 0.25
+  support_material_interface_layers: 3
+  over_bridge_speed: 35%
+  min_bead_width: 90%
+  default_acceleration: 3000
+  first_layer_speed: 45
+inherits:
+- common
+---
+kind: print
+id: corexy-speed-0.25-05-layer
+values:
+  layer_height: 0.25
+  solid_infill_speed: 110
+  top_solid_layers: 4
+  bottom_solid_layers: 3
+  support_material_contact_distance: 0.25
+  raft_contact_distance: 0.25
+inherits:
+- corexy-speed-0.20-05-layer
+---
+kind: print
+id: corexy-speed-0.25-06-layer
+values:
+  layer_height: 0.25
+  perimeter_speed: 90
+  external_perimeter_speed: 80
+  small_perimeter_speed: 80
+  infill_speed: 100
+  solid_infill_speed: 90
+  top_solid_infill_speed: 60
+  support_material_speed: 80
+  bridge_speed: 40
+  gap_fill_speed: 70
+  external_perimeter_acceleration: 2000
+  perimeter_acceleration: 3000
+  top_solid_infill_acceleration: 1500
+  solid_infill_acceleration: 3000
+  infill_acceleration: 4000
+  bridge_acceleration: 1500
+  default_acceleration: 3000
+  support_material_contact_distance: 0.25
+inherits:
+- common-06
+---
+kind: print
+id: corexy-speed-0.30-layer
+values:
+  perimeter_speed: 125
+  external_perimeter_speed: 125
+  small_perimeter_speed: 125
+  infill_speed: 130
+  solid_infill_speed: 125
+  top_solid_infill_speed: 80
+  support_material_speed: 110
+  gap_fill_speed: 80
+  external_perimeter_acceleration: 2500
+  top_solid_infill_acceleration: 1500
+  perimeter_acceleration: 3000
+  overhang_speed_2: 20
+  overhang_speed_3: 60%
+  over_bridge_speed: 60%
+inherits:
+- corexy-detail-0.30-layer
+---
+kind: print
+id: corexy-speed-0.32-06-layer
+values:
+  layer_height: 0.32
+  bottom_solid_layers: 3
+  top_solid_layers: 4
+  perimeter_speed: 70
+  external_perimeter_speed: 70
+  small_perimeter_speed: 70
+  infill_speed: 100
+  solid_infill_speed: 70
+  top_solid_infill_speed: 60
+  bridge_speed: 40
+  gap_fill_speed: 60
+  support_material_speed: 70
+  external_perimeter_acceleration: 2000
+  perimeter_acceleration: 2500
+  top_solid_infill_acceleration: 1500
+  solid_infill_acceleration: 3000
+  infill_acceleration: 4000
+  bridge_acceleration: 1500
+  default_acceleration: 3000
+  support_material_contact_distance: 0.25
+inherits:
+- common-06
+---
+kind: print
+id: corexy-speed-0.40-06-layer
+values:
+  layer_height: 0.4
+  top_solid_layers: 4
+  bottom_solid_layers: 3
+  perimeter_speed: 120
+  external_perimeter_speed: 115
+  small_perimeter_speed: 115
+  infill_speed: 130
+  solid_infill_speed: 120
+  top_solid_infill_speed: 60
+  support_material_speed: 110
+  support_material_interface_speed: 50%
+  bridge_speed: 40
+  gap_fill_speed: 60
+  external_perimeter_acceleration: 3000
+  perimeter_acceleration: 4000
+  top_solid_infill_acceleration: 1500
+  solid_infill_acceleration: 3000
+  infill_acceleration: 4000
+  bridge_acceleration: 1500
+  default_acceleration: 3000
+  support_material_contact_distance: 0.25
+  over_bridge_speed: 70%
+inherits:
+- common-06
+---
+kind: print
+id: corexy-speed-0.40-08-layer
+values:
+  layer_height: 0.4
+  bottom_solid_layers: 3
+  top_solid_layers: 4
+  perimeter_speed: 50
+  external_perimeter_speed: 45
+  small_perimeter_speed: 45
+  infill_speed: 90
+  solid_infill_speed: 45
+  top_solid_infill_speed: 35
+  support_material_speed: 50
+  bridge_speed: 22
+  gap_fill_speed: 35
+  external_perimeter_acceleration: 1500
+  perimeter_acceleration: 2000
+  top_solid_infill_acceleration: 1000
+  solid_infill_acceleration: 5000
+  infill_acceleration: 7000
+  bridge_acceleration: 1000
+  default_acceleration: 3000
+  top_infill_extrusion_width: 0.75
+inherits:
+- common-08
+---
+kind: print
+id: corexy-speed-0.55-layer
+values:
+  perimeter_speed: 75
+  external_perimeter_speed: 70
+  small_perimeter_speed: 70
+  infill_speed: 80
+  solid_infill_speed: 70
+  top_solid_infill_speed: 60
+  gap_fill_speed: 60
+  support_material_speed: 80
+  external_perimeter_acceleration: 2500
+  perimeter_acceleration: 3000
+  top_solid_infill_acceleration: 1500
+  over_bridge_speed: 0
+inherits:
+- corexy-draft-0.55-layer
+---
+kind: print
+id: corexy-speed
+values:
+  infill_acceleration: 7000
+  solid_infill_acceleration: 6000
+  perimeter_acceleration: 6000
+  external_perimeter_acceleration: 3000
+  top_solid_infill_acceleration: 2000
+---
+kind: print
+id: corexy-structural-0.10-layer
+values:
+  layer_height: 0.1
+  top_solid_layers: 8
+  bottom_solid_layers: 7
+  perimeter_speed: 70
+  small_perimeter_speed: 40
+  external_perimeter_speed: 40
+  infill_speed: 200
+  solid_infill_speed: 200
+  top_solid_infill_speed: 70
+  bridge_speed: 30
+  gap_fill_speed: 40
+  support_material_speed: 80
+  external_perimeter_acceleration: 1500
+  perimeter_acceleration: 2000
+  top_solid_infill_acceleration: 1000
+  solid_infill_acceleration: 2500
+  infill_acceleration: 3000
+  bridge_acceleration: 1000
+  default_acceleration: 3000
+  extrusion_width: 0.55
+  perimeter_extrusion_width: 0.5
+  external_perimeter_extrusion_width: 0.5
+  infill_extrusion_width: 0.5
+  solid_infill_extrusion_width: 0.5
+  top_infill_extrusion_width: 0.45
+  support_material_contact_distance: 0.2
+inherits:
+- common-05
+---
+kind: print
+id: corexy-structural-0.12-025-layer
+values:
+  perimeter_speed: 70
+  external_perimeter_speed: 40
+  small_perimeter_speed: 40
+  external_perimeter_acceleration: 1000
+  perimeter_acceleration: 1500
+  infill_acceleration: 2500
+  solid_infill_acceleration: 2000
+inherits:
+- corexy-speed-0.12-layer
+---
+kind: print
+id: corexy-structural-0.12-03-layer
+values:
+  layer_height: 0.12
+  bottom_solid_layers: 6
+  top_solid_layers: 7
+  perimeter_speed: 80
+  small_perimeter_speed: 40
+  external_perimeter_speed: 40
+  infill_speed: 100
+  solid_infill_speed: 200
+  top_solid_infill_speed: 40
+  support_material_speed: 70
+  external_perimeter_acceleration: 1200
+  perimeter_acceleration: 1500
+  top_solid_infill_acceleration: 1000
+  solid_infill_acceleration: 2500
+  infill_acceleration: 3000
+  bridge_acceleration: 1000
+  default_acceleration: 1500
+  support_material_contact_distance: 0.12
+  raft_contact_distance: 0.12
+  support_material_threshold: 40
+inherits:
+- common-03
+---
+kind: print
+id: corexy-structural-0.15-025-layer
+values:
+  perimeter_speed: 70
+  external_perimeter_speed: 40
+  small_perimeter_speed: 40
+  external_perimeter_acceleration: 1000
+  perimeter_acceleration: 1500
+inherits:
+- corexy-speed-0.15-025-layer
+---
+kind: print
+id: corexy-structural-0.15-04-layer
+values:
+  layer_height: 0.15
+  top_solid_layers: 6
+  bottom_solid_layers: 5
+  support_material_contact_distance: 0.17
+  raft_contact_distance: 0.15
+  infill_speed: 110
+  bridge_speed: 45
+inherits:
+- corexy-structural-0.20-04-layer
+---
+kind: print
+id: corexy-structural-0.15-05-layer
+values:
+  layer_height: 0.15
+  top_solid_layers: 6
+  bottom_solid_layers: 5
+  perimeter_speed: 80
+  small_perimeter_speed: 45
+  external_perimeter_speed: 45
+  infill_speed: 200
+  solid_infill_speed: 180
+  top_solid_infill_speed: 70
+  bridge_speed: 40
+  gap_fill_speed: 50
+  support_material_speed: 80
+  external_perimeter_acceleration: 1500
+  perimeter_acceleration: 2000
+  top_solid_infill_acceleration: 1200
+  solid_infill_acceleration: 2500
+  infill_acceleration: 4000
+  bridge_acceleration: 1000
+  default_acceleration: 2000
+  support_material_contact_distance: 0.2
+inherits:
+- common-05
+---
+kind: print
+id: corexy-structural-0.15-06-layer
+values:
+  layer_height: 0.15
+  bottom_solid_layers: 5
+  top_solid_layers: 6
+  perimeter_speed: 70
+  external_perimeter_speed: 45
+  small_perimeter_speed: 45
+  solid_infill_speed: 160
+  infill_speed: 100
+  top_solid_infill_speed: 70
+  bridge_speed: 30
+  gap_fill_speed: 80
+  external_perimeter_acceleration: 1500
+  perimeter_acceleration: 2500
+  top_solid_infill_acceleration: 1500
+  solid_infill_acceleration: 2500
+  infill_acceleration: 4000
+  bridge_acceleration: 1500
+  default_acceleration: 2500
+  support_material_contact_distance: 0.22
+  extrusion_width: 0.68
+  perimeter_extrusion_width: 0.6
+  external_perimeter_extrusion_width: 0.6
+  infill_extrusion_width: 0.6
+  solid_infill_extrusion_width: 0.6
+  top_infill_extrusion_width: 0.5
+  overhang_speed_3: 80%
+inherits:
+- common-06
+---
+kind: print
+id: corexy-structural-0.16-layer
+values:
+  layer_height: 0.16
+  bottom_solid_layers: 5
+  top_solid_layers: 6
+  small_perimeter_speed: 45
+  external_perimeter_speed: 45
+  infill_speed: 120
+  top_solid_infill_speed: 50
+  external_perimeter_acceleration: 1500
+  perimeter_acceleration: 2000
+  top_solid_infill_acceleration: 1000
+  solid_infill_acceleration: 2500
+  infill_acceleration: 4000
+  bridge_acceleration: 1000
+  default_acceleration: 2000
+  support_material_contact_distance: 0.16
+  raft_contact_distance: 0.16
+inherits:
+- corexy-structural-0.12-03-layer
+---
+kind: print
+id: corexy-structural-0.20-03-layer
+values:
+  layer_height: 0.2
+  bottom_solid_layers: 4
+  top_solid_layers: 5
+  support_material_contact_distance: 0.2
+  raft_contact_distance: 0.18
+inherits:
+- corexy-structural-0.16-layer
+---
+kind: print
+id: corexy-structural-0.20-04-layer
+values:
+  perimeter_speed: 80
+  external_perimeter_speed: 45
+  small_perimeter_speed: 45
+  infill_speed: 120
+  solid_infill_speed: 140
+  gap_fill_speed: 60
+  top_solid_infill_speed: 80
+  support_material_speed: 120
+  support_material_interface_speed: 50
+  external_perimeter_acceleration: 1500
+  perimeter_acceleration: 2500
+  solid_infill_acceleration: 3000
+  default_acceleration: 2500
+  overhang_speed_3: 90%
+  first_layer_speed: 45
+  support_material_threshold: 40
+inherits:
+- common
+---
+kind: print
+id: corexy-structural-0.20-05-layer
+values:
+  perimeter_speed: 80
+  small_perimeter_speed: 45
+  external_perimeter_speed: 45
+  infill_speed: 200
+  solid_infill_speed: 120
+  top_solid_infill_speed: 70
+  bridge_speed: 40
+  gap_fill_speed: 70
+  support_material_speed: 80
+  external_perimeter_acceleration: 1500
+  perimeter_acceleration: 2000
+  top_solid_infill_acceleration: 1000
+  solid_infill_acceleration: 2500
+inherits:
+- corexy-speed-0.20-05-layer
+---
+kind: print
+id: corexy-structural-0.20-06-layer
+values:
+  bottom_solid_layers: 4
+  top_solid_layers: 5
+  perimeter_speed: 80
+  external_perimeter_speed: 45
+  small_perimeter_speed: 45
+  infill_speed: 100
+  solid_infill_speed: 110
+  top_solid_infill_speed: 70
+  bridge_speed: 30
+  gap_fill_speed: 80
+  external_perimeter_acceleration: 1500
+  perimeter_acceleration: 2000
+  top_solid_infill_acceleration: 1500
+  solid_infill_acceleration: 2500
+  overhang_speed_3: 80%
+inherits:
+- corexy-speed-0.20-06-layer
+---
+kind: print
+id: corexy-structural-0.25-04-layer
+values:
+  layer_height: 0.25
+  top_solid_layers: 4
+  bottom_solid_layers: 3
+  perimeter_extrusion_width: 0.5
+  external_perimeter_extrusion_width: 0.5
+  infill_extrusion_width: 0.5
+  solid_infill_extrusion_width: 0.5
+  support_material_extrusion_width: 0.4
+  support_material_contact_distance: 0.25
+inherits:
+- corexy-structural-0.20-04-layer
+---
+kind: print
+id: corexy-structural-0.25-05-layer
+values:
+  layer_height: 0.25
+  top_solid_layers: 4
+  bottom_solid_layers: 3
+  support_material_contact_distance: 0.25
+  solid_infill_speed: 110
+  raft_contact_distance: 0.25
+inherits:
+- corexy-structural-0.20-05-layer
+---
+kind: print
+id: corexy-structural-0.25-06-layer
+values:
+  perimeter_speed: 80
+  external_perimeter_speed: 45
+  small_perimeter_speed: 45
+  top_solid_infill_speed: 60
+  bridge_speed: 30
+  external_perimeter_acceleration: 1500
+  perimeter_acceleration: 2500
+  top_solid_infill_acceleration: 1500
+  solid_infill_acceleration: 3000
+  overhang_speed_3: 80%
+inherits:
+- corexy-speed-0.25-06-layer
+---
+kind: print
+id: corexy-structural-0.30-layer
+values:
+  perimeter_speed: 80
+  infill_speed: 120
+  solid_infill_speed: 120
+  gap_fill_speed: 60
+  top_solid_infill_acceleration: 1200
+  overhang_speed_2: 20
+  top_solid_infill_speed: 60
+  support_material_speed: 80
+inherits:
+- corexy-detail-0.30-layer
+---
+kind: print
+id: corexy-structural-0.32-05-layer
+values:
+  layer_height: 0.32
+  top_solid_layers: 4
+  bottom_solid_layers: 3
+inherits:
+- corexy-structural-0.25-05-layer
+---
+kind: print
+id: corexy-structural-0.32-06-layer
+values:
+  bottom_solid_layers: 4
+  top_solid_layers: 5
+  perimeter_speed: 70
+  external_perimeter_speed: 45
+  small_perimeter_speed: 45
+  external_perimeter_acceleration: 1500
+  perimeter_acceleration: 2000
+  bridge_speed: 30
+  infill_speed: 70
+  solid_infill_speed: 70
+  overhang_speed_3: 80%
+inherits:
+- corexy-speed-0.32-06-layer
+---
+kind: print
+id: corexy-structural-0.40-06-layer
+values:
+  perimeter_speed: 80
+  external_perimeter_speed: 45
+  small_perimeter_speed: 45
+  infill_speed: 100
+  solid_infill_speed: 100
+  top_solid_infill_speed: 60
+  bridge_speed: 30
+  gap_fill_speed: 60
+  external_perimeter_acceleration: 1500
+  perimeter_acceleration: 2000
+  top_solid_infill_acceleration: 1500
+  solid_infill_acceleration: 2500
+  infill_acceleration: 3000
+inherits:
+- corexy-speed-0.40-06-layer
+---
+kind: print
+id: corexy-structural-0.40-08-layer
+values:
+  perimeter_speed: 80
+  infill_speed: 100
+  gap_fill_speed: 65
+  solid_infill_speed: 100
+  top_solid_infill_speed: 65
+  support_material_speed: 80
+  top_solid_infill_acceleration: 1200
+inherits:
+- corexy-speed-0.40-08-layer
+---
+kind: print
+id: corexy-structural-0.55-layer
+values:
+  perimeter_speed: 75
+  external_perimeter_speed: 45
+  small_perimeter_speed: 45
+  infill_speed: 75
+  solid_infill_speed: 65
+  gap_fill_speed: 60
+  top_solid_infill_acceleration: 1200
+  top_solid_infill_speed: 45
+  support_material_speed: 65
+inherits:
+- corexy-draft-0.55-layer
+---
+kind: print
+id: corexy-structural
+values:
+  infill_acceleration: 6000
+  solid_infill_acceleration: 4000
+  perimeter_acceleration: 2500
+  external_perimeter_acceleration: 1500
+  top_solid_infill_acceleration: 2000
+  default_acceleration: 3000
+  perimeter_speed: 70
+  external_perimeter_speed: 50
+  small_perimeter_speed: 50
+---
+kind: print
+id: corexy
+values:
+  travel_speed: 350
+  travel_acceleration: 7000
+  default_acceleration: 3000
+  wipe_tower_acceleration: 0
+  support_material_interface_layers: 3
+  first_layer_speed: 45
+  first_layer_infill_speed: 100
+  max_print_speed: 300
+  travel_short_distance_acceleration: 250
+---
+kind: print
+id: corexz-025
+values:
+  default_acceleration: 1500
+  travel_acceleration: 3000
+  external_perimeter_speed: 40
+  gap_fill_speed: 40
+  small_perimeter_speed: 40
+  first_layer_infill_speed: 35
+  first_layer_speed: 20
+  max_print_speed: 200
+  travel_speed: 300
+---
+kind: print
+id: corexz-03
+values:
+  default_acceleration: 2000
+  external_perimeter_acceleration: 1500
+  infill_acceleration: 4000
+  perimeter_acceleration: 2000
+  solid_infill_acceleration: 2500
+  top_solid_infill_acceleration: 1000
+  travel_acceleration: 4000
+  external_perimeter_speed: 45
+  perimeter_speed: 80
+  small_perimeter_speed: 45
+  first_layer_speed: 30
+  max_print_speed: 200
+  travel_speed: 300
+  support_material_interface_speed: 45%
+  support_material_speed: 70
+---
+kind: print
+id: corexz-04
+values:
+  bridge_acceleration: 1500
+  bridge_speed: 50
+  default_acceleration: 4000
+  external_perimeter_acceleration: 4000
+  external_perimeter_speed: 170
+  first_layer_acceleration: 500
+  first_layer_infill_speed: 100
+  first_layer_speed: 40
+  gap_fill_speed: 120
+  infill_acceleration: 4000
+  infill_speed: 200
+  max_print_speed: 200
+  overhang_speed_0: 15
+  overhang_speed_1: 25
+  perimeter_acceleration: 4000
+  perimeter_speed: 170
+  small_perimeter_speed: 170
+  solid_infill_acceleration: 4000
+  support_material_interface_speed: 50%
+  support_material_speed: 120
+  top_solid_infill_acceleration: 1500
+  top_solid_infill_speed: 100
+  travel_acceleration: 4000
+  travel_speed: 300
+---
+kind: print
+id: corexz-05
+values:
+  first_layer_speed: 40
+  max_print_speed: 200
+  travel_speed: 300
+---
+kind: print
+id: corexz-06
+values:
+  default_acceleration: 2500
+  infill_acceleration: 4000
+  solid_infill_acceleration: 2500
+  top_solid_infill_acceleration: 1500
+  travel_acceleration: 4000
+  external_perimeter_speed: 45
+  gap_fill_speed: 80
+  small_perimeter_speed: 45
+  first_layer_speed: 40
+  max_print_speed: 200
+  travel_speed: 300
+  wipe_tower_extra_flow: 200%
+---
+kind: print
+id: corexz-08
+values:
+  default_acceleration: 2000
+  infill_acceleration: 4000
+  perimeter_acceleration: 2000
+  solid_infill_acceleration: 3000
+  top_solid_infill_acceleration: 1000
+  travel_acceleration: 4000
+  first_layer_speed: 40
+  max_print_speed: 200
+  travel_speed: 300
+---
+kind: print
+id: voron-printed-parts
+values:
+  bottom_fill_pattern: monotoniclines
+  bottom_solid_layers: 5
+  bottom_solid_min_thickness: 1
+  ensure_vertical_shell_thickness: 1
+  external_perimeter_extrusion_width: 0.4
+  extrusion_width: 0.4
+  fill_density: 40%
+  fill_pattern: grid
+  first_layer_extrusion_width: 0.4
+  infill_extrusion_width: 0.4
+  perimeter_extrusion_width: 0.4
+  perimeter_generator: classic
+  perimeters: 4
+  solid_infill_extrusion_width: 0.4
+  top_fill_pattern: monotoniclines
+  top_infill_extrusion_width: 0.4
+  top_solid_layers: 5
+  top_solid_min_thickness: 1
+---
+kind: print
+id: corexy-detail-0.05
+values:
+  external_perimeter_speed: 45
+  small_perimeter_speed: 45
+  gap_fill_speed: 45
+inherits:
+- corexy-detail-0.05-layer
+- corexy-025
+---
+kind: print
+id: corexy-detail-0.07
+values:
+  external_perimeter_speed: 45
+  small_perimeter_speed: 45
+  gap_fill_speed: 45
+inherits:
+- corexy-detail-0.07-layer
+- corexy-025
+---
+kind: print
+id: corexy-detail-0.10
+values:
+  perimeter_acceleration: 3000
+  infill_acceleration: 6000
+  solid_infill_acceleration: 4000
+  support_material_threshold: 40
+inherits:
+- corexy-detail-0.10-layer
+---
+kind: print
+id: corexy-detail-0.30
+values:
+  overhang_speed_2: 35
+  top_solid_infill_acceleration: 2000
+  perimeter_acceleration: 2500
+  solid_infill_acceleration: 4000
+  infill_acceleration: 6000
+  gap_fill_speed: 45
+inherits:
+- corexy-detail-0.30-layer
+---
+kind: print
+id: corexy-draft-0.28
+values:
+  overhang_speed_2: 50
+  support_material_threshold: 35
+  external_perimeter_acceleration: 3000
+  perimeter_acceleration: 6000
+  support_material_spacing: 2.5
+  infill_speed: 300
+inherits:
+- corexy-draft-0.28-layer
+- corexy-speed
+---
+kind: print
+id: corexy-draft-0.55
+values:
+  top_solid_infill_acceleration: 2000
+  perimeter_acceleration: 2500
+  solid_infill_acceleration: 4000
+  infill_acceleration: 7000
+  perimeter_speed: 45
+inherits:
+- corexy-draft-0.55-layer
+---
+kind: print
+id: corexy-speed-0.12
+values:
+  travel_acceleration: 6000
+inherits:
+- corexy-speed-0.12-layer
+- corexy-025
+---
+kind: print
+id: corexy-speed-0.15-025
+values:
+  travel_acceleration: 6000
+inherits:
+- corexy-speed-0.15-025-layer
+- corexy-025
+---
+kind: print
+id: corexy-speed-0.15-04
+values:
+  overhang_speed_2: 50
+inherits:
+- corexy-speed-0.15-04-layer
+- corexy-speed
+---
+kind: print
+id: corexy-speed-0.16
+values:
+  infill_acceleration: 6000
+  perimeter_acceleration: 3000
+inherits:
+- corexy-speed-0.16-layer
+- corexy-03
+---
+kind: print
+id: corexy-speed-0.20-03
+values:
+  infill_acceleration: 6000
+  perimeter_acceleration: 3000
+inherits:
+- corexy-speed-0.20-03-layer
+- corexy-03
+---
+kind: print
+id: corexy-speed-0.20-04
+values:
+  overhang_speed_2: 50
+inherits:
+- corexy-speed-0.20-04-layer
+- corexy-speed
+---
+kind: print
+id: corexy-speed-0.20-05
+values:
+  overhang_speed_2: 50
+inherits:
+- corexy-speed-0.20-05-layer
+- corexy-speed
+---
+kind: print
+id: corexy-speed-0.20-06
+values:
+  overhang_speed_2: 30
+  overhang_speed_3: 70%
+  perimeter_speed: 130
+  external_perimeter_speed: 130
+  small_perimeter_speed: 130
+inherits:
+- corexy-speed-0.20-06-layer
+- corexy-speed
+---
+kind: print
+id: corexy-speed-0.25-04
+values:
+  overhang_speed_2: 50
+  infill_speed: 300
+inherits:
+- corexy-speed-0.25-04-layer
+- corexy-speed
+---
+kind: print
+id: corexy-speed-0.25-05
+values:
+  overhang_speed_2: 50
+inherits:
+- corexy-speed-0.25-05-layer
+- corexy-speed
+---
+kind: print
+id: corexy-speed-0.25-06
+values:
+  overhang_speed_2: 30
+  overhang_speed_3: 70%
+  perimeter_speed: 95
+  external_perimeter_speed: 75
+  small_perimeter_speed: 75
+inherits:
+- corexy-speed-0.25-06-layer
+- corexy-speed
+---
+kind: print
+id: corexy-speed-0.30
+values:
+  overhang_speed_2: 45
+  top_solid_infill_acceleration: 2000
+inherits:
+- corexy-speed-0.30-layer
+---
+kind: print
+id: corexy-speed-0.32-05
+values:
+  arc_fitting: disabled
+  bottom_fill_pattern: monotoniclines
+  bottom_solid_layers: 3
+  bottom_solid_min_thickness: 0.5
+  bridge_acceleration: 1000
+  bridge_flow_ratio: 1
+  bridge_speed: 40
+  brim_separation: 0.1
+  default_acceleration: 3000
+  dont_support_bridges: 0
+  elefant_foot_compensation: 0.2
+  enable_dynamic_overhang_speeds: 1
+  ensure_vertical_shell_thickness: 1
+  external_perimeter_acceleration: 3000
+  external_perimeter_extrusion_width: 0.55
+  external_perimeter_speed: 160
+  external_perimeters_first: 0
+  extra_perimeters: 0
+  extrusion_width: 0.55
+  fill_angle: 45
+  fill_density: 15%
+  fill_pattern: grid
+  first_layer_acceleration: 500
+  first_layer_acceleration_over_raft: 0
+  first_layer_extrusion_width: 0.55
+  first_layer_height: 0.2
+  first_layer_infill_speed: 100
+  first_layer_speed: 45
+  first_layer_speed_over_raft: 30
+  gap_fill_enabled: 1
+  gap_fill_speed: 70
+  gcode_comments: 0
+  gcode_label_objects: firmware
+  gcode_resolution: 0.008
+  infill_acceleration: 7000
+  infill_anchor: 2
+  infill_anchor_max: 15
+  infill_every_layers: 1
+  infill_extruder: 1
+  infill_extrusion_width: 0.55
+  infill_first: 0
+  infill_overlap: 15%
+  infill_speed: 200
+  interface_shells: 0
+  ironing_type: top
+  layer_height: 0.32
+  max_print_speed: 300
+  max_volumetric_extrusion_rate_slope_negative: 0
+  max_volumetric_extrusion_rate_slope_positive: 0
+  max_volumetric_speed: 0
+  min_bead_width: 85%
+  min_feature_size: 25%
+  min_skirt_length: 4
+  mmu_segmented_region_max_width: 0
+  only_retract_when_crossing_perimeters: 0
+  ooze_prevention: 0
+  output_filename_format: '{input_filename_base}_0.5n_{layer_height}mm_{printing_filament_types}_{printer_model}_{print_time}.gcode'
+  over_bridge_speed: 40%
+  overhang_speed_0: 15
+  overhang_speed_1: 25
+  overhang_speed_2: 50
+  overhang_speed_3: 80%
+  overhangs: 1
+  perimeter_acceleration: 6000
+  perimeter_extruder: 1
+  perimeter_extrusion_width: 0.55
+  perimeter_generator: arachne
+  perimeter_speed: 160
+  perimeters: 2
+  raft_contact_distance: 0.25
+  raft_expansion: 1.5
+  raft_first_layer_density: 80%
+  raft_first_layer_expansion: 3
+  seam_position: aligned
+  single_extruder_multi_material_priming: 0
+  skirts: 2
+  skirt_height: 2
+  slice_closing_radius: 0.049
+  small_perimeter_speed: 160
+  solid_infill_acceleration: 6000
+  solid_infill_below_area: 0
+  solid_infill_every_layers: 0
+  solid_infill_extruder: 1
+  solid_infill_extrusion_width: 0.55
+  solid_infill_speed: 160
+  support_material: 0
+  support_material_angle: 0
+  support_material_auto: 1
+  support_material_bottom_contact_distance: 0
+  support_material_bottom_interface_layers: 0
+  support_material_buildplate_only: 0
+  support_material_closing_radius: 2
+  support_material_contact_distance: 0.25
+  support_material_enforce_layers: 0
+  support_material_extruder: 0
+  support_material_extrusion_width: 0.4
+  support_material_interface_contact_loops: 0
+  support_material_interface_extruder: 0
+  support_material_interface_layers: 3
+  support_material_interface_pattern: auto
+  support_material_interface_spacing: 0.22
+  support_material_interface_speed: 50%
+  support_material_pattern: rectilinear
+  support_material_spacing: 2
+  support_material_speed: 120
+  support_material_style: snug
+  support_material_synchronize_layers: 0
+  support_material_threshold: 40
+  support_material_with_sheath: 0
+  support_material_xy_spacing: 80%
+  support_tree_angle: 40
+  support_tree_angle_slow: 25
+  support_tree_branch_diameter: 2
+  support_tree_branch_diameter_angle: 5
+  support_tree_branch_diameter_double_wall: 8
+  support_tree_branch_distance: 1
+  support_tree_tip_diameter: 1
+  support_tree_top_rate: 30%
+  thick_bridges: 0
+  thin_walls: 0
+  top_fill_pattern: monotoniclines
+  top_infill_extrusion_width: 0.5
+  top_one_perimeter_type: top
+  top_solid_infill_acceleration: 2000
+  top_solid_infill_speed: 70
+  top_solid_layers: 4
+  top_solid_min_thickness: 0.7
+  travel_acceleration: 7000
+  travel_short_distance_acceleration: 250
+  travel_speed: 350
+  travel_speed_z: 12
+  wipe_tower: 1
+  wipe_tower_cone_angle: 25
+  wipe_tower_extra_flow: 250%
+  wipe_tower_extra_spacing: 110%
+---
+kind: print
+id: corexy-speed-0.32-06
+values:
+  overhang_speed_2: 30
+  overhang_speed_3: 70%
+inherits:
+- corexy-speed-0.32-06-layer
+- corexy-speed
+---
+kind: print
+id: corexy-speed-0.40-06
+values:
+  overhang_speed_2: 35
+  overhang_speed_3: 70%
+  top_solid_infill_acceleration: 2000
+inherits:
+- corexy-speed-0.40-06-layer
+- corexy-speed
+---
+kind: print
+id: corexy-speed-0.40-08
+values:
+  overhang_speed_2: 35
+  top_solid_infill_acceleration: 2000
+  perimeter_acceleration: 2500
+  solid_infill_acceleration: 4000
+  infill_acceleration: 7000
+inherits:
+- corexy-speed-0.40-08-layer
+---
+kind: print
+id: corexy-speed-0.55
+values:
+  overhang_speed_2: 45
+  top_solid_infill_acceleration: 2000
+inherits:
+- corexy-speed-0.55-layer
+---
+kind: print
+id: corexy-structural-0.10
+values:
+  perimeter_speed: 70
+  small_perimeter_speed: 50
+  external_perimeter_speed: 50
+inherits:
+- corexy-structural-0.10-layer
+---
+kind: print
+id: corexy-structural-0.12-025
+values:
+  external_perimeter_speed: 45
+  small_perimeter_speed: 45
+  gap_fill_speed: 45
+inherits:
+- corexy-structural-0.12-025-layer
+- corexy-025
+---
+kind: print
+id: corexy-structural-0.12-03
+values:
+  infill_acceleration: 5000
+  perimeter_speed: 70
+  external_perimeter_speed: 45
+  small_perimeter_speed: 45
+inherits:
+- corexy-structural-0.12-03-layer
+- corexy-03
+---
+kind: print
+id: corexy-structural-0.15-025
+values:
+  external_perimeter_speed: 45
+  small_perimeter_speed: 45
+  gap_fill_speed: 45
+inherits:
+- corexy-structural-0.15-025-layer
+- corexy-025
+---
+kind: print
+id: corexy-structural-0.15-04
+values:
+  overhang_speed_2: 45
+  infill_speed: 120
+  support_material_threshold: 40
+inherits:
+- corexy-structural-0.15-04-layer
+- corexy-structural
+---
+kind: print
+id: corexy-structural-0.15-05
+values:
+  overhang_speed_2: 45
+inherits:
+- corexy-structural-0.15-05-layer
+- corexy-structural
+---
+kind: print
+id: corexy-structural-0.15-06
+values:
+  perimeter_speed: 70
+  overhang_speed_2: 30
+  overhang_speed_3: 70%
+  gap_fill_speed: 70
+inherits:
+- corexy-structural-0.15-06-layer
+- corexy-structural
+---
+kind: print
+id: corexy-structural-0.16
+values:
+  infill_acceleration: 6000
+  perimeter_speed: 70
+  external_perimeter_speed: 50
+  small_perimeter_speed: 50
+inherits:
+- corexy-structural-0.16-layer
+- corexy-03
+---
+kind: print
+id: corexy-structural-0.20-03
+values:
+  infill_acceleration: 6000
+  perimeter_speed: 70
+  external_perimeter_speed: 50
+  small_perimeter_speed: 50
+inherits:
+- corexy-structural-0.20-03-layer
+- corexy-03
+---
+kind: print
+id: corexy-structural-0.20-04
+values:
+  overhang_speed_2: 45
+inherits:
+- corexy-structural-0.20-04-layer
+- corexy-structural
+---
+kind: print
+id: corexy-structural-0.20-05
+values:
+  overhang_speed_2: 45
+inherits:
+- corexy-structural-0.20-05-layer
+- corexy-structural
+---
+kind: print
+id: corexy-structural-0.20-06
+values:
+  overhang_speed_2: 30
+inherits:
+- corexy-structural-0.20-06-layer
+- corexy-structural
+---
+kind: print
+id: corexy-structural-0.25-04
+values:
+  overhang_speed_2: 45
+inherits:
+- corexy-structural-0.25-04-layer
+- corexy-structural
+---
+kind: print
+id: corexy-structural-0.25-05
+values:
+  overhang_speed_2: 45
+inherits:
+- corexy-structural-0.25-05-layer
+- corexy-structural
+---
+kind: print
+id: corexy-structural-0.25-06
+values:
+  overhang_speed_2: 30
+inherits:
+- corexy-structural-0.25-06-layer
+- corexy-structural
+---
+kind: print
+id: corexy-structural-0.30
+values:
+  overhang_speed_2: 40
+  top_solid_infill_acceleration: 2000
+  support_material_speed: 100
+  support_material_interface_speed: 55%
+inherits:
+- corexy-structural-0.30-layer
+- corexy-structural
+---
+kind: print
+id: corexy-structural-0.32-05
+values:
+  overhang_speed_2: 45
+  support_material_speed: 120
+  support_material_interface_speed: 50%
+inherits:
+- corexy-structural-0.32-05-layer
+- corexy-structural
+---
+kind: print
+id: corexy-structural-0.32-06
+values:
+  overhang_speed_2: 30
+inherits:
+- corexy-structural-0.32-06-layer
+- corexy-structural
+---
+kind: print
+id: corexy-structural-0.40-06
+values:
+  overhang_speed_2: 35
+inherits:
+- corexy-structural-0.40-06-layer
+- corexy-structural
+---
+kind: print
+id: corexy-structural-0.40-08
+values:
+  overhang_speed_2: 40
+  top_solid_infill_acceleration: 2000
+inherits:
+- corexy-structural-0.40-08-layer
+- corexy-structural
+---
+kind: print
+id: corexy-structural-0.55
+values:
+  overhang_speed_2: 40
+  top_solid_infill_acceleration: 2000
+inherits:
+- corexy-structural-0.55-layer
+- corexy-structural
+---
+kind: print
+id: corexz-structural-0.20-04
+values:
+  default_acceleration: 2500
+  external_perimeter_acceleration: 1500
+  perimeter_acceleration: 2500
+  solid_infill_acceleration: 3000
+  top_solid_infill_acceleration: 1200
+  external_perimeter_speed: 45
+  gap_fill_speed: 60
+  infill_speed: 120
+  perimeter_speed: 80
+  small_perimeter_speed: 45
+  support_material_interface_speed: 50
+  top_solid_infill_speed: 80
+inherits:
+- corexy-structural-0.20-04
+- corexz-04

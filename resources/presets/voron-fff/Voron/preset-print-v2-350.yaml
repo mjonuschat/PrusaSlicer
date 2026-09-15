@@ -1,0 +1,906 @@
+kind: print
+id: v2-350
+variants:
+- id: v2-350-0.4
+  condition: printer.model=="v2-350" and tool.nozzle_diameter == 0.4 and tool.nozzle_flow_class
+    == "SF"
+  values:
+    max_layer_height: 0.3
+    min_layer_height: 0.07
+    deretract_speed: 35
+    retract_before_travel: 2.0
+    retract_before_wipe: 80%
+    retract_layer_change: 0
+    retract_length: 0.5
+    retract_length_toolchange: 0
+    retract_lift: 0.2
+    retract_lift_above: 0.25
+    retract_lift_below: 0
+    retract_restart_extra: 0
+    retract_restart_extra_toolchange: 0
+    retract_speed: 35
+  variants:
+  - id: v2-350-0.4-corexy-detail-0.10
+    name: 0.10mm Detail 0.4 @VORON2 350mm
+    values:
+      perimeter_acceleration: 3000
+      infill_acceleration: 6000
+      solid_infill_acceleration: 4000
+      support_material_threshold: 40
+      layer_height: 0.1
+    inherits:
+    - corexy-detail-0.10-layer
+  - id: v2-350-0.4-corexy-speed-0.15-04
+    name: 0.15mm Speed 0.4 @VORON2 350mm
+    values:
+      overhang_speed_2: 50
+      layer_height: 0.15
+    inherits:
+    - corexy-speed-0.15-04-layer
+    - corexy-speed
+  - id: v2-350-0.4-corexy-speed-0.20-04
+    name: 0.20mm Speed 0.4 @VORON2 350mm
+    values:
+      overhang_speed_2: 50
+      layer_height: 0.2
+    inherits:
+    - corexy-speed-0.20-04-layer
+    - corexy-speed
+  - id: v2-350-0.4-corexy-structural-0.15-04
+    name: 0.15mm Structural 0.4 @VORON2 350mm
+    values:
+      overhang_speed_2: 45
+      infill_speed: 120
+      support_material_threshold: 40
+      layer_height: 0.15
+    inherits:
+    - corexy-structural-0.15-04-layer
+    - corexy-structural
+  - id: v2-350-0.4-corexy-structural-0.20-04
+    name: 0.20mm Structural 0.4 @VORON2 350mm
+    values:
+      overhang_speed_2: 45
+      layer_height: 0.2
+    inherits:
+    - corexy-structural-0.20-04-layer
+    - corexy-structural
+  - id: v2-350-0.4-corexy-voron-printed-parts-0.20-04
+    name: 0.20mm VORON Printed Parts 0.4 @VORON2 350mm
+    values:
+      layer_height: 0.2
+    inherits:
+    - corexy-structural-0.20-04
+    - voron-printed-parts
+- id: v2-350-0.25
+  condition: printer.model=="v2-350" and tool.nozzle_diameter == 0.25 and tool.nozzle_flow_class
+    == "SF"
+  values:
+    max_layer_height: 0.15
+    min_layer_height: 0.05
+    deretract_speed: 35
+    retract_before_travel: 2.0
+    retract_before_wipe: 80%
+    retract_layer_change: 0
+    retract_length: 0.5
+    retract_length_toolchange: 0
+    retract_lift: 0.15
+    retract_lift_above: 0.25
+    retract_lift_below: 0
+    retract_restart_extra: 0
+    retract_restart_extra_toolchange: 0
+    retract_speed: 35
+  variants:
+  - id: v2-350-0.25-corexy-detail-0.05
+    name: 0.05mm Detail 0.25 @VORON2 350mm
+    values:
+      external_perimeter_speed: 45
+      small_perimeter_speed: 45
+      gap_fill_speed: 45
+      layer_height: 0.05
+    inherits:
+    - corexy-detail-0.05-layer
+    - corexy-025
+  - id: v2-350-0.25-corexy-detail-0.07
+    name: 0.07mm Detail 0.25 @VORON2 350mm
+    values:
+      external_perimeter_speed: 45
+      small_perimeter_speed: 45
+      gap_fill_speed: 45
+      layer_height: 0.07
+    inherits:
+    - corexy-detail-0.07-layer
+    - corexy-025
+  - id: v2-350-0.25-corexy-speed-0.12
+    name: 0.12mm Speed 0.25 @VORON2 350mm
+    values:
+      travel_acceleration: 6000
+      layer_height: 0.12
+    inherits:
+    - corexy-speed-0.12-layer
+    - corexy-025
+  - id: v2-350-0.25-corexy-speed-0.15-025
+    name: 0.15mm Speed 0.25 @VORON2 350mm
+    values:
+      travel_acceleration: 6000
+      layer_height: 0.15
+    inherits:
+    - corexy-speed-0.15-025-layer
+    - corexy-025
+  - id: v2-350-0.25-corexy-structural-0.12-025
+    name: 0.12mm Structural 0.25 @VORON2 350mm
+    values:
+      external_perimeter_speed: 45
+      small_perimeter_speed: 45
+      gap_fill_speed: 45
+      layer_height: 0.12
+    inherits:
+    - corexy-structural-0.12-025-layer
+    - corexy-025
+  - id: v2-350-0.25-corexy-structural-0.15-025
+    name: 0.15mm Structural 0.25 @VORON2 350mm
+    values:
+      external_perimeter_speed: 45
+      small_perimeter_speed: 45
+      gap_fill_speed: 45
+      layer_height: 0.15
+    inherits:
+    - corexy-structural-0.15-025-layer
+    - corexy-025
+- id: v2-350-0.3
+  condition: printer.model=="v2-350" and tool.nozzle_diameter == 0.3 and tool.nozzle_flow_class
+    == "SF"
+  values:
+    max_layer_height: 0.22
+    min_layer_height: 0.05
+    deretract_speed: 35
+    retract_before_travel: 2.0
+    retract_before_wipe: 80%
+    retract_layer_change: 0
+    retract_length: 0.5
+    retract_length_toolchange: 0
+    retract_lift: 0.2
+    retract_lift_above: 0.25
+    retract_lift_below: 0
+    retract_restart_extra: 0
+    retract_restart_extra_toolchange: 0
+    retract_speed: 35
+  variants:
+  - id: v2-350-0.3-corexy-speed-0.16
+    name: 0.16mm Speed 0.3 @VORON2 350mm
+    values:
+      infill_acceleration: 6000
+      perimeter_acceleration: 3000
+      layer_height: 0.16
+    inherits:
+    - corexy-speed-0.16-layer
+    - corexy-03
+  - id: v2-350-0.3-corexy-speed-0.20-03
+    name: 0.20mm Speed 0.3 @VORON2 350mm
+    values:
+      infill_acceleration: 6000
+      perimeter_acceleration: 3000
+      layer_height: 0.2
+    inherits:
+    - corexy-speed-0.20-03-layer
+    - corexy-03
+  - id: v2-350-0.3-corexy-structural-0.12-03
+    name: 0.12mm Structural 0.3 @VORON2 350mm
+    values:
+      infill_acceleration: 5000
+      perimeter_speed: 70
+      external_perimeter_speed: 45
+      small_perimeter_speed: 45
+      layer_height: 0.12
+    inherits:
+    - corexy-structural-0.12-03-layer
+    - corexy-03
+  - id: v2-350-0.3-corexy-structural-0.16
+    name: 0.16mm Structural 0.3 @VORON2 350mm
+    values:
+      infill_acceleration: 6000
+      perimeter_speed: 70
+      external_perimeter_speed: 50
+      small_perimeter_speed: 50
+      layer_height: 0.16
+    inherits:
+    - corexy-structural-0.16-layer
+    - corexy-03
+  - id: v2-350-0.3-corexy-structural-0.20-03
+    name: 0.20mm Structural 0.3 @VORON2 350mm
+    values:
+      infill_acceleration: 6000
+      perimeter_speed: 70
+      external_perimeter_speed: 50
+      small_perimeter_speed: 50
+      layer_height: 0.2
+    inherits:
+    - corexy-structural-0.20-03-layer
+    - corexy-03
+- id: v2-350-0.5
+  condition: printer.model=="v2-350" and tool.nozzle_diameter == 0.5 and tool.nozzle_flow_class
+    == "SF"
+  values:
+    max_layer_height: 0.32
+    min_layer_height: 0.07
+    deretract_speed: 35
+    retract_before_travel: 2.0
+    retract_before_wipe: 80%
+    retract_layer_change: 0
+    retract_length: 0.5
+    retract_length_toolchange: 0
+    retract_lift: 0.2
+    retract_lift_above: 0.25
+    retract_lift_below: 0
+    retract_restart_extra: 0
+    retract_restart_extra_toolchange: 0
+    retract_speed: 35
+  variants:
+  - id: v2-350-0.5-corexy-speed-0.20-05
+    name: 0.20mm Speed 0.5 @VORON2 350mm
+    values:
+      overhang_speed_2: 50
+      layer_height: 0.2
+    inherits:
+    - corexy-speed-0.20-05-layer
+    - corexy-speed
+  - id: v2-350-0.5-corexy-speed-0.25-05
+    name: 0.25mm Speed 0.5 @VORON2 350mm
+    values:
+      overhang_speed_2: 50
+      layer_height: 0.25
+    inherits:
+    - corexy-speed-0.25-05-layer
+    - corexy-speed
+  - id: v2-350-0.5-corexy-structural-0.10
+    name: 0.10mm Structural 0.5 @VORON2 350mm
+    values:
+      perimeter_speed: 70
+      small_perimeter_speed: 50
+      external_perimeter_speed: 50
+      layer_height: 0.1
+    inherits:
+    - corexy-structural-0.10-layer
+  - id: v2-350-0.5-corexy-structural-0.15-05
+    name: 0.15mm Structural 0.5 @VORON2 350mm
+    values:
+      overhang_speed_2: 45
+      layer_height: 0.15
+    inherits:
+    - corexy-structural-0.15-05-layer
+    - corexy-structural
+  - id: v2-350-0.5-corexy-structural-0.20-05
+    name: 0.20mm Structural 0.5 @VORON2 350mm
+    values:
+      overhang_speed_2: 45
+      layer_height: 0.2
+    inherits:
+    - corexy-structural-0.20-05-layer
+    - corexy-structural
+  - id: v2-350-0.5-corexy-structural-0.25-05
+    name: 0.25mm Structural 0.5 @VORON2 350mm
+    values:
+      overhang_speed_2: 45
+      layer_height: 0.25
+    inherits:
+    - corexy-structural-0.25-05-layer
+    - corexy-structural
+- id: v2-350-0.6
+  condition: printer.model=="v2-350" and tool.nozzle_diameter == 0.6 and tool.nozzle_flow_class
+    == "SF"
+  values:
+    max_layer_height: 0.4
+    min_layer_height: 0.15
+    deretract_speed: 35
+    retract_before_travel: 2.0
+    retract_before_wipe: 80%
+    retract_layer_change: 0
+    retract_length: 0.5
+    retract_length_toolchange: 0
+    retract_lift: 0.2
+    retract_lift_above: 0.25
+    retract_lift_below: 0
+    retract_restart_extra: 0
+    retract_restart_extra_toolchange: 0
+    retract_speed: 35
+  variants:
+  - id: v2-350-0.6-corexy-speed-0.20-06
+    name: 0.20mm Speed 0.6 @VORON2 350mm
+    values:
+      overhang_speed_2: 30
+      overhang_speed_3: 70%
+      perimeter_speed: 130
+      external_perimeter_speed: 130
+      small_perimeter_speed: 130
+      layer_height: 0.2
+    inherits:
+    - corexy-speed-0.20-06-layer
+    - corexy-speed
+  - id: v2-350-0.6-corexy-speed-0.25-06
+    name: 0.25mm Speed 0.6 @VORON2 350mm
+    values:
+      overhang_speed_2: 30
+      overhang_speed_3: 70%
+      perimeter_speed: 95
+      external_perimeter_speed: 75
+      small_perimeter_speed: 75
+      layer_height: 0.25
+    inherits:
+    - corexy-speed-0.25-06-layer
+    - corexy-speed
+  - id: v2-350-0.6-corexy-speed-0.32-06
+    name: 0.32mm Speed 0.6 @VORON2 350mm
+    values:
+      overhang_speed_2: 30
+      overhang_speed_3: 70%
+      layer_height: 0.32
+    inherits:
+    - corexy-speed-0.32-06-layer
+    - corexy-speed
+  - id: v2-350-0.6-corexy-structural-0.15-06
+    name: 0.15mm Structural 0.6 @VORON2 350mm
+    values:
+      perimeter_speed: 70
+      overhang_speed_2: 30
+      overhang_speed_3: 70%
+      gap_fill_speed: 70
+      layer_height: 0.15
+    inherits:
+    - corexy-structural-0.15-06-layer
+    - corexy-structural
+  - id: v2-350-0.6-corexy-structural-0.20-06
+    name: 0.20mm Structural 0.6 @VORON2 350mm
+    values:
+      overhang_speed_2: 30
+      layer_height: 0.2
+    inherits:
+    - corexy-structural-0.20-06-layer
+    - corexy-structural
+  - id: v2-350-0.6-corexy-structural-0.25-06
+    name: 0.25mm Structural 0.6 @VORON2 350mm
+    values:
+      overhang_speed_2: 30
+      layer_height: 0.25
+    inherits:
+    - corexy-structural-0.25-06-layer
+    - corexy-structural
+  - id: v2-350-0.6-corexy-structural-0.32-06
+    name: 0.32mm Structural 0.6 @VORON2 350mm
+    values:
+      overhang_speed_2: 30
+      layer_height: 0.32
+    inherits:
+    - corexy-structural-0.32-06-layer
+    - corexy-structural
+- id: v2-350-0.8
+  condition: printer.model=="v2-350" and tool.nozzle_diameter == 0.8 and tool.nozzle_flow_class
+    == "SF"
+  values:
+    max_layer_height: 0.6
+    min_layer_height: 0.2
+    deretract_speed: 35
+    retract_before_travel: 2.0
+    retract_before_wipe: 50%
+    retract_layer_change: 0
+    retract_length: 0.5
+    retract_length_toolchange: 0
+    retract_lift: 0.25
+    retract_lift_above: 0.25
+    retract_lift_below: 0
+    retract_restart_extra: 0
+    retract_restart_extra_toolchange: 0
+    retract_speed: 35
+  variants:
+  - id: v2-350-0.8-corexy-detail-0.30
+    name: 0.30mm Detail 0.8 @VORON2 350mm
+    values:
+      overhang_speed_2: 35
+      top_solid_infill_acceleration: 2000
+      perimeter_acceleration: 2500
+      solid_infill_acceleration: 4000
+      infill_acceleration: 6000
+      gap_fill_speed: 45
+      layer_height: 0.3
+    inherits:
+    - corexy-detail-0.30-layer
+  - id: v2-350-0.8-corexy-draft-0.55
+    name: 0.55mm Draft 0.8 @VORON2 350mm
+    values:
+      top_solid_infill_acceleration: 2000
+      perimeter_acceleration: 2500
+      solid_infill_acceleration: 4000
+      infill_acceleration: 7000
+      perimeter_speed: 45
+      layer_height: 0.55
+    inherits:
+    - corexy-draft-0.55-layer
+  - id: v2-350-0.8-corexy-speed-0.40-08
+    name: 0.40mm Speed 0.8 @VORON2 350mm
+    values:
+      overhang_speed_2: 35
+      top_solid_infill_acceleration: 2000
+      perimeter_acceleration: 2500
+      solid_infill_acceleration: 4000
+      infill_acceleration: 7000
+      layer_height: 0.4
+    inherits:
+    - corexy-speed-0.40-08-layer
+- id: v2-350-0.4-hf
+  condition: printer.model=="v2-350" and tool.nozzle_diameter == 0.4 and tool.nozzle_flow_class
+    == "HF"
+  values:
+    max_layer_height: 0.3
+    min_layer_height: 0.07
+    deretract_speed: 35
+    retract_before_travel: 2.0
+    retract_before_wipe: 80%
+    retract_layer_change: 0
+    retract_length: 0.5
+    retract_length_toolchange: 0
+    retract_lift: 0.2
+    retract_lift_above: 0.25
+    retract_lift_below: 0
+    retract_restart_extra: 0
+    retract_restart_extra_toolchange: 0
+    retract_speed: 35
+  variants:
+  - id: v2-350-0.4-hf-corexy-draft-0.28
+    name: 0.28mm Draft 0.4-hf @VORON2 350mm
+    values:
+      overhang_speed_2: 50
+      support_material_threshold: 35
+      external_perimeter_acceleration: 3000
+      perimeter_acceleration: 6000
+      support_material_spacing: 2.5
+      infill_speed: 300
+      layer_height: 0.28
+    inherits:
+    - corexy-draft-0.28-layer
+    - corexy-speed
+  - id: v2-350-0.4-hf-corexy-speed-0.15-04
+    name: 0.15mm Speed 0.4-hf @VORON2 350mm
+    values:
+      overhang_speed_2: 50
+      external_perimeter_speed: 200
+      infill_speed: 300
+      over_bridge_speed: 35%
+      overhang_speed_3: 70%
+      perimeter_speed: 250
+      solid_infill_speed: 250
+      layer_height: 0.15
+    inherits:
+    - corexy-speed-0.15-04-layer
+    - corexy-speed
+  - id: v2-350-0.4-hf-corexy-speed-0.20-04
+    name: 0.20mm Speed 0.4-hf @VORON2 350mm
+    values:
+      overhang_speed_2: 50
+      external_perimeter_speed: 200
+      infill_speed: 300
+      over_bridge_speed: 35%
+      overhang_speed_3: 70%
+      perimeter_speed: 250
+      solid_infill_speed: 250
+      layer_height: 0.2
+    inherits:
+    - corexy-speed-0.20-04-layer
+    - corexy-speed
+  - id: v2-350-0.4-hf-corexy-speed-0.25-04
+    name: 0.25mm Speed 0.4-hf @VORON2 350mm
+    values:
+      overhang_speed_2: 50
+      infill_speed: 300
+      layer_height: 0.25
+    inherits:
+    - corexy-speed-0.25-04-layer
+    - corexy-speed
+  - id: v2-350-0.4-hf-corexy-structural-0.25-04
+    name: 0.25mm Structural 0.4-hf @VORON2 350mm
+    values:
+      overhang_speed_2: 45
+      layer_height: 0.25
+    inherits:
+    - corexy-structural-0.25-04-layer
+    - corexy-structural
+  - id: v2-350-0.4-hf-corexy-voron-printed-parts-0.20-04
+    name: 0.20mm VORON Printed Parts 0.4-hf @VORON2 350mm
+    values:
+      bridge_speed: 70
+      external_perimeter_acceleration: 2500
+      external_perimeter_speed: 200
+      first_layer_infill_speed: 150
+      first_layer_speed: 75
+      gap_fill_speed: 170
+      infill_acceleration: 5000
+      infill_speed: 240
+      overhang_speed_3: 70%
+      perimeter_acceleration: 3000
+      perimeter_speed: 220
+      small_perimeter_speed: 170
+      solid_infill_acceleration: 5000
+      solid_infill_speed: 240
+      support_material_interface_speed: 100
+      support_material_speed: 200
+      top_solid_infill_speed: 125
+      layer_height: 0.2
+    inherits:
+    - corexy-structural-0.20-04
+    - voron-printed-parts
+- id: v2-350-0.5-hf
+  condition: printer.model=="v2-350" and tool.nozzle_diameter == 0.5 and tool.nozzle_flow_class
+    == "HF"
+  values:
+    max_layer_height: 0.32
+    min_layer_height: 0.07
+    deretract_speed: 35
+    retract_before_travel: 2.0
+    retract_before_wipe: 80%
+    retract_layer_change: 0
+    retract_length: 0.5
+    retract_length_toolchange: 0
+    retract_lift: 0.2
+    retract_lift_above: 0.25
+    retract_lift_below: 0
+    retract_restart_extra: 0
+    retract_restart_extra_toolchange: 0
+    retract_speed: 35
+  variants:
+  - id: v2-350-0.5-hf-corexy-speed-0.20-05
+    name: 0.20mm Speed 0.5-hf @VORON2 350mm
+    values:
+      overhang_speed_2: 50
+      bottom_solid_layers: 3
+      external_perimeter_speed: 200
+      infill_speed: 220
+      over_bridge_speed: 40%
+      perimeter_speed: 200
+      small_perimeter_speed: 170
+      solid_infill_speed: 220
+      layer_height: 0.2
+    inherits:
+    - corexy-speed-0.20-05-layer
+    - corexy-speed
+  - id: v2-350-0.5-hf-corexy-speed-0.25-05
+    name: 0.25mm Speed 0.5-hf @VORON2 350mm
+    values:
+      overhang_speed_2: 50
+      external_perimeter_speed: 200
+      over_bridge_speed: 40%
+      perimeter_speed: 200
+      small_perimeter_speed: 170
+      solid_infill_speed: 200
+      layer_height: 0.25
+    inherits:
+    - corexy-speed-0.25-05-layer
+    - corexy-speed
+  - id: v2-350-0.5-hf-corexy-speed-0.32-05
+    name: 0.32mm Speed 0.5-hf @VORON2 350mm
+    values:
+      arc_fitting: disabled
+      bottom_fill_pattern: monotoniclines
+      bottom_solid_layers: 3
+      bottom_solid_min_thickness: 0.5
+      bridge_acceleration: 1000
+      bridge_flow_ratio: 1
+      bridge_speed: 40
+      brim_separation: 0.1
+      default_acceleration: 3000
+      dont_support_bridges: 0
+      elefant_foot_compensation: 0.2
+      enable_dynamic_overhang_speeds: 1
+      ensure_vertical_shell_thickness: 1
+      external_perimeter_acceleration: 3000
+      external_perimeter_extrusion_width: 0.55
+      external_perimeter_speed: 160
+      external_perimeters_first: 0
+      extra_perimeters: 0
+      extrusion_width: 0.55
+      fill_angle: 45
+      fill_density: 15%
+      fill_pattern: grid
+      first_layer_acceleration: 500
+      first_layer_acceleration_over_raft: 0
+      first_layer_extrusion_width: 0.55
+      first_layer_height: 0.2
+      first_layer_infill_speed: 100
+      first_layer_speed: 45
+      first_layer_speed_over_raft: 30
+      gap_fill_enabled: 1
+      gap_fill_speed: 70
+      gcode_comments: 0
+      gcode_label_objects: firmware
+      gcode_resolution: 0.008
+      infill_acceleration: 7000
+      infill_anchor: 2
+      infill_anchor_max: 15
+      infill_every_layers: 1
+      infill_extruder: 1
+      infill_extrusion_width: 0.55
+      infill_first: 0
+      infill_overlap: 15%
+      infill_speed: 200
+      interface_shells: 0
+      ironing_type: top
+      layer_height: 0.32
+      max_print_speed: 300
+      max_volumetric_extrusion_rate_slope_negative: 0
+      max_volumetric_extrusion_rate_slope_positive: 0
+      max_volumetric_speed: 0
+      min_bead_width: 85%
+      min_feature_size: 25%
+      min_skirt_length: 4
+      mmu_segmented_region_max_width: 0
+      only_retract_when_crossing_perimeters: 0
+      ooze_prevention: 0
+      output_filename_format: '{input_filename_base}_0.5n_{layer_height}mm_{printing_filament_types}_{printer_model}_{print_time}.gcode'
+      over_bridge_speed: 40%
+      overhang_speed_0: 15
+      overhang_speed_1: 25
+      overhang_speed_2: 50
+      overhang_speed_3: 80%
+      overhangs: 1
+      perimeter_acceleration: 6000
+      perimeter_extruder: 1
+      perimeter_extrusion_width: 0.55
+      perimeter_generator: arachne
+      perimeter_speed: 160
+      perimeters: 2
+      raft_contact_distance: 0.25
+      raft_expansion: 1.5
+      raft_first_layer_density: 80%
+      raft_first_layer_expansion: 3
+      seam_position: aligned
+      single_extruder_multi_material_priming: 0
+      skirts: 2
+      skirt_height: 2
+      slice_closing_radius: 0.049
+      small_perimeter_speed: 160
+      solid_infill_acceleration: 6000
+      solid_infill_below_area: 0
+      solid_infill_every_layers: 0
+      solid_infill_extruder: 1
+      solid_infill_extrusion_width: 0.55
+      solid_infill_speed: 160
+      support_material: 0
+      support_material_angle: 0
+      support_material_auto: 1
+      support_material_bottom_contact_distance: 0
+      support_material_bottom_interface_layers: 0
+      support_material_buildplate_only: 0
+      support_material_closing_radius: 2
+      support_material_contact_distance: 0.25
+      support_material_enforce_layers: 0
+      support_material_extruder: 0
+      support_material_extrusion_width: 0.4
+      support_material_interface_contact_loops: 0
+      support_material_interface_extruder: 0
+      support_material_interface_layers: 3
+      support_material_interface_pattern: auto
+      support_material_interface_spacing: 0.22
+      support_material_interface_speed: 50%
+      support_material_pattern: rectilinear
+      support_material_spacing: 2
+      support_material_speed: 120
+      support_material_style: snug
+      support_material_synchronize_layers: 0
+      support_material_threshold: 40
+      support_material_with_sheath: 0
+      support_material_xy_spacing: 80%
+      support_tree_angle: 40
+      support_tree_angle_slow: 25
+      support_tree_branch_diameter: 2
+      support_tree_branch_diameter_angle: 5
+      support_tree_branch_diameter_double_wall: 8
+      support_tree_branch_distance: 1
+      support_tree_tip_diameter: 1
+      support_tree_top_rate: 30%
+      thick_bridges: 0
+      thin_walls: 0
+      top_fill_pattern: monotoniclines
+      top_infill_extrusion_width: 0.5
+      top_one_perimeter_type: top
+      top_solid_infill_acceleration: 2000
+      top_solid_infill_speed: 70
+      top_solid_layers: 4
+      top_solid_min_thickness: 0.7
+      travel_acceleration: 7000
+      travel_short_distance_acceleration: 250
+      travel_speed: 350
+      travel_speed_z: 12
+      wipe_tower: 1
+      wipe_tower_cone_angle: 25
+      wipe_tower_extra_flow: 250%
+      wipe_tower_extra_spacing: 110%
+  - id: v2-350-0.5-hf-corexy-structural-0.32-05
+    name: 0.32mm Structural 0.5-hf @VORON2 350mm
+    values:
+      overhang_speed_2: 45
+      support_material_speed: 120
+      support_material_interface_speed: 50%
+      layer_height: 0.32
+    inherits:
+    - corexy-structural-0.32-05-layer
+    - corexy-structural
+- id: v2-350-0.6-hf
+  condition: printer.model=="v2-350" and tool.nozzle_diameter == 0.6 and tool.nozzle_flow_class
+    == "HF"
+  values:
+    max_layer_height: 0.4
+    min_layer_height: 0.15
+    deretract_speed: 35
+    retract_before_travel: 2.0
+    retract_before_wipe: 80%
+    retract_layer_change: 0
+    retract_length: 0.5
+    retract_length_toolchange: 0
+    retract_lift: 0.2
+    retract_lift_above: 0.25
+    retract_lift_below: 0
+    retract_restart_extra: 0
+    retract_restart_extra_toolchange: 0
+    retract_speed: 35
+  variants:
+  - id: v2-350-0.6-hf-corexy-speed-0.20-06
+    name: 0.20mm Speed 0.6-hf @VORON2 350mm
+    values:
+      overhang_speed_2: 30
+      overhang_speed_3: 70%
+      perimeter_speed: 200
+      external_perimeter_speed: 200
+      small_perimeter_speed: 170
+      bottom_solid_layers: 3
+      infill_speed: 200
+      solid_infill_speed: 200
+      support_material_interface_speed: 50%
+      support_material_speed: 110
+      layer_height: 0.2
+    inherits:
+    - corexy-speed-0.20-06-layer
+    - corexy-speed
+  - id: v2-350-0.6-hf-corexy-speed-0.25-06
+    name: 0.25mm Speed 0.6-hf @VORON2 350mm
+    values:
+      overhang_speed_2: 30
+      overhang_speed_3: 70%
+      perimeter_speed: 180
+      external_perimeter_speed: 180
+      small_perimeter_speed: 170
+      infill_speed: 190
+      solid_infill_speed: 190
+      support_material_interface_speed: 50%
+      support_material_speed: 110
+      layer_height: 0.25
+    inherits:
+    - corexy-speed-0.25-06-layer
+    - corexy-speed
+  - id: v2-350-0.6-hf-corexy-speed-0.32-06
+    name: 0.32mm Speed 0.6-hf @VORON2 350mm
+    values:
+      overhang_speed_2: 35
+      overhang_speed_3: 70%
+      external_perimeter_speed: 145
+      infill_speed: 145
+      perimeter_speed: 145
+      small_perimeter_speed: 145
+      solid_infill_speed: 140
+      support_material_interface_speed: 50%
+      support_material_speed: 110
+      layer_height: 0.32
+    inherits:
+    - corexy-speed-0.32-06-layer
+    - corexy-speed
+  - id: v2-350-0.6-hf-corexy-speed-0.40-06
+    name: 0.40mm Speed 0.6-hf @VORON2 350mm
+    values:
+      overhang_speed_2: 35
+      overhang_speed_3: 70%
+      top_solid_infill_acceleration: 2000
+      layer_height: 0.4
+    inherits:
+    - corexy-speed-0.40-06-layer
+    - corexy-speed
+  - id: v2-350-0.6-hf-corexy-structural-0.32-06
+    name: 0.32mm Structural 0.6-hf @VORON2 350mm
+    values:
+      overhang_speed_2: 35
+      bridge_speed: 40
+      infill_speed: 120
+      overhang_speed_3: 50
+      support_material_interface_speed: 50%
+      support_material_speed: 110
+      layer_height: 0.32
+    inherits:
+    - corexy-structural-0.32-06-layer
+    - corexy-structural
+  - id: v2-350-0.6-hf-corexy-structural-0.40-06
+    name: 0.40mm Structural 0.6-hf @VORON2 350mm
+    values:
+      overhang_speed_2: 35
+      layer_height: 0.4
+    inherits:
+    - corexy-structural-0.40-06-layer
+    - corexy-structural
+- id: v2-350-0.8-hf
+  condition: printer.model=="v2-350" and tool.nozzle_diameter == 0.8 and tool.nozzle_flow_class
+    == "HF"
+  values:
+    max_layer_height: 0.6
+    min_layer_height: 0.2
+    deretract_speed: 35
+    retract_before_travel: 2.0
+    retract_before_wipe: 50%
+    retract_layer_change: 0
+    retract_length: 0.5
+    retract_length_toolchange: 0
+    retract_lift: 0.25
+    retract_lift_above: 0.25
+    retract_lift_below: 0
+    retract_restart_extra: 0
+    retract_restart_extra_toolchange: 0
+    retract_speed: 35
+  variants:
+  - id: v2-350-0.8-hf-corexy-speed-0.30
+    name: 0.30mm Speed 0.8-hf @VORON2 350mm
+    values:
+      overhang_speed_2: 45
+      top_solid_infill_acceleration: 2000
+      layer_height: 0.3
+    inherits:
+    - corexy-speed-0.30-layer
+  - id: v2-350-0.8-hf-corexy-speed-0.40-08
+    name: 0.40mm Speed 0.8-hf @VORON2 350mm
+    values:
+      overhang_speed_2: 45
+      top_solid_infill_acceleration: 2000
+      perimeter_acceleration: 3000
+      solid_infill_acceleration: 5000
+      infill_acceleration: 7000
+      external_perimeter_acceleration: 2500
+      external_perimeter_speed: 85
+      gap_fill_speed: 65
+      infill_speed: 105
+      over_bridge_speed: 70%
+      perimeter_speed: 100
+      small_perimeter_speed: 85
+      solid_infill_speed: 100
+      support_material_speed: 90
+      top_solid_infill_speed: 75
+      layer_height: 0.4
+    inherits:
+    - corexy-speed-0.40-08-layer
+  - id: v2-350-0.8-hf-corexy-speed-0.55
+    name: 0.55mm Speed 0.8-hf @VORON2 350mm
+    values:
+      overhang_speed_2: 45
+      top_solid_infill_acceleration: 2000
+      layer_height: 0.55
+    inherits:
+    - corexy-speed-0.55-layer
+  - id: v2-350-0.8-hf-corexy-structural-0.30
+    name: 0.30mm Structural 0.8-hf @VORON2 350mm
+    values:
+      overhang_speed_2: 40
+      top_solid_infill_acceleration: 2000
+      support_material_speed: 100
+      support_material_interface_speed: 55%
+      layer_height: 0.3
+    inherits:
+    - corexy-structural-0.30-layer
+    - corexy-structural
+  - id: v2-350-0.8-hf-corexy-structural-0.40-08
+    name: 0.40mm Structural 0.8-hf @VORON2 350mm
+    values:
+      overhang_speed_2: 40
+      top_solid_infill_acceleration: 2000
+      layer_height: 0.4
+    inherits:
+    - corexy-structural-0.40-08-layer
+    - corexy-structural
+  - id: v2-350-0.8-hf-corexy-structural-0.55
+    name: 0.55mm Structural 0.8-hf @VORON2 350mm
+    values:
+      overhang_speed_2: 40
+      top_solid_infill_acceleration: 2000
+      layer_height: 0.55
+    inherits:
+    - corexy-structural-0.55-layer
+    - corexy-structural
