@@ -17,9 +17,10 @@ void ReverseOddLayerExtrusionFeature::register_config(Domain::ConfigDefinitions&
 
     ConfigItemDef* internal_perimeters = defs.add("internal_perimeters_reverse", typeid(bool));
     internal_perimeters->location      = FDMConfigLocation::Print;
+    internal_perimeters->overrides_in  = std::set<ConfigLocation>{FDMConfigLocation::Object, FDMConfigLocation::Volume};
     internal_perimeters->category      = ConfigItemDef::Category::Print_WallsPerimeters;
-    internal_perimeters->option_group  = ConfigItemDef::OptionGroup::Print_WallsPerimeters_Perimeters;
-    internal_perimeters->order         = 4;
+    internal_perimeters->option_group  = ConfigItemDef::OptionGroup::Print_WallsPerimeters_Direction;
+    internal_perimeters->order         = 0;
     internal_perimeters->gui_type      = ConfigItemDef::GUIType::checkbox;
     internal_perimeters->label         = BossL("Reverse on odd layers: Internal perimeters");
     internal_perimeters->full_label    = BossL("Reverse on odd layers: Internal perimeters");
@@ -31,9 +32,10 @@ void ReverseOddLayerExtrusionFeature::register_config(Domain::ConfigDefinitions&
 
     ConfigItemDef* overhangs = defs.add("overhangs_reverse", typeid(bool));
     overhangs->location     = FDMConfigLocation::Print;
+    overhangs->overrides_in = std::set<ConfigLocation>{FDMConfigLocation::Object, FDMConfigLocation::Volume};
     overhangs->category     = ConfigItemDef::Category::Print_WallsPerimeters;
-    overhangs->option_group = ConfigItemDef::OptionGroup::Print_WallsPerimeters_Perimeters;
-    overhangs->order        = 5;
+    overhangs->option_group = ConfigItemDef::OptionGroup::Print_WallsPerimeters_Direction;
+    overhangs->order        = 1;
     overhangs->gui_type     = ConfigItemDef::GUIType::checkbox;
     overhangs->label        = BossL("Reverse on odd layers: Overhangs");
     overhangs->full_label   = BossL("Reverse on odd layers: Overhangs");
@@ -45,9 +47,10 @@ void ReverseOddLayerExtrusionFeature::register_config(Domain::ConfigDefinitions&
 
     ConfigItemDef* infill = defs.add("infill_reverse", typeid(bool));
     infill->location     = FDMConfigLocation::Print;
+    infill->overrides_in = std::set<ConfigLocation>{FDMConfigLocation::Object, FDMConfigLocation::Volume};
     infill->category     = ConfigItemDef::Category::Print_Infill;
-    infill->option_group = ConfigItemDef::OptionGroup::Print_Infill_Advanced;
-    infill->order        = 8;
+    infill->option_group = ConfigItemDef::OptionGroup::Print_Infill_Direction;
+    infill->order        = 0;
     infill->gui_type     = ConfigItemDef::GUIType::checkbox;
     infill->label        = BossL("Reverse on odd layers: Infill");
     infill->full_label   = BossL("Reverse on odd layers: Infill");
