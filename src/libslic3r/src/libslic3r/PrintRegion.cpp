@@ -77,10 +77,17 @@ Flow PrintRegion::flow(const PrintObject &object, FlowRole role, double layer_he
     if (config_width.is_zero())
         config_width = object.config().get<std::vector<Domain::FloatOrPercentage>>("extrusion_width").at(extruder_id);
 
+    double flow_ratio = 1.;
+    if (first_layer) {
+        flow_ratio = m_config.get<double>("first_layer_flow_ratio");
+    } else if (role == frTopSolidInfill) {
+        flow_ratio = m_config.get<double>("top_layer_flow_ratio");
+    }
+
     // Get the configured nozzle_diameter for the extruder associated to the flow role requested.
     // Here this->extruder(role) is > 0.
     auto nozzle_diameter = float(Biz::Slicing::get_nozzle_diameter(print_config.hw_config(), extruder_id));
-    return Flow::new_from_config_width(role, config_width, nozzle_diameter, float(layer_height));
+    return Flow::new_from_config_width(role, config_width, nozzle_diameter, float(layer_height * flow_ratio));
 }
 
 double PrintRegion::nozzle_dmr_avg(const PrintConfigView& print_config) const
