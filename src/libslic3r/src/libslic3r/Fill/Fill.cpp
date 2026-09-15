@@ -151,7 +151,8 @@ std::vector<SurfaceFill> group_fills(const Layer &layer)
 		        } else if (params.density <= 0)
 		            continue;
 
-		        // BOSS fill patterns are sparse-only, so a forced solid pattern always wins.
+		        // A BOSS fill pattern reaches a solid surface only through top_fill_pattern
+		        // or bottom_fill_pattern, which a feature opts into with solid_fill_eligible.
 
 		        if (is_bridge) {
 		            params.extrusion_role = ExtrusionRole::BridgeInfill;
