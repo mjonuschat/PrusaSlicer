@@ -1,0 +1,6 @@
+kind: tool_print
+id: v2-300
+variants:
+- id: v2-300-no-tool
+  condition: printer.model=="v2-300"
+  name: no tool
