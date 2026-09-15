@@ -51,6 +51,17 @@ GCodeWriterConfig::GCodeWriterConfig(const PrintConfigView& print_config)
          print_config.get<std::vector<double>>("machine_max_junction_deviation").front() :
          0.;
 
+    // Jerk limits respect the same EmitToGCode gate as the other machine limits,
+    // except for Klipper: SET_VELOCITY_LIMIT is its own command, independent of
+    // machine_limits_usage, so Klipper always clamps to the machine's jerk limits.
+    const bool use_jerk_limits = emit_limits || gcode_flavor == GCodeFlavor::gcfKlipper;
+    max_jerk_x                 = static_cast<unsigned int>(std::round(
+        use_jerk_limits ? print_config.get<std::vector<double>>("machine_max_jerk_x").front() : 0
+    ));
+    max_jerk_y                 = static_cast<unsigned int>(std::round(
+        use_jerk_limits ? print_config.get<std::vector<double>>("machine_max_jerk_y").front() : 0
+    ));
+
     gcode_comments           = print_config.get<bool>("gcode_comments");
     use_volumetric_e         = print_config.get<bool>("use_volumetric_e");
     use_relative_e_distances = print_config.get<bool>("use_relative_e_distances");

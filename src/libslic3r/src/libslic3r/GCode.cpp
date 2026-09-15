@@ -3197,11 +3197,25 @@ std::string GCodeGenerator::extrude_smooth_path(
     }
 
     // reset acceleration
+    const unsigned int default_acceleration =
+        fast_round_up<unsigned int>(config.default_acceleration.at(m_writer.extruder()->id()));
+
+    Boss::ExtrusionContext default_ctx{
+        ExtrusionRole::None,
+        /*is_first_layer=*/false,
+        /*is_object_layer_over_raft=*/false,
+        m_writer.extruder()->id(),
+        nullptr
+    };
+    default_ctx.extrude_config = &config;
+    auto default_dynamics      = Boss::BossExtrusionFeatures::before_extrusion(default_ctx);
     gcode += m_writer.set_print_acceleration(
-        fast_round_up<unsigned int>(
-            config.default_acceleration.at(m_writer.extruder()->id())
-        )
+        default_acceleration,
+        default_dynamics ? default_dynamics->minimum_cruise_ratio : 0.0,
+        "Default"
     );
+    if (default_dynamics)
+        gcode += m_writer.set_jerk(default_dynamics->jerk, "Default");
 
     if (is_loop) {
         GCode::SmoothPath wipe{smooth_path.begin() + wipe_offset, smooth_path.end()};
@@ -3527,7 +3541,23 @@ std::string GCodeGenerator::_extrude(
 
     const unsigned extruder_id{m_writer.extruder()->id()};
 
-    // adjust acceleration
+    // Acceleration/MCR and jerk are independently gated in 2.9.x
+    // (default_acceleration > 0 vs. default_jerk > 0, the latter applied inside
+    // resolve_jerk()), so jerk must not be nested inside the acceleration block:
+    // a printer that leaves acceleration to the firmware (default_acceleration == 0)
+    // can still have real per-role jerk settings.
+    Boss::ExtrusionContext boss_ctx{
+        path_attr.role,
+        this->on_first_layer(),
+        this->object_layer_over_raft(),
+        extruder_id,
+        nullptr
+    };
+    boss_ctx.extrude_config = &config;
+    auto dynamics           = Boss::BossExtrusionFeatures::before_extrusion(boss_ctx);
+    const std::string role_comment =
+        gcode_extrusion_role_to_string(extrusion_role_to_gcode_extrusion_role(path_attr.role));
+
     if (config.default_acceleration.at(extruder_id) > 0) {
         double acceleration;
         if (this->on_first_layer() && config.first_layer_acceleration.at(extruder_id) > 0) {
@@ -3549,8 +3579,14 @@ std::string GCodeGenerator::_extrude(
         } else {
             acceleration = config.default_acceleration.at(extruder_id);
         }
-        gcode += m_writer.set_print_acceleration((unsigned int)floor(acceleration + 0.5));
+        gcode += m_writer.set_print_acceleration(
+            (unsigned int) floor(acceleration + 0.5),
+            dynamics ? dynamics->minimum_cruise_ratio : 0.0,
+            role_comment
+        );
     }
+    if (dynamics)
+        gcode += m_writer.set_jerk(dynamics->jerk, role_comment);
 
     // calculate extrusion length per distance unit
     double e_per_mm = m_writer.extruder()->e_per_mm3() * path_attr.mm3_per_mm;
@@ -3801,11 +3837,32 @@ std::string GCodeGenerator::generate_travel_gcode(
 
     const unsigned travel_acceleration                = static_cast<unsigned>(config.travel_acceleration + 0.5);
     const unsigned travel_short_distance_acceleration = static_cast<unsigned>(config.travel_short_distance_acceleration + 0.5);
+    const std::size_t extruder_id = m_writer.extruder()->id();
+
+    // Travel resolves via is_travel/is_short_distance_travel, not the extrusion-role
+    // priority cascade: there is no ExtrusionRole for a non-extruding travel move.
+    auto travel_dynamics = [this, &config, extruder_id](bool is_short_distance)
+    {
+        Boss::ExtrusionContext ctx{ExtrusionRole::None, false, false, extruder_id, nullptr};
+        ctx.extrude_config           = &config;
+        ctx.is_travel                = true;
+        ctx.is_short_distance_travel = is_short_distance;
+        return Boss::BossExtrusionFeatures::before_extrusion(ctx);
+    };
+    const std::optional<Boss::MotionDynamics> active_dynamics =
+        travel_dynamics(use_short_distance_acceleration());
 
     std::string gcode;
     // Generate G-code for the travel move.
     // Use G1 because we rely on paths being straight (G0 may make round paths).
-    gcode += this->m_writer.set_travel_acceleration(use_short_distance_acceleration() ? travel_short_distance_acceleration : travel_acceleration);
+    gcode += this->m_writer.set_travel_acceleration(
+        use_short_distance_acceleration() ?
+            travel_short_distance_acceleration :
+            travel_acceleration,
+        active_dynamics ? active_dynamics->minimum_cruise_ratio : 0.0
+    );
+    if (active_dynamics)
+        gcode += this->m_writer.set_jerk(active_dynamics->jerk, "Travel");
 
     bool already_inserted{false};
     for (std::size_t i{0}; i < travel.size(); ++i) {
@@ -3836,15 +3893,32 @@ std::string GCodeGenerator::generate_travel_gcode(
     // This is mainly for parts of the G-code export that don't take into account that travel acceleration could change during printing.
     // Those parts of the G-code export always use the travel acceleration that was set last.
     if (use_short_distance_acceleration() && travel_short_distance_acceleration != travel_acceleration) {
-        gcode += this->m_writer.set_travel_acceleration(travel_acceleration);
+        auto regular_dynamics = travel_dynamics(false);
+        gcode += this->m_writer.set_travel_acceleration(
+            travel_acceleration,
+            regular_dynamics ? regular_dynamics->minimum_cruise_ratio : 0.0
+        );
     }
 
     if (!this->m_writer.supports_separate_travel_acceleration()) {
         // In case that this flavor does not support separate print and travel acceleration,
         // reset acceleration to default.
         // TODO: This doesn't seem to perform what the comment describes.
-        gcode += this->m_writer.set_travel_acceleration(travel_acceleration);
+        auto regular_dynamics = travel_dynamics(false);
+        gcode += this->m_writer.set_travel_acceleration(
+            travel_acceleration,
+            regular_dynamics ? regular_dynamics->minimum_cruise_ratio : 0.0
+        );
     }
+
+    // Matches the 2.9.x source's own gate: reset jerk to the default value only
+    // when both default_jerk and (plain, not short-distance) travel_jerk are set,
+    // even inside the short-distance branch.
+    if (config.boss.default_jerk.at(extruder_id) > 0 && config.boss.travel_jerk.at(extruder_id) > 0)
+        gcode += this->m_writer.set_jerk(
+            static_cast<unsigned int>(config.boss.default_jerk.at(extruder_id)),
+            "Default"
+        );
 
     return gcode;
 }
