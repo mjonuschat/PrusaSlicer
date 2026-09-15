@@ -1,0 +1,6 @@
+kind: tool_print
+id: trident-350
+variants:
+- id: trident-350-no-tool
+  condition: printer.model=="trident-350"
+  name: no tool
