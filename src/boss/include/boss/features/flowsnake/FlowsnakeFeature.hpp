@@ -18,6 +18,7 @@ struct FlowsnakeFeature {
     static constexpr std::string_view key = "flowsnake";
     static constexpr std::string_view label = "Flowsnake";
     static constexpr bool anchoring_eligible = false;
+    static constexpr bool solid_fill_eligible = true;
 
     static std::unique_ptr<Fill> create_fill();
     static bool use_bridge_flow();
