@@ -41,6 +41,8 @@
 #include "libslic3r/Print.hpp"
 #include "Slic3r/Biz/Algorithms/BoundingBox.hpp"
 #include "libslic3r/HwConfigUtils.hpp"
+#include "boss/generated/BossPerimeterPolicies.hpp"
+#include "libslic3r/boss/perimeter/PerimeterPolicyContext.hpp"
 
 //#define ARACHNE_DEBUG
 
@@ -1035,6 +1037,8 @@ void PerimeterGenerator::process_arachne(
     // extra perimeters for each one
     // detect how many perimeters must be generated for this island
     int loop_number = params.config.get<std::vector<int>>("perimeters").at(extruder_id) + surface.extra_perimeters - 1; // 0-indexed loops
+    loop_number = Boss::BossPerimeterPolicies::adjust_loop_count(
+        loop_number, Boss::make_perimeter_policy_context(params, extruder_id));
     if (loop_number > 0 && ((params.config.get<Domain::TopOnePerimeterType>("top_one_perimeter_type") == Domain::TopOnePerimeterType::TopmostOnly && upper_slices == nullptr) || (params.config.get<bool>("only_one_perimeter_first_layer") && params.layer_id == 0)))
         loop_number = 0;
 
@@ -1261,6 +1265,8 @@ void PerimeterGenerator::process_classic(
     // extra perimeters for each one
     // detect how many perimeters must be generated for this island
     int        loop_number = params.config.get<std::vector<int>>("perimeters").at(extruder_id) + surface.extra_perimeters - 1;  // 0-indexed loops
+    loop_number = Boss::BossPerimeterPolicies::adjust_loop_count(
+        loop_number, Boss::make_perimeter_policy_context(params, extruder_id));
 
     // Set the topmost layer to be one perimeter.
     if (loop_number > 0 && ((params.config.get<Domain::TopOnePerimeterType>("top_one_perimeter_type") != Domain::TopOnePerimeterType::None && upper_slices == nullptr) || (params.config.get<bool>("only_one_perimeter_first_layer") && params.layer_id == 0)))
