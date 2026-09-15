@@ -15,6 +15,7 @@ void AlternateExtraPerimeterFeature::register_config(Domain::ConfigDefinitions& 
 
     ConfigItemDef* def = defs.add("alternate_extra_perimeter", typeid(bool));
     def->location      = FDMConfigLocation::Print;
+    def->overrides_in  = std::set<ConfigLocation>{FDMConfigLocation::Object, FDMConfigLocation::Volume};
     def->category      = ConfigItemDef::Category::Print_WallsPerimeters;
     def->option_group  = ConfigItemDef::OptionGroup::Print_WallsPerimeters_Perimeters;
     def->order         = 1;
