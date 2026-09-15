@@ -7,6 +7,7 @@
 #include "libslic3r/libslic3r.h"
 
 #include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/Fill/Fill.hpp"
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/Geometry.hpp"
@@ -633,4 +634,18 @@ bool test_if_solid_surface_filled(const ExPolygon& expolygon, double flow_spacin
 #endif
 
     return uncovered.empty(); // solid surface is fully filled
+}
+
+TEST_CASE("SurfaceFillParams distinguishes fills with different role speeds", "[Fill]")
+{
+    SurfaceFillParams base;
+    base.bridge = false;
+    base.extrusion_role = ExtrusionRole::InternalInfill;
+    base.role_speed = 40.f;
+
+    SurfaceFillParams modifier = base;
+    modifier.role_speed = 80.f;
+
+    REQUIRE_FALSE(base == modifier);
+    REQUIRE((base < modifier || modifier < base));
 }
