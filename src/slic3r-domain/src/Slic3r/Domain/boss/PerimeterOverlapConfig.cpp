@@ -16,9 +16,10 @@ void PerimeterOverlapFeature::register_config(Domain::ConfigDefinitions& defs)
 
     ConfigItemDef* external = defs.add("external_perimeter_overlap", typeid(FloatOrPercentage));
     external->location      = FDMConfigLocation::Print;
-    external->category      = ConfigItemDef::Category::Print_WallsPerimeters;
-    external->option_group  = ConfigItemDef::OptionGroup::Print_WallsPerimeters_Perimeters;
-    external->order         = 3;
+    external->overrides_in  = std::set<ConfigLocation>{FDMConfigLocation::Object, FDMConfigLocation::Volume};
+    external->category      = ConfigItemDef::Category::Print_ExtrusionRetraction;
+    external->option_group  = ConfigItemDef::OptionGroup::Print_ExtrusionRetraction_Overlap;
+    external->order         = 1;
     external->gui_type      = ConfigItemDef::GUIType::unit_or_percentage;
     external->label         = BossL("Ext. perimeter/perimeter overlap");
     external->tooltip       = BossL(
@@ -35,9 +36,10 @@ void PerimeterOverlapFeature::register_config(Domain::ConfigDefinitions& defs)
 
     ConfigItemDef* internal = defs.add("perimeter_perimeter_overlap", typeid(FloatOrPercentage));
     internal->location      = FDMConfigLocation::Print;
-    internal->category      = ConfigItemDef::Category::Print_WallsPerimeters;
-    internal->option_group  = ConfigItemDef::OptionGroup::Print_WallsPerimeters_Perimeters;
-    internal->order         = 2;
+    internal->overrides_in  = std::set<ConfigLocation>{FDMConfigLocation::Object, FDMConfigLocation::Volume};
+    internal->category      = ConfigItemDef::Category::Print_ExtrusionRetraction;
+    internal->option_group  = ConfigItemDef::OptionGroup::Print_ExtrusionRetraction_Overlap;
+    internal->order         = 0;
     internal->gui_type      = ConfigItemDef::GUIType::unit_or_percentage;
     internal->label         = BossL("Perimeter/perimeter overlap");
     internal->tooltip       = BossL(
