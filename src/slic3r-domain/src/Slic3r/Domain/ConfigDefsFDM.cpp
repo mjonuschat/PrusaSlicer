@@ -959,6 +959,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->overrides_in = Locations{ Volume };
     def->label = L("Extruder");
     def->category = ConfigItemDef::Category::Object_Extruders;
+    def->option_group = ConfigItemDef::OptionGroup::Object_Extruders_Extruders;
     def->gui_type = ConfigItemDef::GUIType::extruder_selection;
     def->tooltip = L("The extruder to use (unless more specific extruder settings are specified). "
                    "This value overrides perimeter and infill extruders, but not the support extruders.");

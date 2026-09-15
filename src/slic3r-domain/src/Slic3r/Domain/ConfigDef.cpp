@@ -311,6 +311,8 @@ std::string ConfigItemDef::translate_option_group(OptionGroup option_group)
         return L("Custom G-code");
     case ConfigItemDef::OptionGroup::Printer_Notes_Notes:
         return L("Notes");
+    case ConfigItemDef::OptionGroup::Object_Extruders_Extruders:
+        return L("Extruders");
     case ConfigItemDef::OptionGroup::AppConfig_General_General:
         return L("General");
     case ConfigItemDef::OptionGroup::AppConfig_General_Application:
