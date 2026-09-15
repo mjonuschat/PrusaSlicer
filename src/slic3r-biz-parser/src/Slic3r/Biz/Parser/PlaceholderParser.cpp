@@ -94,11 +94,16 @@ void PlaceholderParser::update_timestamp(IO::Config &config)
         config.set("timestamp", ss.str());
     }
     config.set("year",   int(1900 + timeinfo->tm_year));
-    config.set("month",  int(1 + timeinfo->tm_mon));
-    config.set("day",    int(timeinfo->tm_mday));
-    config.set("hour",   int(timeinfo->tm_hour));
-    config.set("minute", int(timeinfo->tm_min));
-    config.set("second", int(timeinfo->tm_sec));
+    auto two_digits = [](int value) {
+        char buf[3];
+        std::snprintf(buf, sizeof(buf), "%02d", value);
+        return std::string(buf);
+    };
+    config.set("month",  two_digits(1 + timeinfo->tm_mon));
+    config.set("day",    two_digits(timeinfo->tm_mday));
+    config.set("hour",   two_digits(timeinfo->tm_hour));
+    config.set("minute", two_digits(timeinfo->tm_min));
+    config.set("second", two_digits(timeinfo->tm_sec));
 }
 
 void PlaceholderParser::update_timestamp() { PlaceholderParser::update_timestamp(m_config); }
