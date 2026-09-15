@@ -327,6 +327,10 @@ struct ConfigItemDef
 
         Printer_Notes_Notes = 10700,
 
+        ///////////////// Object //////////////////
+
+        Object_Extruders_Extruders = 14000,
+
         ///////////////// AppConfig //////////////////
 
         AppConfig_General_General     = 15000,
