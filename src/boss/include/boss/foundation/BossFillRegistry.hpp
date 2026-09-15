@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <type_traits>
 #include <optional>
 #include <string>
 
@@ -38,6 +39,17 @@ class Fill;
 }
 
 namespace Slic3r::Boss {
+
+// A fill feature reaches top_fill_pattern and bottom_fill_pattern only if it
+// declares `static constexpr bool solid_fill_eligible = true`. Sparse-only is
+// the default because a pattern with no meaning at 100% density must not be
+// offered for a solid surface.
+template<class Feature, class = void>
+struct SolidFillEligible : std::false_type {};
+
+template<class Feature>
+struct SolidFillEligible<Feature, std::void_t<decltype(Feature::solid_fill_eligible)>>
+    : std::bool_constant<Feature::solid_fill_eligible> {};
 
 template<class... Features>
 struct BossFillRegistry {
@@ -63,14 +75,7 @@ public:
             return;
         }
 
-        (Domain::append_enum_choice(
-             defs,
-             "fill_pattern",
-             Features::id,
-             std::string(Features::key),
-             BossL(std::string(Features::label))
-         ),
-         ...);
+        (register_feature_choices<Features>(defs), ...);
     }
 
     // Native patterns are the enumerators below ipCount; anything above is a
@@ -100,6 +105,20 @@ public:
         bool result = false;
         ((id == Features::id ? (result = Features::anchoring_eligible, true) : false) || ...);
         return result;
+    }
+
+private:
+    template<class Feature>
+    static void register_feature_choices(Domain::ConfigDefinitions& defs)
+    {
+        const std::string key{Feature::key};
+        const std::string label{BossL(std::string(Feature::label))};
+
+        Domain::append_enum_choice(defs, "fill_pattern", Feature::id, key, label);
+        if constexpr (SolidFillEligible<Feature>::value) {
+            Domain::append_enum_choice(defs, "top_fill_pattern", Feature::id, key, label);
+            Domain::append_enum_choice(defs, "bottom_fill_pattern", Feature::id, key, label);
+        }
     }
 };
 
