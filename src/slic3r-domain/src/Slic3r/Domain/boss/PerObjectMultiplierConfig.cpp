@@ -17,8 +17,8 @@ void PerObjectMultiplierFeature::register_config(Domain::ConfigDefinitions& defs
     def->location      = FDMConfigLocation::Print;
     def->overrides_in  = std::set<ConfigLocation>{FDMConfigLocation::Object};
     def->category      = ConfigItemDef::Category::Print_ExtrusionRetraction;
-    def->option_group  = ConfigItemDef::OptionGroup::Print_ExtrusionRetraction_ExtrusionWidth;
-    def->order         = 9;
+    def->option_group  = ConfigItemDef::OptionGroup::Print_ExtrusionRetraction_Flow;
+    def->order         = 2;
     // A global value here would duplicate the filament tab's extrusion
     // multiplier; only the per-object override is meant to be set.
     def->override_only = true;
