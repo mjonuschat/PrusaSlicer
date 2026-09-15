@@ -1,0 +1,32 @@
+Feature: reverse-odd-layer-extrusion
+
+Model: a small object with internal and external perimeters, an overhang
+(TestMesh::overhang), and sparse infill (fill_density > 0), sliced across at
+least 2 layers. The synthetic test meshes used by the exercising test are
+built in code (tests/fff_print/test_boss_reverse_odd_layer_extrusion.cpp),
+not loaded from this config.ini; the settings here document the values that
+exercise this feature.
+
+Assertions (see test_boss_reverse_odd_layer_extrusion.cpp):
+
+1. internal_perimeters_reverse
+   - OFF: the internal perimeter's start point is the same on layer 0
+     (even) and layer 1 (odd).
+   - ON: the internal perimeter's start point on layer 1 (odd) differs from
+     the OFF run; layer 0 (even) is unaffected.
+
+2. overhangs_reverse
+   - OFF: the first perimeter loop's start point on layer 1 (odd) matches
+     the OFF run's layer 0.
+   - ON: the first perimeter loop's start point on layer 1 (odd) differs
+     from the OFF run; layer 0 (even) is unaffected.
+
+3. infill_reverse
+   - OFF: the internal infill's start point is the same on layer 0 (even)
+     and layer 1 (odd).
+   - ON: the internal infill's start point on layer 1 (odd) differs from
+     the OFF run; layer 0 (even) is unaffected.
+
+Each option is toggled independently; the other two stay off in that
+option's test case, proving toggling one option off restores the
+un-reversed direction for that extrusion kind.
