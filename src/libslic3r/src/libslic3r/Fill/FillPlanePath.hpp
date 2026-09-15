@@ -37,6 +37,9 @@ protected:
 
     float _layer_angle(size_t idx) const override { return 0.f; }
     virtual bool centered() const = 0;
+    // Multiplier applied to the computed line spacing for this pattern.
+    // 1.0 leaves spacing unchanged.
+    virtual double spacing_correction() const { return 1.; }
 
     friend class InfillPolylineClipper;
     class InfillPolylineOutput {
@@ -93,6 +96,25 @@ public:
 protected:
     bool centered() const override { return true; }
     void generate(coord_t min_x, coord_t min_y, coord_t max_x, coord_t max_y, const double resolution, InfillPolylineOutput &output) override;
+};
+
+class FillFlowsnake : public FillPlanePath
+{
+public:
+    Fill* clone() const override { return new FillFlowsnake(*this); };
+    ~FillFlowsnake() override = default;
+
+protected:
+    // Gosper curve's higher extrusion length per area than a naive grid needs
+    // wider line spacing and thinner flow to avoid over-extruded blobs at
+    // path crossings.
+    static constexpr double flowsnake_spacing_correction = 1.08;
+    static constexpr double flowsnake_flow_correction     = 0.85;
+
+    bool centered() const override { return true; }
+    void generate(coord_t min_x, coord_t min_y, coord_t max_x, coord_t max_y, const double resolution, InfillPolylineOutput &output) override;
+    double spacing_correction() const override { return flowsnake_spacing_correction; }
+    double flow_correction() const override { return flowsnake_flow_correction; }
 };
 
 } // namespace Slic3r
