@@ -3639,7 +3639,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->overrides_in = Locations{ Tool, Object, Volume };
     def->label = L("Small external perimeters");
     def->option_group = ConfigItemDef::OptionGroup::Print_Speed_MainStructure;
-    def->category = ConfigItemDef::Category::Hidden;
+    def->category = ConfigItemDef::Category::Print_Speed;
     def->order = 3;
     def->gui_type = ConfigItemDef::GUIType::unit_or_percentage;
     def->tooltip = L("This setting affects the speed of small external perimeters (having radius "
