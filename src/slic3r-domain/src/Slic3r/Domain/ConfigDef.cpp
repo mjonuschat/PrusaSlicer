@@ -114,6 +114,12 @@ std::string ConfigItemDef::translate_option_group(OptionGroup option_group)
         return L("Flow");
     case ConfigItemDef::OptionGroup::Print_ExtrusionRetraction_Flow:
         return L("Flow");
+    case ConfigItemDef::OptionGroup::Print_ExtrusionRetraction_Overlap:
+        return L("Overlap");
+    case ConfigItemDef::OptionGroup::Print_WallsPerimeters_Direction:
+        return L("Direction");
+    case ConfigItemDef::OptionGroup::Print_Infill_Direction:
+        return L("Direction");
     case ConfigItemDef::OptionGroup::Print_WallsPerimeters_Perimeters:
         return L("Perimeters");
     case ConfigItemDef::OptionGroup::Print_WallsPerimeters_Seams:

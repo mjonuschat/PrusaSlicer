@@ -195,6 +195,7 @@ struct ConfigItemDef
         Print_WallsPerimeters_Seams        = 201,
         Print_WallsPerimeters_WallsQuality = 202,
         Print_WallsPerimeters_FuzzySkin    = 203,
+        Print_WallsPerimeters_Direction    = 204,
 
         Print_Infill_DensityPattern    = 300,
         Print_Infill_InfillCombination = 301,
@@ -202,6 +203,7 @@ struct ConfigItemDef
         Print_Infill_WallAnchoring     = 303,
         Print_Infill_Advanced          = 304,
         Print_Infill_FlowCompensation  = 305,
+        Print_Infill_Direction         = 306,
 
         Print_BedAdhesion_Brim  = 400,
         Print_BedAdhesion_Skirt = 401,
@@ -237,6 +239,7 @@ struct ConfigItemDef
         Print_ExtrusionRetraction_Retraction         = 802,
         Print_ExtrusionRetraction_IdleToolRetraction = 803,
         Print_ExtrusionRetraction_Flow               = 804,
+        Print_ExtrusionRetraction_Overlap            = 805,
 
         Print_MultiMaterial_ExtruderAssignment  = 900,
         Print_MultiMaterial_OozePrevention      = 901,
