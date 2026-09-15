@@ -16,6 +16,7 @@ void SmallPerimeterThresholdFeature::register_config(Domain::ConfigDefinitions& 
 
     ConfigItemDef* min_length = defs.add("small_perimeter_min_length", typeid(double));
     min_length->location      = FDMConfigLocation::Print;
+    min_length->overrides_in = std::set<ConfigLocation>{FDMConfigLocation::Object, FDMConfigLocation::Volume};
     min_length->category      = ConfigItemDef::Category::Print_Speed;
     min_length->option_group  = ConfigItemDef::OptionGroup::Print_Speed_MainStructure;
     min_length->order         = 4;
@@ -33,6 +34,7 @@ void SmallPerimeterThresholdFeature::register_config(Domain::ConfigDefinitions& 
 
     ConfigItemDef* max_length = defs.add("small_perimeter_max_length", typeid(double));
     max_length->location      = FDMConfigLocation::Print;
+    max_length->overrides_in = std::set<ConfigLocation>{FDMConfigLocation::Object, FDMConfigLocation::Volume};
     max_length->category      = ConfigItemDef::Category::Print_Speed;
     max_length->option_group  = ConfigItemDef::OptionGroup::Print_Speed_MainStructure;
     max_length->order         = 5;
