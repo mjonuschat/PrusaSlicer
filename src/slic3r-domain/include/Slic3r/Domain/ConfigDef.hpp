@@ -236,6 +236,7 @@ struct ConfigItemDef
         Print_ExtrusionRetraction_ExtrusionWidth     = 801,
         Print_ExtrusionRetraction_Retraction         = 802,
         Print_ExtrusionRetraction_IdleToolRetraction = 803,
+        Print_ExtrusionRetraction_Flow               = 804,
 
         Print_MultiMaterial_ExtruderAssignment  = 900,
         Print_MultiMaterial_OozePrevention      = 901,
