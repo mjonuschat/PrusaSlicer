@@ -31,6 +31,7 @@ void ExternalFirstHolesFeature::register_config(Domain::ConfigDefinitions& defs)
 
     ConfigItemDef* min_size = defs.add("external_perimeters_first_holes_min_size", typeid(double));
     min_size->location     = FDMConfigLocation::Print;
+    min_size->overrides_in = {FDMConfigLocation::Object, FDMConfigLocation::Volume};
     min_size->category     = ConfigItemDef::Category::Print_WallsPerimeters;
     min_size->option_group = ConfigItemDef::OptionGroup::Print_WallsPerimeters_WallsQuality;
     min_size->order        = 2;
@@ -45,6 +46,7 @@ void ExternalFirstHolesFeature::register_config(Domain::ConfigDefinitions& defs)
 
     ConfigItemDef* disabled_first_layers = defs.add("external_perimeters_first_disabled_first_layers", typeid(int));
     disabled_first_layers->location     = FDMConfigLocation::Print;
+    disabled_first_layers->overrides_in = {FDMConfigLocation::Object, FDMConfigLocation::Volume};
     disabled_first_layers->category     = ConfigItemDef::Category::Print_WallsPerimeters;
     disabled_first_layers->option_group = ConfigItemDef::OptionGroup::Print_WallsPerimeters_WallsQuality;
     disabled_first_layers->order        = 3;
