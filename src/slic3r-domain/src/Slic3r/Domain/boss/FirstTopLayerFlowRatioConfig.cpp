@@ -16,9 +16,10 @@ void FirstTopLayerFlowRatioFeature::register_config(Domain::ConfigDefinitions& d
 
     ConfigItemDef* first_layer = defs.add("first_layer_flow_ratio", typeid(double));
     first_layer->location = FDMConfigLocation::Print;
+    first_layer->overrides_in = std::set<ConfigLocation>{FDMConfigLocation::Object, FDMConfigLocation::Volume};
     first_layer->label = BossL("First layer flow ratio");
-    first_layer->category = ConfigItemDef::Category::Print_LayersSurfaces;
-    first_layer->option_group = ConfigItemDef::OptionGroup::Print_LayerSurfaces_Flow;
+    first_layer->category = ConfigItemDef::Category::Print_ExtrusionRetraction;
+    first_layer->option_group = ConfigItemDef::OptionGroup::Print_ExtrusionRetraction_Flow;
     first_layer->order = 0;
     first_layer->gui_type = ConfigItemDef::GUIType::textfield;
     first_layer->tooltip = BossL(
@@ -32,9 +33,10 @@ void FirstTopLayerFlowRatioFeature::register_config(Domain::ConfigDefinitions& d
 
     ConfigItemDef* top_layer = defs.add("top_layer_flow_ratio", typeid(double));
     top_layer->location = FDMConfigLocation::Print;
+    top_layer->overrides_in = std::set<ConfigLocation>{FDMConfigLocation::Object, FDMConfigLocation::Volume};
     top_layer->label = BossL("Top layer flow ratio");
-    top_layer->category = ConfigItemDef::Category::Print_LayersSurfaces;
-    top_layer->option_group = ConfigItemDef::OptionGroup::Print_LayerSurfaces_Flow;
+    top_layer->category = ConfigItemDef::Category::Print_ExtrusionRetraction;
+    top_layer->option_group = ConfigItemDef::OptionGroup::Print_ExtrusionRetraction_Flow;
     top_layer->order = 1;
     top_layer->gui_type = ConfigItemDef::GUIType::textfield;
     top_layer->tooltip = BossL(
