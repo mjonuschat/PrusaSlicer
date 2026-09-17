@@ -122,6 +122,13 @@ if (APPLE)
         set(SLIC3R_BUILD_TESTS OFF CACHE BOOL "" FORCE)
     endif ()
     add_compile_options(-Werror=partial-availability -Werror=unguarded-availability -Werror=unguarded-availability-new)
+
+    # range-v3's meta.hpp guards its legacy std-container forward declarations on
+    # __apple_build_version__, which Apple Clang always defines, so the guard always
+    # fires on macOS regardless of toolchain age. The macOS 27 SDK's libc++ header
+    # layout collides with it. Verified this define is a no-op on Xcode 16.4 (macOS
+    # 15.5 SDK, used for releases): identical compile result with or without it.
+    add_compile_definitions(META_NO_STD_FORWARD_DECLARATIONS)
 endif ()
 include(${PROJECT_SOURCE_DIR}/cmake/modules/OSXDeploymentTarget.cmake)
 if(WIN32)
