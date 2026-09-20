@@ -54,6 +54,28 @@ elseif (UNIX)
 	)
 endif ()
 
+set(SLIC3R_GIT_HASH "")
+execute_process(
+	COMMAND git rev-parse --abbrev-ref HEAD
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+	OUTPUT_VARIABLE _slic3r_git_branch
+	OUTPUT_STRIP_TRAILING_WHITESPACE
+	ERROR_QUIET
+)
+if (NOT _slic3r_git_branch MATCHES "^build/" OR _slic3r_git_branch STREQUAL "build/nightly")
+	execute_process(
+		COMMAND git rev-parse --short HEAD
+		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+		OUTPUT_VARIABLE SLIC3R_GIT_HASH
+		OUTPUT_STRIP_TRAILING_WHITESPACE
+		ERROR_QUIET
+		RESULT_VARIABLE _slic3r_git_result
+	)
+	if (NOT _slic3r_git_result EQUAL 0)
+		set(SLIC3R_GIT_HASH "")
+	endif ()
+endif ()
+
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/Slic3r/Version.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/include/Slic3r/Version.hpp @ONLY)
 
 add_library(slic3r-base STATIC ${SLIC3R_BASE_FILES} ${CMAKE_CURRENT_BINARY_DIR}/include/Slic3r/Version.hpp)

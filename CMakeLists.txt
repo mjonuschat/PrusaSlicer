@@ -117,6 +117,8 @@ file(REMOVE_RECURSE "${SLIC3R_RESOURCES_DIR}/matdb")
 file(COPY "${SLIC3R_MATDB_DIR}" DESTINATION "${SLIC3R_RESOURCES_DIR}")
 
 include("version.inc")
+set(SLIC3R_BOSS_VERSION "${SLIC3R_VERSION}+BOSS")
+string(REPLACE "+UNKNOWN" "+BOSS" SLIC3R_BUILD_ID "${SLIC3R_BUILD_ID}")
 include(GNUInstallDirs)
 include(CMakeDependentOption)
 include(Utils)
