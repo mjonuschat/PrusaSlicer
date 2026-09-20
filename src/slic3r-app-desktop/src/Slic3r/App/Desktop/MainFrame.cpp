@@ -79,13 +79,30 @@ static wxIcon main_frame_icon()
 }
 #endif // _WIN32
 
+// SLIC3R_BUILD_ID carries a "+UNKNOWN" placeholder that only the upstream release
+// pipeline replaces. Strip it and show the BOSS label (and, for dev builds, the git
+// commit hash) instead.
+static std::string frame_title()
+{
+    std::string build_id = ::Slic3r::BUILD_ID;
+    size_t idx_plus = build_id.find('+');
+    if (idx_plus != build_id.npos)
+        build_id.erase(build_id.begin() + idx_plus, build_id.end());
+
+    build_id += "+BOSS";
+    if (std::string git_hash = ::Slic3r::GIT_HASH; !git_hash.empty())
+        build_id += " (" + git_hash + ")";
+
+    return build_id;
+}
+
 MainFrame::MainFrame(
     Domain::Workbench& workbench,
     Biz::ProjectInteractor& project_interactor,
     Navigator& navigator,
     std::shared_ptr<ProjectSaver> project_saver
 ) :
-    wxFrame(nullptr, wxID_ANY, from_u8(::Slic3r::BUILD_ID), wxDefaultPosition,wxDefaultSize,
+    wxFrame(nullptr, wxID_ANY, from_u8(frame_title()), wxDefaultPosition,wxDefaultSize,
         wxDEFAULT_FRAME_STYLE, from_u8("mainframe")),
     m_workbench(workbench),
     m_project_interactor(project_interactor),
