@@ -11,7 +11,7 @@
   <key>CFBundleName</key>
   <string>@SLIC3R_APP_KEY@</string>
   <key>CFBundleShortVersionString</key>
-  <string>@SLIC3R_APP_NAME@ @SLIC3R_BUILD_ID@</string>
+  <string>@SLIC3R_APP_NAME@ @SLIC3R_BOSS_VERSION@</string>
   <key>CFBundleIdentifier</key>
   <string>com.prusa3d.slic3r</string>
   <key>CFBundleInfoDictionaryVersion</key>
@@ -21,7 +21,7 @@
   <key>CFBundleSignature</key>
   <string>????</string>
   <key>CFBundleVersion</key>
-  <string>@SLIC3R_BUILD_ID@</string>
+  <string>@SLIC3R_BOSS_VERSION@</string>
   <key>CFBundleDocumentTypes</key>
   <array>
     <dict>
