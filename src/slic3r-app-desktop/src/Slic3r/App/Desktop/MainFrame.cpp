@@ -81,13 +81,24 @@ static wxIcon main_frame_icon()
 }
 #endif // _WIN32
 
+// The Windows single-instance check finds this window by searching its title for BUILD_ID,
+// so the title keeps BUILD_ID intact and only appends the git hash of dev builds.
+static std::string frame_title()
+{
+    std::string title = ::Slic3r::BUILD_ID;
+    if (std::string git_hash = ::Slic3r::GIT_HASH; !git_hash.empty())
+        title += " (" + git_hash + ")";
+
+    return title;
+}
+
 MainFrame::MainFrame(
     Domain::Workbench& workbench,
     Biz::ProjectInteractor& project_interactor,
     Navigator& navigator,
     std::shared_ptr<ProjectSaver> project_saver
 ) :
-    wxFrame(nullptr, wxID_ANY, from_u8(::Slic3r::BUILD_ID), wxDefaultPosition,wxDefaultSize,
+    wxFrame(nullptr, wxID_ANY, from_u8(frame_title()), wxDefaultPosition,wxDefaultSize,
         wxDEFAULT_FRAME_STYLE, from_u8("mainframe")),
     m_workbench(workbench),
     m_project_interactor(project_interactor),

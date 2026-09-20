@@ -1,5 +1,5 @@
 [Desktop Entry]
-Name=PrusaSlicer (@SLIC3R_BUILD_ID@)
+Name=PrusaSlicer (@SLIC3R_BOSS_VERSION@)
 GenericName=3D Printing Software
 Icon=com.prusa3d.PrusaSlicer
 Exec=/app/bin/slic3r-app-launcher --single-instance-on-url %u
