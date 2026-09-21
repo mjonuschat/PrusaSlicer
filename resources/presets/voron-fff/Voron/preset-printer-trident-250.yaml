@@ -1,0 +1,95 @@
+kind: printer
+id: trident-250
+condition: printer.model=="trident-250"
+name: VORON Trident 250mm
+values:
+  gcode_flavor: klipper
+  start_gcode: '; @see https://github.com/jontek2/A-better-print_start-macro for the
+    macro
+
+    PRINT_START EXTRUDER=[first_layer_temperature[initial_extruder]] BED=[first_layer_bed_temperature]
+    CHAMBER=[chamber_temperature] CHAMBER_MINIMAL=[chamber_minimal_temperature]'
+  end_gcode: PRINT_END
+  autoemit_temperature_commands: false
+  extruder_offset:
+  - '0x0'
+  before_layer_gcode: ';BEFORE_LAYER_CHANGE
+
+    G92 E0
+
+    ;{layer_z}'
+  binary_gcode: false
+  color_change_gcode: M600
+  travel_max_lift: 1.5
+  travel_ramping_lift: false
+  travel_slope: 1
+  variable_layer_height: true
+  wipe: false
+  layer_gcode: ';AFTER_LAYER_CHANGE
+
+    ;{layer_z}'
+  extruder_clearance_height: 33
+  extruder_clearance_radius: 75
+  machine_limits_usage: time_estimate_only
+  pause_print_gcode: PAUSE
+  remaining_times: true
+  silent_mode: false
+  thumbnails: 32x32/PNG, 300x300/PNG, 400x300/PNG
+  machine_max_acceleration_e:
+  - 5000
+  - 2500
+  machine_max_acceleration_extruding:
+  - 7000
+  - 2500
+  machine_max_acceleration_retracting:
+  - 2500
+  - 2500
+  machine_max_acceleration_travel:
+  - 7000
+  - 2500
+  machine_max_acceleration_x:
+  - 10000
+  - 2500
+  machine_max_acceleration_y:
+  - 10000
+  - 2500
+  machine_max_acceleration_z:
+  - 400
+  - 200
+  machine_max_feedrate_e:
+  - 100
+  - 100
+  machine_max_feedrate_x:
+  - 350
+  - 175
+  machine_max_feedrate_y:
+  - 350
+  - 175
+  machine_max_feedrate_z:
+  - 15
+  - 15
+  machine_max_jerk_e:
+  - 10
+  - 10
+  machine_max_jerk_x:
+  - 10
+  - 8
+  machine_max_jerk_y:
+  - 10
+  - 8
+  machine_max_jerk_z:
+  - 2
+  - 2
+  machine_min_extruding_rate:
+  - 0
+  - 0
+  machine_min_travel_rate:
+  - 0
+  - 0
+  use_relative_e_distances: true
+  bed_shape:
+  - '0x0'
+  - 250x0
+  - 250x250
+  - '0x250'
+  max_print_height: 210

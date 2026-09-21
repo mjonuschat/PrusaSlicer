@@ -1,0 +1,5 @@
+kind: tool_print
+id: switchwire
+variants:
+- condition: printer.model=="switchwire"
+  name: no tool

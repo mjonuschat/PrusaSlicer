@@ -1,0 +1,5 @@
+kind: tool_print
+id: v2-350
+variants:
+- condition: printer.model=="v2-350"
+  name: no tool

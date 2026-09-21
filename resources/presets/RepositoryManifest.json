@@ -6,4 +6,12 @@
     "url": "http://localhost:8000/prusa-research-fff/",
     "index_url": "http://localhost:8000/prusa-research-fff/vendor_indices.zip",
     "selected": true
+}, {
+    "name": "Voron",
+    "description": "Voron FFF printers",
+    "visibility": "",
+    "id": "voron-fff",
+    "url": "http://localhost:8000/voron-fff/",
+    "index_url": "http://localhost:8000/voron-fff/vendor_indices.zip",
+    "selected": false
 }]
