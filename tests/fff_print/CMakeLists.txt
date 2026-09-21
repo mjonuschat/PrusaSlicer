@@ -10,6 +10,7 @@ list(REMOVE_ITEM BOSS_TEST_SOURCES test_boss_fill_fixture.cpp test_boss_solid_fi
 add_executable(${_TEST_NAME}_tests
 	${_TEST_NAME}_tests.cpp
 	test_avoid_crossing_perimeters.cpp
+	test_boss_3d_honeycomb_bridging.cpp
 	test_bridges.cpp
 	test_cooling.cpp
 	test_clipper.cpp

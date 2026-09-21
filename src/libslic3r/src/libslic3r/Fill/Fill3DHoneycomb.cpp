@@ -1,3 +1,10 @@
+///|/ Copyright (c) Prusa Research 2016 - 2021 Vojtěch Bubník @bubnikv
+///|/ Copyright (c) SuperSlicer 2019 Remi Durand @supermerill
+///|/ Copyright (c) OrcaSlicer 2024 David Eccles @gringer
+///|/ Copyright (c) OrcaSlicer 2026 Rodrigo Faselli @RF47
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #include <algorithm>
 #include <cmath>
 #include <vector>
@@ -30,98 +37,132 @@ and Y axes.
 Credits: David Eccles (gringer).
 */
 
-// Generate an array of points that are in the same direction as the
-// basic printing line (i.e. Y points for columns, X points for rows)
-// Note: a negative offset only causes a change in the perpendicular
-// direction
-static std::vector<double> colinearPoints(const double offset, const size_t baseLocation, size_t gridLength)
+template <typename T> int sgn(T val)
 {
-    const double offset2 = std::abs(offset / double(2.));
-    std::vector<double> points;
-    points.push_back(baseLocation - offset2);
-    for (size_t i = 0; i < gridLength; ++i) {
-        points.push_back(baseLocation + i + offset2);
-        points.push_back(baseLocation + i + 1 - offset2);
+    return (T(0) < val) - (val < T(0));
+}
+
+// Triangular wave function. Has period (gridSize * 2) and amplitude
+// (gridSize / 2), with triWave(pos = 0) = 0.
+static double triWave(double pos, double gridSize)
+{
+    float t = float(pos / (gridSize * 2.)) + 0.25f; // convert relative to grid size
+    t = t - float(int(t));
+    return (1. - std::abs(double(t) * 8. - 4.)) * (gridSize / 4.) + (gridSize / 4.);
+}
+
+// Truncated octagonal waveform, with period and offset as per the
+// triangular wave function. The Z position adjusts the maximum offset
+// [between -(gridSize / 4) and (gridSize / 4)], with period (gridSize * 2)
+// and troctWave(Zpos = 0) = 0.
+static double troctWave(double pos, double gridSize, double Zpos)
+{
+    double Zcycle = triWave(Zpos, gridSize);
+    double perpOffset = Zcycle / 2;
+    double y = triWave(pos, gridSize);
+    return (std::abs(y) > std::abs(perpOffset)) ? (sgn(y) * perpOffset) : (y * sgn(perpOffset));
+}
+
+// Identify the important points of curve change within a truncated
+// octahedron wave (as waveform fraction t):
+// 1. Start of wave (always 0.0)
+// 2. Transition to upper "horizontal" part
+// 3. Transition from upper "horizontal" part
+// 4. Transition to lower "horizontal" part
+// 5. Transition from lower "horizontal" part
+static std::vector<double> getCriticalPoints(double Zpos, double gridSize)
+{
+    std::vector<double> res = {0.};
+    double perpOffset = std::abs(triWave(Zpos, gridSize) / 2.);
+    double normalisedOffset = perpOffset / gridSize;
+    if (normalisedOffset > 0) {
+        res.push_back(gridSize * (0. + normalisedOffset));
+        res.push_back(gridSize * (1. - normalisedOffset));
+        res.push_back(gridSize * (1. + normalisedOffset));
+        res.push_back(gridSize * (2. - normalisedOffset));
     }
-    points.push_back(baseLocation + gridLength + offset2);
+    return res;
+}
+
+// Generate an array of points that are in the same direction as the
+// basic printing line (i.e. Y points for columns, X points for rows).
+static std::vector<double> colinearPoints(
+    double gridSize, const std::vector<double>& critPoints, const size_t baseLocation,
+    size_t gridLength
+)
+{
+    std::vector<double> points;
+    points.push_back(double(baseLocation));
+    for (double cLoc = double(baseLocation); cLoc < double(gridLength); cLoc += gridSize * 2) {
+        for (size_t pi = 0; pi < critPoints.size(); pi++) {
+            points.push_back(double(baseLocation) + cLoc + critPoints[pi]);
+        }
+    }
+    points.push_back(double(gridLength));
     return points;
 }
 
 // Generate an array of points for the dimension that is perpendicular to
-// the basic printing line (i.e. X points for columns, Y points for rows)
-static std::vector<double> perpendPoints(const double offset, const size_t baseLocation, size_t gridLength)
+// the basic printing line (i.e. X points for columns, Y points for rows).
+static std::vector<double> perpendPoints(
+    double Zpos, double gridSize, const std::vector<double>& critPoints, size_t baseLocation,
+    size_t gridLength, double offsetBase, double perpDir
+)
 {
-    double offset2 = offset / double(2.);
-    coord_t  side    = 2 * (baseLocation & 1) - 1;
     std::vector<double> points;
-    points.push_back(baseLocation - offset2 * side);
-    for (size_t i = 0; i < gridLength; ++i) {
-        side = 2*((i+baseLocation) & 1) - 1;
-        points.push_back(baseLocation + offset2 * side);
-        points.push_back(baseLocation + offset2 * side);
+    points.push_back(offsetBase);
+    for (double cLoc = double(baseLocation); cLoc < double(gridLength); cLoc += gridSize * 2) {
+        for (size_t pi = 0; pi < critPoints.size(); pi++) {
+            double offset = troctWave(critPoints[pi], gridSize, Zpos);
+            points.push_back(offsetBase + (offset * perpDir));
+        }
     }
-    points.push_back(baseLocation - offset2 * side);
+    points.push_back(offsetBase);
     return points;
 }
 
-// Trims an array of points to specified rectangular limits. Point
-// components that are outside these limits are set to the limits.
-static inline void trim(Pointfs &pts, double minX, double minY, double maxX, double maxY)
-{
-    for (Vec2d &pt : pts) {
-        pt.x() = std::clamp(pt.x(), minX, maxX);
-        pt.y() = std::clamp(pt.y(), minY, maxY);
-    }
-}
-
-static inline Pointfs zip(const std::vector<double> &x, const std::vector<double> &y)
+static inline Pointfs zip(const std::vector<double>& x, const std::vector<double>& y)
 {
     assert(x.size() == y.size());
     Pointfs out;
     out.reserve(x.size());
-    for (size_t i = 0; i < x.size(); ++ i)
+    for (size_t i = 0; i < x.size(); ++i)
         out.push_back(Vec2d(x[i], y[i]));
     return out;
 }
 
 // Generate a set of curves (array of array of 2d points) that describe a
-// horizontal slice of a truncated regular octahedron with edge length 1.
-// curveType specifies which lines to print, 1 for vertical lines
-// (columns), 2 for horizontal lines (rows), and 3 for both.
-static std::vector<Pointfs> makeNormalisedGrid(double z, size_t gridWidth, size_t gridHeight, size_t curveType)
+// horizontal slice of a truncated regular octahedron.
+static std::vector<Pointfs> makeActualGrid(
+    double Zpos, double gridSize, size_t boundsX, size_t boundsY
+)
 {
-    // offset required to create a regular octagram
-    double octagramGap = double(0.5);
-    
-    // sawtooth wave function for range f($z) = [-$octagramGap .. $octagramGap]
-    double a = std::sqrt(double(2.));  // period
-    double wave = fabs(fmod(z, a) - a/2.)/a*4. - 1.;
-    double offset = wave * octagramGap;
-    
     std::vector<Pointfs> points;
-    if ((curveType & 1) != 0) {
-        for (size_t x = 0; x <= gridWidth; ++x) {
+    std::vector<double> critPoints = getCriticalPoints(Zpos, gridSize);
+    double zCycle = std::fmod(Zpos + gridSize / 2, gridSize * 2.) / (gridSize * 2.);
+    bool printVert = zCycle < 0.5;
+    if (printVert) {
+        double perpDir = -1;
+        for (double x = 0; x <= double(boundsX); x += gridSize, perpDir *= -1) {
             points.push_back(Pointfs());
-            Pointfs &newPoints = points.back();
+            Pointfs& newPoints = points.back();
             newPoints = zip(
-                perpendPoints(offset, x, gridHeight), 
-                colinearPoints(offset, 0, gridHeight));
-            // trim points to grid edges
-            trim(newPoints, double(0.), double(0.), double(gridWidth), double(gridHeight));
-            if (x & 1)
+                perpendPoints(Zpos, gridSize, critPoints, 0, boundsY, x, perpDir),
+                colinearPoints(gridSize, critPoints, 0, boundsY)
+            );
+            if (perpDir == 1)
                 std::reverse(newPoints.begin(), newPoints.end());
         }
-    }
-    if ((curveType & 2) != 0) {
-        for (size_t y = 0; y <= gridHeight; ++y) {
+    } else {
+        double perpDir = 1;
+        for (double y = gridSize; y <= double(boundsY); y += gridSize, perpDir *= -1) {
             points.push_back(Pointfs());
-            Pointfs &newPoints = points.back();
+            Pointfs& newPoints = points.back();
             newPoints = zip(
-                colinearPoints(offset, 0, gridWidth),
-                perpendPoints(offset, y, gridWidth));
-            // trim points to grid edges
-            trim(newPoints, double(0.), double(0.), double(gridWidth), double(gridHeight));
-            if (y & 1)
+                colinearPoints(gridSize, critPoints, 0, boundsX),
+                perpendPoints(Zpos, gridSize, critPoints, 0, boundsX, y, perpDir)
+            );
+            if (perpDir == -1)
                 std::reverse(newPoints.begin(), newPoints.end());
         }
     }
@@ -130,59 +171,100 @@ static std::vector<Pointfs> makeNormalisedGrid(double z, size_t gridWidth, size_
 
 // Generate a set of curves (array of array of 2d points) that describe a
 // horizontal slice of a truncated regular octahedron with a specified
-// grid square size.
-static Polylines makeGrid(coord_t z, coord_t gridSize, size_t gridWidth, size_t gridHeight, size_t curveType)
+// grid square size. boundWidth/boundHeight are the bounding box size.
+static Polylines makeGrid(double z, double gridSize, double boundWidth, double boundHeight)
 {
-    coord_t  scaleFactor = gridSize;
-    double normalisedZ = double(z) / double(scaleFactor);
-    std::vector<Pointfs> polylines = makeNormalisedGrid(normalisedZ, gridWidth, gridHeight, curveType);
+    std::vector<Pointfs> polylines =
+        makeActualGrid(z, gridSize, size_t(boundWidth), size_t(boundHeight));
     Polylines result;
     result.reserve(polylines.size());
-    for (std::vector<Pointfs>::const_iterator it_polylines = polylines.begin(); it_polylines != polylines.end(); ++ it_polylines) {
+    for (auto it_polylines = polylines.begin(); it_polylines != polylines.end(); ++it_polylines) {
         result.push_back(Polyline());
-        Polyline &polyline = result.back();
-        for (Pointfs::const_iterator it = it_polylines->begin(); it != it_polylines->end(); ++ it)
-            polyline.points.push_back(Point(coord_t((*it)(0) * scaleFactor), coord_t((*it)(1) * scaleFactor)));
+        Polyline& polyline = result.back();
+        for (auto it = it_polylines->begin(); it != it_polylines->end(); ++it)
+            polyline.points.push_back(Point(coord_t((*it)(0)), coord_t((*it)(1))));
     }
     return result;
 }
 
 void Fill3DHoneycomb::_fill_surface_single(
-    const FillParams                &params, 
+    const FillParams                &params,
     unsigned int                     thickness_layers,
-    const std::pair<float, Point>   &direction, 
+    const std::pair<float, Point>   &direction,
     ExPolygon                        expolygon,
-    Polylines                       &polylines_out)
+    Polylines                       &polylines_out
+)
 {
-    // no rotation is supported for this infill pattern
+    auto infill_angle = float(this->angle);
+    if (std::abs(infill_angle) >= EPSILON)
+        expolygon.rotate(-infill_angle);
     BoundingBox bb = Algorithms::Polygon::get_bounding_box(expolygon.contour);
-    coord_t     distance = coord_t(scale_(this->spacing) / params.density);
 
-    // align bounding box to a multiple of our honeycomb grid module
-    // (a module is 2*$distance since one $distance half-module is 
-    // growing while the other $distance half-module is shrinking)
-    bb = BB::merge(bb, align_to_grid(bb.min, Point(2*distance, 2*distance)));
-    
-    // generate pattern
-    Polylines   polylines = makeGrid(
-        scale_(this->z),
-        distance,
-        ceil(BB::sizes(bb)(0) / distance) + 1,
-        ceil(BB::sizes(bb)(1) / distance) + 1,
-        ((this->layer_id/thickness_layers) % 2) + 1);
-    
-    // move pattern in place
-	for (Polyline &pl : polylines)
-		pl.translate(bb.min);
+    // With equally-scaled X/Y/Z, the pattern creates a vertically-stretched
+    // truncated octahedron, so Z is pre-adjusted by scaling by sqrt(2).
+    double zScale = std::sqrt(2.);
 
-    // clip pattern to boundaries, chain the clipped polylines
+    // First guess at the preferred grid size.
+    double gridSize = scale_(this->spacing) * ((zScale + 1.) / 2.) / params.density;
+
+    // This density calculation is incorrect for many values > 25%, likely
+    // due to quantisation error, so this value is used as a first guess,
+    // then the Z scale is adjusted to make the layer patterns consistent.
+    // The resultant infill won't be an ideal truncated octahedron, but it
+    // looks better than the equivalent quantised version.
+    //
+    // Use a fixed module height (one layer) rather than the combined layer
+    // thickness. With "combine infill every N layers", thickness_layers > 1
+    // made the honeycomb pattern inconsistent between Z modules and
+    // produced poor bridges.
+    double layerHeight = scale_(1.0);
+    double layersPerModule = std::floor((gridSize * 2) / (zScale * layerHeight) + 0.05);
+    if (params.density > 0.42) { // exact layer pattern for >42% density
+        layersPerModule = 2;
+        gridSize = scale_(this->spacing) * 1.1 / params.density;
+        zScale = (gridSize * 2) / (layersPerModule * layerHeight);
+    } else {
+        if (layersPerModule < 2)
+            layersPerModule = 2;
+        zScale = (gridSize * 2) / (layersPerModule * layerHeight);
+        gridSize = scale_(this->spacing) * ((zScale + 1.) / 2.) / params.density;
+        layersPerModule = std::floor((gridSize * 2) / (zScale * layerHeight) + 0.05);
+        if (layersPerModule < 2)
+            layersPerModule = 2;
+        zScale = (gridSize * 2) / (layersPerModule * layerHeight);
+    }
+
+    // Align bounding box to a multiple of our honeycomb grid module (a
+    // module is 4*gridSize since one gridSize half-module is growing while
+    // the other gridSize half-module is shrinking).
+    bb = BB::merge(
+        bb, align_to_grid(bb.min, Point(coord_t(gridSize * 4), coord_t(gridSize * 4)))
+    );
+
+    Polylines polylines =
+        makeGrid(scale_(this->z) * zScale, gridSize, BB::sizes(bb)(0), BB::sizes(bb)(1));
+
+    for (Polyline& pl : polylines)
+        pl.translate(bb.min);
+
     polylines = intersection_pl(polylines, expolygon);
 
-    // connect lines if needed
-    if (params.dont_connect() || polylines.size() <= 1)
-        append(polylines_out, chain_polylines(std::move(polylines)));
-    else
-        this->connect_infill(std::move(polylines), expolygon, polylines_out, this->spacing, params);
+    if (!polylines.empty()) {
+        auto infill_start_idx = polylines_out.size(); // only rotate what belongs to us.
+
+        if (params.dont_connect() || polylines.size() <= 1)
+            append(polylines_out, chain_polylines(std::move(polylines)));
+        else
+            this->connect_infill(
+                std::move(polylines), expolygon, polylines_out, this->spacing, params
+            );
+
+        if (std::abs(infill_angle) >= EPSILON) {
+            auto begin = polylines_out.begin() + long(infill_start_idx);
+            for (auto it = begin; it != polylines_out.end(); ++it)
+                it->rotate(infill_angle);
+        }
+    }
 }
 
 } // namespace Slic3r
