@@ -15,6 +15,7 @@
 #include "libslic3r/Geometry/ArcWelder.hpp"
 #include "libslic3r/LayerRegion.hpp"
 #include "libslic3r/Print.hpp"
+#include "libslic3r/boss/gcode/reverse_odd_layer/ReverseOddLayerPolicy.hpp"
 
 namespace Slic3r::GCode::ExtrusionOrder {
 
@@ -128,7 +129,23 @@ std::vector<Perimeter> extract_perimeter_extrusions(
                 bool reverse_loop{false};
                 if (auto loop = dynamic_cast<const ExtrusionLoop *>(ee)) {
                     const bool is_hole = loop->is_clockwise();
-                    reverse_loop = print.config().get<bool>("prefer_clockwise_movements") ? !is_hole : is_hole;
+                    const bool base_reverse = print.config().get<bool>("prefer_clockwise_movements") ? !is_hole : is_hole;
+
+                    const bool is_odd_layer = layer.id() % 2 == 1;
+                    const ExtrusionRole role = ee->role();
+                    bool touches_overhang{false};
+                    for (const ExtrusionPath &path : loop->paths) {
+                        if (path.role().is_overhang_perimeter()) {
+                            touches_overhang = true;
+                            break;
+                        }
+                    }
+                    const bool reverse_on_odd = Boss::ReverseOddLayerPolicy::reverse_perimeter(
+                        is_odd_layer, role.is_internal_perimeter(), touches_overhang,
+                        region.config().get<bool>("internal_perimeters_reverse"),
+                        region.config().get<bool>("overhangs_reverse")
+                    );
+                    reverse_loop = base_reverse ^ reverse_on_odd;
                 }
                 auto [path, wipe_offset]{smooth_path(&layer, &region, ExtrusionEntityReference{*ee, reverse_loop}, extruder_id, last_position)};
                 previous_position = get_gcode_point(last_position, offset);
@@ -192,10 +209,17 @@ std::vector<InfillRange> extract_infill_ranges(
         const Point* start_near{previous_instance_point ? &(previous_instance_point->local_point) : nullptr};
         const ExtrusionEntityReferences sorted_extrusions{sort_fill_extrusions(extrusions, start_near)};
 
+        const bool infill_reverse_enabled = region.config().get<bool>("infill_reverse");
+        const bool is_odd_layer = layer.id() % 2 == 1;
+
         std::vector<SmoothPath> paths;
         for (const ExtrusionEntityReference &extrusion_reference : sorted_extrusions) {
             std::optional<InstancePoint> last_position{get_instance_point(previous_position, offset)};
-            auto [path, _]{smooth_path(&layer, &region, extrusion_reference, extruder_id, last_position)};
+            const bool flipped = Boss::ReverseOddLayerPolicy::resolve_infill_flip(
+                extrusion_reference.flipped(), is_odd_layer, infill_reverse_enabled
+            );
+            const ExtrusionEntityReference reversible_reference{extrusion_reference.extrusion_entity(), flipped};
+            auto [path, _]{smooth_path(&layer, &region, reversible_reference, extruder_id, last_position)};
             if (!path.empty()) {
                 paths.push_back(std::move(path));
             }
