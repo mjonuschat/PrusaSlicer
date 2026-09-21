@@ -373,6 +373,14 @@ std::string to_display_string(Biz::Slicing::Warning warning, const Domain::Proje
         );
         break;
 
+    case WarningCode::PerimeterOverlapOutOfBounds:
+        message = _u8L(
+            "External perimeter/perimeter overlap is set to an absolute value that is out of "
+            "range for the current perimeter extrusion width. Check external_perimeter_overlap "
+            "and perimeter_perimeter_overlap."
+        );
+        break;
+
     case WarningCode::None:
         message = _u8L("Warning: unspecified issue detected.");
         break;
