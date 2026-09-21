@@ -1,0 +1,25 @@
+{
+  "name": "filament-max-speed",
+  "id": 10002,
+  "key": "filament-max-speed",
+  "trait": "Slic3r::Boss::FilamentMaxSpeedFeature",
+  "header": "boss/features/filament-max-speed/FilamentMaxSpeedFeature.hpp",
+  "label": "Filament maximum speed",
+  "components": {
+    "slic3r-domain": {
+      "capabilities": ["fdm_config"],
+      "sources": ["slic3r-domain/src/Slic3r/Domain/boss/FilamentMaxSpeedConfig.cpp"]
+    },
+    "libslic3r": {
+      "capabilities": ["wipe_tower_speed_cap"],
+      "sources": ["libslic3r/src/libslic3r/boss/wipe_tower/FilamentMaxSpeedCap.cpp"]
+    }
+  },
+  "config_options": [
+    {
+      "key": "filament_max_speed",
+      "invalidates": ["psWipeTower", "psSkirtBrim"],
+      "store": {"home": "extrude_config", "field": "filament_max_speed", "kind": "per_extruder_double"}
+    }
+  ]
+}
