@@ -218,7 +218,7 @@ static std::vector<size_t> order_of_grouped_perimeter_extrusions_to_minimize_dis
     return grouped_extrusions_order;
 }
 
-static PerimeterExtrusions extract_ordered_perimeter_extrusions(const PerimeterExtrusions &sorted_perimeter_extrusions, const bool external_perimeters_first) {
+static PerimeterExtrusions extract_ordered_perimeter_extrusions(const PerimeterExtrusions &sorted_perimeter_extrusions, const Slic3r::Boss::OrderingPolicy &ordering) {
     // Extrusions are ordered inside each group.
     std::vector<GroupedPerimeterExtrusions> grouped_extrusions;
 
@@ -263,14 +263,30 @@ static PerimeterExtrusions extract_ordered_perimeter_extrusions(const PerimeterE
             }
         }
 
-        if (!external_perimeters_first)
+        if (!ordering.contours_external_first)
             std::reverse(grouped_extrusions.back().extrusions.begin(), grouped_extrusions.back().extrusions.end());
     }
 
     const std::vector<size_t> grouped_extrusion_order = order_of_grouped_perimeter_extrusions_to_minimize_distances(grouped_extrusions, Point::Zero());
 
+    const coord_t min_hole_length = scaled(ordering.min_hole_perimeter_length);
+
     PerimeterExtrusions ordered_extrusions;
     for (size_t order_idx : grouped_extrusion_order) {
+        const GroupedPerimeterExtrusions &perimeter_extrusion = grouped_extrusions[order_idx];
+        // Holes reversed by contours_external_first above are un-reversed back
+        // to the native "external last" order unless holes_external_first
+        // overrides it -- and even then, only above the min-size threshold,
+        // so small holes keep the native ordering regardless.
+        if (!perimeter_extrusion.external_perimeter_extrusion->is_contour() &&
+            ordering.contours_external_first &&
+            (!ordering.holes_external_first ||
+             perimeter_extrusion.external_perimeter_extrusion->extrusion.polylineLength() < min_hole_length)) {
+            std::reverse(
+                grouped_extrusions[order_idx].extrusions.begin(),
+                grouped_extrusions[order_idx].extrusions.end()
+            );
+        }
         for (const PerimeterExtrusion *perimeter_extrusion : grouped_extrusions[order_idx].extrusions)
             ordered_extrusions.emplace_back(*perimeter_extrusion);
     }
@@ -280,11 +296,11 @@ static PerimeterExtrusions extract_ordered_perimeter_extrusions(const PerimeterE
 
 // FIXME: From the point of better patch planning, it should be better to do ordering when we have generated all extrusions (for now, when G-Code is exported).
 // FIXME: It would be better to extract the adjacency graph of extrusions from the SkeletalTrapezoidation graph.
-PerimeterExtrusions ordered_perimeter_extrusions(const Perimeters &perimeters, const bool external_perimeters_first) {
+PerimeterExtrusions ordered_perimeter_extrusions(const Perimeters &perimeters, const Slic3r::Boss::OrderingPolicy &ordering) {
     PerimeterExtrusions sorted_perimeter_extrusions = get_sorted_perimeter_extrusions_by_area(perimeters);
     construct_perimeter_extrusions_adjacency_graph(sorted_perimeter_extrusions);
     assign_nearest_external_perimeter(sorted_perimeter_extrusions);
-    return extract_ordered_perimeter_extrusions(sorted_perimeter_extrusions, external_perimeters_first);
+    return extract_ordered_perimeter_extrusions(sorted_perimeter_extrusions, ordering);
 }
 
 } // namespace Slic3r::Arachne::PerimeterOrder

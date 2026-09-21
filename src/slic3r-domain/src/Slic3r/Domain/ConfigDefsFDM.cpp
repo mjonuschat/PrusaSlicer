@@ -826,7 +826,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Ensure vertical shell thickness");
     def->option_group = ConfigItemDef::OptionGroup::Print_WallsPerimeters_WallsQuality;
     def->category = ConfigItemDef::Category::Print_WallsPerimeters;
-    def->order = 7;
+    def->order = 10;
     def->gui_type = ConfigItemDef::GUIType::combobox;
     def->tooltip = L("Add solid infill near sloping surfaces to guarantee the vertical shell thickness "
                    "(top+bottom solid layers).");
@@ -921,6 +921,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->location = Print;
     def->overrides_in = Locations{ Tool, Object, Volume };
     def->label = L("External perimeters first");
+    def->full_label = L("External perimeters first for contours");
     def->option_group = ConfigItemDef::OptionGroup::Print_WallsPerimeters_WallsQuality;
     def->category = ConfigItemDef::Category::Print_WallsPerimeters;
     def->order = 0;
@@ -935,7 +936,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Extra perimeters if needed");
     def->option_group = ConfigItemDef::OptionGroup::Print_WallsPerimeters_WallsQuality;
     def->category = ConfigItemDef::Category::Print_WallsPerimeters;
-    def->order = 1;
+    def->order = 4;
     def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Add more perimeters when needed for avoiding gaps in sloping walls. "
                    "Slic3r keeps adding perimeters, until more than 70% of the loop immediately above "
@@ -948,7 +949,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Extra perimeters on overhangs (Experimental)");
     def->option_group = ConfigItemDef::OptionGroup::Print_WallsPerimeters_WallsQuality;
     def->category = ConfigItemDef::Category::Print_WallsPerimeters;
-    def->order = 2;
+    def->order = 5;
     def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Detect overhang areas where bridges cannot be anchored, and fill them with "
                     "extra perimeter paths. These paths are anchored to the nearby non-overhang area when possible.");
@@ -1994,7 +1995,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Fill gaps");
     def->option_group = ConfigItemDef::OptionGroup::Print_WallsPerimeters_WallsQuality;
     def->category = ConfigItemDef::Category::Print_WallsPerimeters;
-    def->order = 6;
+    def->order = 9;
     def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Enables filling of gaps between perimeters and between the inner most perimeters and infill.");
     def->init_fn = init_with(true);
@@ -2932,7 +2933,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Detect bridging perimeters");
     def->option_group = ConfigItemDef::OptionGroup::Print_WallsPerimeters_WallsQuality;
     def->category = ConfigItemDef::Category::Print_WallsPerimeters;
-    def->order = 3;
+    def->order = 6;
     def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Experimental option to adjust flow for overhangs (bridge flow will be used), "
                    "to apply bridge speed to them and enable fan.");
@@ -4534,7 +4535,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Thick bridges");
     def->option_group = ConfigItemDef::OptionGroup::Print_WallsPerimeters_WallsQuality;
     def->category = ConfigItemDef::Category::Print_WallsPerimeters;
-    def->order = 4;
+    def->order = 7;
     def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("If enabled, bridges are more reliable, can bridge longer distances, but may look worse. "
                      "If disabled, bridges look better but are reliable just for shorter bridged distances.");
@@ -4546,7 +4547,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Detect thin walls");
     def->option_group = ConfigItemDef::OptionGroup::Print_WallsPerimeters_WallsQuality;
     def->category = ConfigItemDef::Category::Print_WallsPerimeters;
-    def->order = 5;
+    def->order = 8;
     def->gui_type = ConfigItemDef::GUIType::checkbox;
     def->tooltip = L("Detect single-width walls (parts where two extrusions don't fit and we need "
                    "to collapse them into a single trace).");
