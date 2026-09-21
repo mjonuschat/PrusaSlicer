@@ -52,16 +52,18 @@ struct Parameters {
         Flow                        solid_infill_flow,
         const PrintRegionConfigView    &config,
         const PerimeterRegions     &perimeter_regions,
-        const bool                  spiral_vase) :   
+        const bool                  spiral_vase,
+        double                      slice_z = 0.) :
             layer_height(layer_height),
             layer_id(layer_id),
-            perimeter_flow(perimeter_flow), 
+            perimeter_flow(perimeter_flow),
             ext_perimeter_flow(ext_perimeter_flow),
-            overhang_flow(overhang_flow), 
+            overhang_flow(overhang_flow),
             solid_infill_flow(solid_infill_flow),
-            config(config), 
+            config(config),
             perimeter_regions(perimeter_regions),
             spiral_vase(spiral_vase),
+            slice_z(slice_z),
             scaled_resolution(scaled<double>(config.get<double>("gcode_resolution"))),
             ext_mm3_per_mm(ext_perimeter_flow.mm3_per_mm()),
             mm3_per_mm(perimeter_flow.mm3_per_mm()),
@@ -81,6 +83,10 @@ struct Parameters {
 
     // Derived parameters
     bool                         spiral_vase;
+    // Trailing, defaulted (not derived): kept last in both the constructor's
+    // parameter list and this declaration order so existing 9-argument call
+    // sites elsewhere in the composed build keep compiling unchanged.
+    double                       slice_z;
     double                       scaled_resolution;
     double                       ext_mm3_per_mm;
     double                       mm3_per_mm;
