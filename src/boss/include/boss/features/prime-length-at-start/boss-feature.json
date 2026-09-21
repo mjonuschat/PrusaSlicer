@@ -1,0 +1,17 @@
+{
+  "name": "prime-length-at-start",
+  "id": 10008,
+  "key": "prime-length-at-start",
+  "trait": "Slic3r::Boss::PrimeLengthAtStartFeature",
+  "header": "boss/features/prime-length-at-start/PrimeLengthAtStartFeature.hpp",
+  "label": "Prime length at start",
+  "components": {
+    "slic3r-domain": {
+      "capabilities": ["fdm_config"],
+      "sources": ["slic3r-domain/src/Slic3r/Domain/boss/PrimeLengthAtStartConfig.cpp"]
+    }
+  },
+  "config_options": [
+    {"key": "prime_length_at_start", "invalidates": ["psGCodeExport"]}
+  ]
+}
