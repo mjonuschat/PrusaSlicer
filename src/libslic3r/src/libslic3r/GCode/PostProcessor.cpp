@@ -453,6 +453,30 @@ static std::vector<std::string> format_statistics(const Domain::FullPrintStatist
     return result;
 }
 
+static std::string format_m104_1_preheat_line(int temperature, int tool, const std::vector<float>& time_diffs)
+{
+    std::string line = "M104.1 T" + std::to_string(tool);
+    if (time_diffs.size() > 0)
+        line += " P" + std::to_string(int(std::round(time_diffs[0])));
+    if (time_diffs.size() > 1)
+        line += " Q" + std::to_string(int(std::round(time_diffs[1])));
+    line += " S" + std::to_string(temperature) + "\n";
+    return line;
+}
+
+static std::string format_temperature_preheat_line(Domain::GCodeFlavor flavor, int temperature, int tool,
+    const std::vector<float>& time_diffs)
+{
+    const int seconds = time_diffs.empty() ? 0 : int(std::round(time_diffs[0]));
+    std::string line = flavor == Domain::GCodeFlavor::gcfRepRapFirmware ? "G10 " : "M104 ";
+    line += (flavor == Domain::GCodeFlavor::gcfMach3 || flavor == Domain::GCodeFlavor::gcfMachinekit) ? "P" : "S";
+    line += std::to_string(temperature);
+    line += flavor == Domain::GCodeFlavor::gcfRepRapFirmware ? " P" : " T";
+    line += std::to_string(tool);
+    line += " ; preheat T" + std::to_string(tool) + " time: " + std::to_string(seconds) + "s\n";
+    return line;
+}
+
 class PostProcessor
 {
 public:
@@ -500,7 +524,7 @@ private:
 
     WarningCallback m_warning_callback{ nullptr };
     // Backtrace data for Tx gcode lines
-    static const Backtrace s_BACKTRACE_T;
+    const Backtrace m_backtrace_t{ m_config.preheat_time, m_config.preheat_steps };
 
     void apply_config() {
         for (size_t i = 0; i < TIME_MODES_COUNT; ++i) {
@@ -603,7 +627,7 @@ private:
                     }
                     processed = true;
                 }
-                max_backtrace_time = std::max(max_backtrace_time, s_BACKTRACE_T.time);
+                max_backtrace_time = std::max(max_backtrace_time, m_backtrace_t.time);
                 if (processed)
                     continue;
             }
@@ -871,18 +895,13 @@ private:
                 [this, layer_id, tool_number, &ret](size_t line_id, const std::vector<float>& time_diffs) {
                     const int temperature = int(layer_id) != 0 ? m_config.extruder_temps_config[tool_number] : 
                         m_config.extruder_temps_first_layer_config[tool_number];
-                    std::string new_line = "M104.1 T" + std::to_string(tool_number);
-                    if (time_diffs.size() > 0)
-                        new_line += " P" + std::to_string(int(std::round(time_diffs[0])));
-                    if (time_diffs.size() > 1)
-                        new_line += " Q" + std::to_string(int(std::round(time_diffs[1])));
-                    new_line += " S" + std::to_string(temperature) + "\n";
-
-                    ret.first.push_back({ line_id, new_line });
+                    ret.first.push_back({ line_id, m_config.supports_tool_preheating ?
+                        format_m104_1_preheat_line(temperature, tool_number, time_diffs) :
+                        format_temperature_preheat_line(m_config.flavor, temperature, tool_number, time_diffs) });
                 },
                 // line replacer
-                [tool_number, &ret](size_t line_id, const std::string& gcode_line) {
-                    if (GCodeLine::cmd_is(gcode_line, "M104")) {
+                [this, tool_number, &ret](size_t line_id, const std::string& gcode_line) {
+                    if (m_config.supports_tool_preheating && GCodeLine::cmd_is(gcode_line, "M104")) {
                         GCodeLine gline;
                         GCodeReader reader;
                         reader.parse_line(gcode_line, [&gline](GCodeReader& reader, const GCodeLine& l) { gline = l; });
@@ -908,14 +927,14 @@ private:
     void insert_M104_lines(size_t lines_counter, const std::string& cmd,
         std::function<void(size_t, const std::vector<float>&)> line_inserter,
         std::function<void(size_t, const std::string&)> line_replacer) {
-        const float time_step = s_BACKTRACE_T.time_step();
+        const float time_step = m_backtrace_t.time_step();
         const size_t base_rev_it_dist = m_result.gcode().size() - lines_counter; // distance from the current gcode line to the end of gcode
         auto base_gcode_rev_it = m_result.gcode().rbegin() + base_rev_it_dist; // reverse iterator to the current gcode line
         auto base_times_rev_it = m_gcode_times.rbegin() + base_rev_it_dist; // reverse iterator to the current gcode line times
 
         size_t rev_it_dist = 0; // distance from the current gcode line of the starting point of the backtrace
         float last_time_insertion = 0.0f; // used to avoid inserting two lines at the same time
-        for (unsigned int i = 0; i < s_BACKTRACE_T.steps; ++i) {
+        for (unsigned int i = 0; i < m_backtrace_t.steps; ++i) {
             const float backtrace_time_i = float(i + 1) * time_step;
             const float time_threshold_i = m_times[size_t(TimeMode::Normal)] - backtrace_time_i;
             auto gcode_rev_it = base_gcode_rev_it + rev_it_dist;
@@ -952,8 +971,6 @@ private:
         }
     }
 };
-
-const PostProcessor::Backtrace PostProcessor::s_BACKTRACE_T = { 120.0f, 10 };
 
 ProcessorResult post_process(
     const PostProcessorConfig& config,
