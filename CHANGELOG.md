@@ -141,6 +141,21 @@ ported to the 3.0 architecture, not as new work.
 
 ### Notes
 
+## 2.9.7 - 2026-11-02
+
+### Added
+
+- Exclude Object for Skirt/Brim/Wipe Tower: reports skirt, brim, and wipe tower
+  to Klipper hosts such as Mainsail and Fluidd without making them cancelable,
+  so the print's size and bounding box stay accurate.
+
+### Fixed
+
+- Flowsnake infill no longer prints as a dense, squished blob, especially at low
+  density. The pattern now shows a visible lattice.
+- The tooltip for the small perimeter speed setting now describes the lower and
+  upper length thresholds. It no longer states the old 6.5 mm radius rule.
+
 ## 2.9.6 - 2026-06-25
 
 ### Fixed
