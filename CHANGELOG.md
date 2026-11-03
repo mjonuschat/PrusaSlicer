@@ -15,6 +15,9 @@ lost during the rebase and squash based workflow.
   speed" setting, which also caps the tower's sparse infill and
   perimeters. Zero turns the cap off. Presets that kept the old BOSS
   value of 90 mm/s now cap the whole tower at 90 mm/s.
+- Platform Builds: macOS builds are Apple Silicon only, as a single DMG
+  without a universal binary. The Linux Flatpak is x86_64 only. Intel
+  Macs and ARM Linux machines get no BOSS 3.0 builds.
 
 ### Fixed
 
