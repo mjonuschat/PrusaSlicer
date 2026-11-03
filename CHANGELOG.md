@@ -11,6 +11,11 @@ lost during the rebase and squash based workflow.
 
 ### Changed
 
+- Wipe Tower Maximum Purge Speed: now PrusaSlicer's own "Maximal print
+  speed" setting, which also caps the tower's sparse infill and
+  perimeters. Zero turns the cap off. Presets that kept the old BOSS
+  value of 90 mm/s now cap the whole tower at 90 mm/s.
+
 ### Fixed
 
 ### Ported
@@ -72,8 +77,6 @@ ported to the 3.0 architecture, not as new work.
 - Disable Wipe Tower Ramming/Cooling: independent switches for ramming
   and cooling moves, allowing more granular control for filament
   changer setups.
-- Wipe Tower Maximum Purge Speed: caps purge move speed for more
-  reliable purging in tall wipe towers.
 - Force Wipe Tower Linear Advance Suppression: prevents pressure
   advance from being silently disabled for the rest of the print,
   PrusaSlicer's default behavior at purge points on Klipper.
