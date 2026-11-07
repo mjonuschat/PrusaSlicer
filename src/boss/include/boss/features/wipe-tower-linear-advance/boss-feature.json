@@ -1,0 +1,21 @@
+{
+  "name": "wipe-tower-linear-advance",
+  "id": 10006,
+  "key": "wipe-tower-linear-advance",
+  "trait": "Slic3r::Boss::WipeTowerLinearAdvanceFeature",
+  "header": "boss/features/wipe-tower-linear-advance/WipeTowerLinearAdvanceFeature.hpp",
+  "label": "Force wipe tower linear advance suppression",
+  "components": {
+    "slic3r-domain": {
+      "capabilities": ["fdm_config"],
+      "sources": ["slic3r-domain/src/Slic3r/Domain/boss/WipeTowerLinearAdvanceConfig.cpp"]
+    }
+  },
+  "config_options": [
+    {
+      "key": "wipe_tower_disable_linear_advance",
+      "invalidates": ["psWipeTower", "psSkirtBrim"],
+      "store": {"home": "wipe_tower", "field": "disable_linear_advance", "kind": "scalar_bool"}
+    }
+  ]
+}
