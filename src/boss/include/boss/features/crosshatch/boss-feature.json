@@ -1,0 +1,14 @@
+{
+  "name": "crosshatch",
+  "id": 10101,
+  "key": "crosshatch",
+  "trait": "Slic3r::Boss::CrossHatchFeature",
+  "header": "boss/features/crosshatch/CrossHatchFeature.hpp",
+  "label": "CrossHatch",
+  "components": {
+    "libslic3r": {
+      "capabilities": ["fill"],
+      "sources": ["libslic3r/src/libslic3r/Fill/boss/crosshatch/FillCrossHatch.cpp"]
+    }
+  }
+}
