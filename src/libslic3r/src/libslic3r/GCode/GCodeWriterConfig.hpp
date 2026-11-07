@@ -17,6 +17,8 @@ struct GCodeWriterConfig
     unsigned int max_acceleration{};
     unsigned int max_travel_acceleration{};
     double max_junction_deviation{};
+    unsigned int max_jerk_x{};
+    unsigned int max_jerk_y{};
 
     bool gcode_comments{};
     bool use_volumetric_e{};
