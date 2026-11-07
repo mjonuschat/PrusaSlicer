@@ -1,0 +1,22 @@
+{
+  "name": "narrow-solid-infill-erosion",
+  "id": 10201,
+  "key": "narrow-solid-infill-erosion",
+  "trait": "Slic3r::Boss::NarrowSolidInfillErosionFeature",
+  "header": "boss/features/narrow-solid-infill-erosion/NarrowSolidInfillErosionFeature.hpp",
+  "label": "Narrow solid-infill erosion",
+  "components": {
+    "slic3r-domain": {
+      "capabilities": ["fdm_config"],
+      "sources": ["slic3r-domain/src/Slic3r/Domain/boss/NarrowSolidInfillErosionConfig.cpp"]
+    },
+    "libslic3r": {
+      "capabilities": ["solid_fill_policy"],
+      "sources": ["libslic3r/src/libslic3r/boss/surface/narrow_solid/NarrowSolidInfillErosion.cpp"]
+    }
+  },
+  "config_options": [
+    { "key": "detect_narrow_solid_infill", "invalidates": ["posInfill"] },
+    { "key": "detect_narrow_solid_infill_threshold", "invalidates": ["posInfill"] }
+  ]
+}
