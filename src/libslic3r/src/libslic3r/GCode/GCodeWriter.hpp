@@ -144,6 +144,7 @@ public:
      * @param max_feedrate Upper limit of the feedrate (mm/min) that would keep the de-retraction speed.
      */
     std::string unretract_while_moving(const Domain::Vec2d &end, double max_feedrate);
+    std::string prime();
 
     // Current position of the printer, in G-code coordinates.
     // Z coordinate of current position contains zhop. If zhop is applied (this->zhop() > 0),
