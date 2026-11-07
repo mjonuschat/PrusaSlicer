@@ -1,6 +1,7 @@
 
 #include "TimeProcessor.hpp"
 #include "Slic3r/Biz/libpgcode/Utils.hpp"
+#include "Slic3r/Biz/libpgcode/boss/KlipperCorneringModel.hpp"
 
 namespace Slic3r::Biz::libpgcode {
 using namespace Domain;
@@ -8,6 +9,12 @@ using namespace Domain;
 static float get_value(const std::vector<float>& options, size_t id)
 {
     return options.empty() ? 0.0f : (id < options.size()) ? options[id] : options.back();
+}
+
+static void set_value(std::vector<float>& options, size_t id, float value)
+{
+    if (id < options.size())
+        options[id] = value;
 }
 
 void TimeProcessor::update_machine_accelerations(GCodeFlavor flavor)
@@ -27,6 +34,19 @@ void TimeProcessor::update_machine_accelerations(GCodeFlavor flavor)
             max_travel_acceleration = 0.0f;
         machine.max_travel_acceleration = max_travel_acceleration;
         machine.travel_acceleration = (max_travel_acceleration > 0.0f) ? max_travel_acceleration : DEFAULT_TRAVEL_ACCELERATION;
+
+        if (flavor == GCodeFlavor::gcfKlipper) {
+            // Klipper has no Marlin-style JD -- convert SCV to an equivalent JD so
+            // process_G1's existing JD cornering math handles Klipper too.
+            set_value(machine_limits.max_junction_deviation, i, 0.f);
+            float jerk_x = axis_max_jerk(TimeMode(i), X);
+            float jerk_y = axis_max_jerk(TimeMode(i), Y);
+            float scv = std::min(jerk_x, jerk_y);
+            machine.square_corner_velocity = scv;
+            float jd = Slic3r::Boss::KlipperCorneringModel::junction_deviation_from_scv(scv, machine.max_acceleration);
+            if (jd > 0.f)
+                set_value(machine_limits.max_junction_deviation, i, jd);
+        }
     }
 }
 
