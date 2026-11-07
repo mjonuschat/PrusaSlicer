@@ -1153,6 +1153,45 @@ static void expand_parameters(SquashResult& squashed_boxes, const std::size_t ma
         squashed_boxes.squashed_values.erase("first_layer_speed");
         squashed_boxes.effective_values.erase("first_layer_speed");
     }
+
+    if (const ConfigValueAndDef* small_perimeter_speed{
+            find_param(squashed_boxes.squashed_values, "small_perimeter_speed")})
+    {
+        const std::string key{"small_external_perimeter_speed"};
+        ConfigValueAndDef* small_external_perimeter_speed{
+            find_param(squashed_boxes.squashed_values, key)};
+
+        bool expanded{false};
+        if (!small_external_perimeter_speed) {
+            squashed_boxes.squashed_values[key] =
+                ConfigValueAndDef{small_perimeter_speed->value, nullptr};
+            expanded = true;
+        } else {
+            const auto small_perimeter_speed_value{
+                small_perimeter_speed->value.get<std::vector<FloatOrPercentage>>()};
+            small_external_perimeter_speed->value.visit(overloaded{
+                [&](std::vector<FloatOrPercentage>& values){
+                    for (std::size_t i{}; i < values.size(); ++i) {
+                        FloatOrPercentage& value{values[i]};
+                        if (value.is_zero()) {
+                            value    = small_perimeter_speed_value.at(i);
+                            expanded = true;
+                        }
+                    }
+                },
+                [](auto&&){
+                    PANIC("Vector of values is expected!");
+                },
+            });
+        }
+
+        if (expanded) {
+            squashed_boxes.effective_values[key].modifications.push_back(
+                EffectiveValue::Modification{
+                    EffectiveValue::ExpandedFrom{"small_perimeter_speed"},
+                    find_param(squashed_boxes.squashed_values, key)->value});
+        }
+    }
 }
 
 SquashedConfig::SquashedConfig(
