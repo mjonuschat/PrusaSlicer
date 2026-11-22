@@ -9,6 +9,11 @@ lost during the rebase and squash based workflow.
 
 ### Added
 
+- Bed Names: beds can be renamed from the default "Bed 1", "Bed 2",
+  making beds easy to tell apart in multi-bed print jobs.
+- Bed Names: made the `bed_name` available as a filename placeholder,
+  for matching exported files to the bed they came from.
+
 ### Changed
 
 - Wipe Tower Maximum Purge Speed: now PrusaSlicer's own "Maximal print
