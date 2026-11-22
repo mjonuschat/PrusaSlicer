@@ -12,6 +12,18 @@
 
 namespace Slic3r::Biz::ExportNameParser {
 
+std::string sanitize_bed_name(const std::string& name)
+{
+    constexpr std::string_view unsafe_characters{"/\\:*?\"<>|"};
+    std::string result{name};
+    std::ranges::replace_if(
+        result,
+        [unsafe_characters](char c) { return unsafe_characters.find(c) != std::string_view::npos; },
+        '_'
+    );
+    return result;
+}
+
 namespace {
 
 std::string resolve_preferred_extension(const std::string& output_filename_format)
@@ -66,6 +78,7 @@ ExportNameData parse_fdm_export_name(
     const Biz::FDMResultRef fdm_result = fdm_result_opt.value();
 
     parser.set("input_filename_base", project_name);
+    parser.set("bed_name", sanitize_bed_name(bed_instance->name()));
     const auto* print_statistics_ptr = std::get_if<Domain::FullPrintStatistics>(&fdm_result.get().print_statistics);
     if (!print_statistics_ptr) {
         // We could also fill just basic. The filename will look bad though.
@@ -222,6 +235,7 @@ ExportNameData parse_sla_export_name(
 
     parser.set("num_objects", (int)names.size());
     parser.set("num_instances", (int)bed_instance->model_instances.size());
+    parser.set("bed_name", sanitize_bed_name(bed_instance->name()));
 
     // This line might throw PlaceholderParserError
     result.filename = parser.process(output_filename_format);

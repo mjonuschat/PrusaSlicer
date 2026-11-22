@@ -81,6 +81,45 @@ struct ExportNameFixture
         project_interactor.new_project();
     }
 
+    std::string sliced_export_filename(const std::string& output_filename_format)
+    {
+        Domain::Project& project = workbench.project(project_interactor.selected_project_id());
+        Domain::ConfigContainer& cc = *project.config_containers().front();
+        cc.mutable_selected_preset()
+            .print.config_box()
+            .items.opt("output_filename_format")
+            .set(output_filename_format);
+
+        project_interactor.scene_interactor().new_object_from_mesh(
+            Domain::TriangleMesh{TriMesh::make_cube(20, 20, 20)}
+        );
+
+        const Domain::SlicingId id = project_interactor.selected_bed_slicing_id();
+
+        Domain::ConfigPack config = cc.build_print_config();
+        if (auto* fdm_config = std::get_if<Domain::ConfigPackFDM>(&config)) {
+            disable_stale_tool_overrides(*fdm_config);
+        }
+        Domain::BedInstance* bed_instance = project.find_bed_instance_by_id(id.bed_instance_id);
+        REQUIRE(bed_instance != nullptr);
+        project_interactor.slicing_interactor().update_process(
+            project.model(),
+            project.metadata(),
+            cc.selected_preset().metadata(),
+            config,
+            *bed_instance
+        );
+
+        FinishedListener listener{id};
+        project_interactor.slicing_interactor().add_listener<Slic3r::Biz::Slicing::IStatusListener>(&listener);
+
+        project_interactor.slicing_interactor().slice_bed(id);
+
+        REQUIRE(wait_until_finished(listener, std::chrono::seconds(60), dispatcher));
+
+        return ExportNameParser::parse_export_name(project_interactor).filename;
+    }
+
     Domain::Workbench workbench;
     App::Platform::StdMainThreadDispatcher dispatcher;
     Tests::AppInstanceMessageHandlerScope app_instance_message_handler_scope{dispatcher};
@@ -98,40 +137,36 @@ TEST_CASE_METHOD(
     "[boss][export][timeout]"
 )
 {
-    Domain::Project& project = workbench.project(project_interactor.selected_project_id());
-    Domain::ConfigContainer& cc = *project.config_containers().front();
-    cc.mutable_selected_preset()
-        .print.config_box()
-        .items.opt("output_filename_format")
-        .set(std::string("{input_filename_base}_bed{bed_number}.gcode"));
+    const std::string filename = sliced_export_filename("{input_filename_base}_bed{bed_number}.gcode");
+    REQUIRE(filename.find("_bed01.gcode") != std::string::npos);
+}
 
-    project_interactor.scene_interactor().new_object_from_mesh(
-        Domain::TriangleMesh{TriMesh::make_cube(20, 20, 20)}
-    );
+TEST_CASE_METHOD(
+    ExportNameFixture,
+    "BOSS bed-name placeholder resolves in the exported filename",
+    "[boss][export][timeout]"
+)
+{
+    const std::string filename = sliced_export_filename("{input_filename_base}_{bed_name}.gcode");
+    REQUIRE(filename.find("_Bed 1.gcode") != std::string::npos);
+}
 
-    const Domain::SlicingId id = project_interactor.selected_bed_slicing_id();
+TEST_CASE("sanitize_bed_name leaves a safe name unchanged", "[ExportNameParser]")
+{
+    CHECK(ExportNameParser::sanitize_bed_name("Hinges 2") == "Hinges 2");
+}
 
-    Domain::ConfigPack config = cc.build_print_config();
-    if (auto* fdm_config = std::get_if<Domain::ConfigPackFDM>(&config)) {
-        disable_stale_tool_overrides(*fdm_config);
-    }
-    Domain::BedInstance* bed_instance = project.find_bed_instance_by_id(id.bed_instance_id);
-    REQUIRE(bed_instance != nullptr);
-    project_interactor.slicing_interactor().update_process(
-        project.model(),
-        project.metadata(),
-        cc.selected_preset().metadata(),
-        config,
-        *bed_instance
-    );
+TEST_CASE("sanitize_bed_name replaces every unsafe character", "[ExportNameParser]")
+{
+    CHECK(ExportNameParser::sanitize_bed_name("a/b\\c:d*e?f\"g<h>i|j") == "a_b_c_d_e_f_g_h_i_j");
+}
 
-    FinishedListener listener{id};
-    project_interactor.slicing_interactor().add_listener<Slic3r::Biz::Slicing::IStatusListener>(&listener);
+TEST_CASE("sanitize_bed_name keeps a name made only of unsafe characters non-empty", "[ExportNameParser]")
+{
+    CHECK(ExportNameParser::sanitize_bed_name("///") == "___");
+}
 
-    project_interactor.slicing_interactor().slice_bed(id);
-
-    REQUIRE(wait_until_finished(listener, std::chrono::seconds(60), dispatcher));
-
-    const auto name_data = ExportNameParser::parse_export_name(project_interactor);
-    REQUIRE(name_data.filename.find("_bed01.gcode") != std::string::npos);
+TEST_CASE("sanitize_bed_name keeps non-ASCII text", "[ExportNameParser]")
+{
+    CHECK(ExportNameParser::sanitize_bed_name("K\u00e4fig") == "K\u00e4fig");
 }
