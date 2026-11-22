@@ -69,6 +69,17 @@ public:
     CCBedButton(CollapsibleArea* collapsible_item, std::function<void()>&& remove_bed_fn);
 
     void set_name(const std::string& name);
+
+    /**
+     * @brief Sets the function called with the new name each time the user edits the name.
+     */
+    void set_rename_callback(std::function<void(const std::string&)> rename_fn);
+
+    /**
+     * @brief Replaces the name label by the name editor until the editing is finished.
+     */
+    void start_renaming();
+
     void set_remove_button_visible(bool visible);
     void set_selected(bool selected);
     void set_selection_callbacks(
@@ -86,10 +97,13 @@ public:
 private:
     void hovered_updated_internal() override;
     void update_remove_button_visibility();
+    void finish_renaming();
 
     Yoga::Icon* m_icon{nullptr};
     BedThumbnailIcon* m_thumbnail_icon{nullptr};
     Yoga::Text* m_name{nullptr};
+    Yoga::InputTextField* m_name_editing{nullptr};
+    std::function<void(const std::string&)> m_rename_fn;
     SlicingStateMarker* m_slicing_state_marker{nullptr};
     ActionButton* m_remove_button{nullptr};
     std::function<void()> m_remove_bed_fn{nullptr};
@@ -139,6 +153,12 @@ public:
      * @return true if a row of this bed took it (the bed is expanded then).
      */
     bool start_renaming(const Domain::ElementRef& element);
+
+    /**
+     * @brief Shows the name editor on this bed's row.
+     * @return true if @p bed is this bed.
+     */
+    bool start_renaming_bed(const Domain::BedRef& bed);
 
 private:
     void on_data_update() override;

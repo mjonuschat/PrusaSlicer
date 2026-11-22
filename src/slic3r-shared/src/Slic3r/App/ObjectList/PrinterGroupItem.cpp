@@ -183,4 +183,14 @@ bool PrinterGroupItem::start_renaming(const Domain::ElementRef& element)
     return false;
 }
 
+bool PrinterGroupItem::start_renaming_bed(const Domain::BedRef& bed)
+{
+    for (size_t i = 0; i < m_beds_list_view->list_item_count(); ++i) {
+        if (m_beds_list_view->item_at(i)->start_renaming_bed(bed)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 } // namespace Slic3r::App::ObjectList

@@ -238,6 +238,7 @@ if(SLIC3R_BUILD_TESTS)
         test/Slic3r/Domain/Preset/HwConfigTests.cpp
         test/Slic3r/Domain/Preset/SelectedPresetTests.cpp
         test/Slic3r/Domain/SizeTests.cpp
+        test/Slic3r/Domain/BedInstanceTests.cpp
         test/Slic3r/Domain/Preset/MatDbMatchRuleTests.cpp
     )
     target_include_directories(slic3r-domain-tests PRIVATE test)

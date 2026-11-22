@@ -121,6 +121,11 @@ public:
      */
     void start_renaming_selected();
 
+    /**
+     * @brief Shows the name editor on the row of the last selected bed.
+     */
+    void start_renaming_selected_bed();
+
     void on_selected_project_changed(size_t index) override;
 
 private:

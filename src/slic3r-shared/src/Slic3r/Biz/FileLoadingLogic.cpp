@@ -1133,6 +1133,10 @@ static Project convert_to_project(Loaded3MF&& loaded_3mf, IMessageDialogProvider
             if (custom_gcode_it != cc_data.custom_gcodes.end()) {
                 cc.bed_instances().back()->custom_gcode = custom_gcode_it->second;
             }
+            const auto bed_name_it{cc_data.bed_names.find(bed_idx)};
+            if (bed_name_it != cc_data.bed_names.end()) {
+                cc.bed_instances().back()->set_custom_name(bed_name_it->second);
+            }
         }
     }
 

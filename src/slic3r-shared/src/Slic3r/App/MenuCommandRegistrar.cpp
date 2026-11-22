@@ -295,6 +295,7 @@ void MenuCommandRegistrar::register_bed_menu_commands()
                 .enabled = [any_selected_bed_has_object]() { return any_selected_bed_has_object(); }
             }
         )
+        .append_item_from_command(MenuItemName::RenameBed, CommandName::RenameBed)
         .append_separator()
         .append_item(
             MenuItemName::DeleteBed,

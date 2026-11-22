@@ -132,6 +132,35 @@ void ConfigContainerBedObservableList::on_wipe_tower_removed(Domain::SlicingId s
     refresh_selection(slicing_id.project_id, SelectionType::WipeTower);
 }
 
+void ConfigContainerBedObservableList::
+    on_bed_renamed(Domain::SelectionId project_id, const Domain::BedRef& bed)
+{
+    if (m_project_id != project_id || m_config_container_id != bed.config_container_id) {
+        return;
+    }
+
+    const auto it = std::find_if(
+        m_items.begin(),
+        m_items.end(),
+        [&bed](const Bed& item) { return item.id == bed.instance_id; }
+    );
+    if (it == m_items.end()) {
+        return;
+    }
+
+    const Domain::BedInstance* bed_instance =
+        m_project_interactor.project(m_project_id).find_bed_instance_by_id(bed.instance_id);
+    if (bed_instance == nullptr) {
+        return;
+    }
+
+    it->name = bed_instance->name();
+    const IndexRange index_range(std::distance(m_items.begin(), it));
+    this->invoke_listeners<IListObserver<Bed>>(
+        [index_range](auto* l) { l->on_updated(index_range); }
+    );
+}
+
 void ConfigContainerBedObservableList::on_selected_bed_instances_changed(
     Domain::SelectionId project_id,
     const Scene::BedSelection& bed_selection

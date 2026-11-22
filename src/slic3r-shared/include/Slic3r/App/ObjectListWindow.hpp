@@ -51,6 +51,12 @@ public:
      */
     void start_renaming_selected();
 
+    /**
+     * @brief Shows the name editor on the row of the last selected bed. The window is expanded,
+     * so the editor is visible.
+     */
+    void start_renaming_selected_bed();
+
     std::function<void()> on_config_container_added{nullptr};
 
 private:

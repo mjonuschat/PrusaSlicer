@@ -1385,6 +1385,21 @@ void SceneInteractor::edit_name(const Domain::ElementRef& id, const std::string&
     );
 }
 
+void SceneInteractor::set_bed_name(const Domain::BedRef& bed, const std::string& new_name)
+{
+    Domain::BedInstance* bed_instance =
+        m_workbench.project(m_selected_project_id).find_bed_instance_by_id(bed.instance_id);
+    if (bed_instance == nullptr) {
+        return;
+    }
+
+    bed_instance->set_custom_name(new_name);
+
+    invoke_listeners<ISceneChangedListener>(
+        [&](auto* l) { l->on_bed_renamed(m_selected_project_id, bed); }
+    );
+}
+
 bool SceneInteractor::can_reorder_volume(
     const Domain::ElementRef& volume,
     const Domain::ElementRef& target,

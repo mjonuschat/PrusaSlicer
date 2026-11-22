@@ -285,6 +285,7 @@ struct Loaded3MF {
         std::vector<Domain::Vec2d> bed_offsets;
         Domain::WipeTowersOnBeds wipe_towers;
         Domain::CustomGCodesOnBeds custom_gcodes;
+        std::map<int, std::string> bed_names;
         Biz::VirtualExtrudersConfig virtual_extruders_config;
         Domain::PhysicalPrinterSelection physical_printer;
     };

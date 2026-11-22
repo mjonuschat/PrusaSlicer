@@ -258,4 +258,19 @@ void ObjectListItem::start_renaming_selected()
     }
 }
 
+void ObjectListItem::start_renaming_selected_bed()
+{
+    const Biz::Scene::BedSelection& selection = m_project_interactor.scene_interactor().bed_selection();
+    if (selection.empty()) {
+        return;
+    }
+
+    const Domain::BedRef bed = selection.last_selected_bed();
+    for (size_t i = 0; i < m_printer_group_list_view->list_item_count(); ++i) {
+        if (m_printer_group_list_view->item_at(i)->start_renaming_bed(bed)) {
+            return;
+        }
+    }
+}
+
 } // namespace Slic3r::App

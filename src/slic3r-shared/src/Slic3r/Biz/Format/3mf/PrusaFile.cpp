@@ -1688,6 +1688,9 @@ void write(
             beds_json.emplace_back();
             beds_json.back()["position_x"] = offset.x();
             beds_json.back()["position_y"] = offset.y();
+            if (!bed_instance->custom_name().empty()) {
+                beds_json.back()["name"] = bed_instance->custom_name();
+            }
 
             if (has_wipe_tower) {
                 beds_json.back()["wipe_tower"]["x"] = bed_instance->wipe_tower.position.x();
@@ -1819,6 +1822,14 @@ void load(
                 from_json(bed, "position_x", x, collected_issues);
                 from_json(bed, "position_y", y, collected_issues);
                 config_containers_data.back().bed_offsets.emplace_back(x, y);
+
+                if (bed.contains("name")) {
+                    std::string name;
+                    from_json(bed, "name", name, collected_issues);
+                    if (!name.empty()) {
+                        config_containers_data.back().bed_names[bed_idx] = std::move(name);
+                    }
+                }
 
                 if (bed.contains("wipe_tower")) {
                     const nlohmann::ordered_json& wipe_tower = bed.at("wipe_tower");

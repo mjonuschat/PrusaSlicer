@@ -188,6 +188,11 @@ public:
     )
     {}
 
+    /**
+     * @brief Called whenever a bed's custom name is changed via set_bed_name.
+     */
+    virtual void on_bed_renamed(Domain::SelectionId project_id, const Domain::BedRef& bed) {}
+
     virtual void on_wipe_tower_changed(Domain::SlicingId slicing_id, const Slicing::WipeTowerGeometry& wipe_tower) {}
     virtual void on_wipe_tower_moved(Domain::SlicingId slicing_id) {}
     virtual void on_wipe_tower_removed(Domain::SlicingId slicing_id) {}
@@ -370,6 +375,12 @@ public:
     );
 
     void edit_name(const Domain::ElementRef& id, const std::string& new_name);
+
+    /**
+     * @brief Sets the custom name of a bed in the selected project. An empty name restores the
+     * default "Bed N" name. Does nothing when the bed does not exist.
+     */
+    void set_bed_name(const Domain::BedRef& bed, const std::string& new_name);
 
     /**
      * @brief Whether moving @p volume before/after @p target changes the volume order.

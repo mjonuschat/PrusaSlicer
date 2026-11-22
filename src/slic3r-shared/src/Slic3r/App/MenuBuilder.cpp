@@ -170,6 +170,7 @@ std::string MenuBuilder::item_name_translated(UniversalMenuItemName menu_item_na
                 case MenuItemName::DeleteSelectedSvgOrText:
                 case MenuItemName::DeleteSelectedVolume:
                     return Biz::_u8L("Delete");
+                case MenuItemName::RenameBed:
                 case MenuItemName::RenameObject:
                 case MenuItemName::RenameVolume:
                     return Biz::_u8L("Rename");

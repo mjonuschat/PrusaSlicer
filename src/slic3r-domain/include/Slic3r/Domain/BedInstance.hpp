@@ -46,6 +46,9 @@ struct BedInstance : public ObjectBase
     const std::string& label() const;
     const std::string& name() const;
 
+    const std::string& custom_name() const;
+    void set_custom_name(std::string name);
+
     std::reference_wrapper<const Bed> bed;
     Transformation transformation;
     ModelInstanceList model_instances;
@@ -61,6 +64,7 @@ private:
     size_t m_index{0};
     std::string m_label;
     std::string m_name;
+    std::string m_custom_name;
 };
 
 } // namespace Slic3r::Domain
