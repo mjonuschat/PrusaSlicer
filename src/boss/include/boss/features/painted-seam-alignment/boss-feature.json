@@ -1,0 +1,15 @@
+{
+  "name": "painted-seam-alignment",
+  "id": 10507,
+  "key": "painted-seam-alignment",
+  "trait": "Slic3r::Boss::PaintedAlignmentFeature",
+  "header": "boss/features/painted-seam-alignment/PaintedAlignmentFeature.hpp",
+  "label": "Painted seam alignment/blending",
+  "components": {
+    "libslic3r": {
+      "capabilities": ["seam_aligned"],
+      "sources": ["libslic3r/src/libslic3r/boss/seam/PaintedAlignment.cpp"]
+    }
+  },
+  "config_options": []
+}
