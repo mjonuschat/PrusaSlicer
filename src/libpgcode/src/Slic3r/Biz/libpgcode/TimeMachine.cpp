@@ -270,6 +270,7 @@ void TimeMachine::reset()
     max_retract_acceleration = 0.0f;
     travel_acceleration = 0.0f;
     max_travel_acceleration = 0.0f;
+    square_corner_velocity = 0.0f;
     first_layer_time = 0.0f;
     time = 0.0;
     line_m73_main_mask.clear();

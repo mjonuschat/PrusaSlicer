@@ -1,0 +1,16 @@
+{
+  "name": "klipper-scv-cornering",
+  "id": 10502,
+  "key": "klipper-scv-cornering",
+  "trait": "Slic3r::Boss::KlipperScvCorneringFeature",
+  "header": "boss/features/klipper-scv-cornering/KlipperScvCorneringFeature.hpp",
+  "label": "Klipper square corner velocity cornering model",
+  "components": {
+    "libpgcode": {
+      "sources": [
+        "libpgcode/src/Slic3r/Biz/libpgcode/boss/KlipperCorneringModel.cpp"
+      ]
+    }
+  },
+  "config_options": []
+}
