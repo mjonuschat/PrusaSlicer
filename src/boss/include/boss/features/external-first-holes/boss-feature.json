@@ -1,0 +1,23 @@
+{
+  "name": "external-first-holes",
+  "id": 10510,
+  "key": "external-first-holes",
+  "trait": "Slic3r::Boss::ExternalFirstHolesFeature",
+  "header": "boss/features/external-first-holes/ExternalFirstHolesFeature.hpp",
+  "label": "External perimeters first for holes",
+  "components": {
+    "slic3r-domain": {
+      "capabilities": ["fdm_config"],
+      "sources": ["slic3r-domain/src/Slic3r/Domain/boss/ExternalFirstHolesConfig.cpp"]
+    },
+    "libslic3r": {
+      "capabilities": ["perimeter_policy"],
+      "sources": ["libslic3r/src/libslic3r/boss/perimeter/external_first_holes/ExternalFirstHolesPolicy.cpp"]
+    }
+  },
+  "config_options": [
+    { "key": "external_perimeters_first_holes", "invalidates": ["posPerimeters"] },
+    { "key": "external_perimeters_first_holes_min_size", "invalidates": ["posPerimeters"] },
+    { "key": "external_perimeters_first_disabled_first_layers", "invalidates": ["posPerimeters"] }
+  ]
+}

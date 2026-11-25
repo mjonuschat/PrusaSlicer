@@ -8,6 +8,7 @@
 
 #include "libslic3r/Arachne/utils/ExtrusionLine.hpp"
 #include "libslic3r/Polygon.hpp"
+#include "libslic3r/boss/perimeter/PerimeterPolicyContext.hpp"
 
 namespace Slic3r::Arachne::PerimeterOrder {
 
@@ -43,7 +44,7 @@ struct PerimeterExtrusion
 
 using PerimeterExtrusions = std::vector<PerimeterExtrusion>;
 
-PerimeterExtrusions ordered_perimeter_extrusions(const Perimeters &perimeters, bool external_perimeters_first);
+PerimeterExtrusions ordered_perimeter_extrusions(const Perimeters &perimeters, const Slic3r::Boss::OrderingPolicy &ordering);
 
 } // namespace Slic3r::Arachne::PerimeterOrder
 
