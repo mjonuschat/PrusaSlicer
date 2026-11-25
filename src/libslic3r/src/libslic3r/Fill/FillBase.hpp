@@ -123,6 +123,12 @@ public:
     // Use bridge flow for the fill?
     virtual bool use_bridge_flow() const { return false; }
 
+    // Multiplier applied to the computed extrusion flow for this pattern's
+    // infill lines. 1.0 leaves flow unchanged; a pattern whose geometry
+    // self-overlaps (e.g. Flowsnake's Gosper-curve grid) overrides this to
+    // thin the flow and avoid over-extruded blobs at path crossings.
+    virtual double flow_correction() const { return 1.; }
+
     // Do not sort the fill lines to optimize the print head path?
     virtual bool no_sort() const { return false; }
 
