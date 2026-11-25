@@ -2108,7 +2108,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Gap fill");
     def->option_group = ConfigItemDef::OptionGroup::Print_Speed_MainStructure;
     def->category = ConfigItemDef::Category::Print_Speed;
-    def->order = 6;
+    def->order = 9;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Speed for filling small gaps using short zigzag moves. Keep this reasonably low "
                    "to avoid too much shaking and resonance issues. Set zero to disable gaps filling.");
@@ -2423,7 +2423,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Infill");
     def->option_group = ConfigItemDef::OptionGroup::Print_Speed_MainStructure;
     def->category = ConfigItemDef::Category::Print_Speed;
-    def->order = 3;
+    def->order = 6;
     def->gui_type = ConfigItemDef::GUIType::textfield;
     def->tooltip = L("Speed for printing the internal fill. Set to zero for auto.");
     def->units = {L("mm/s")};
@@ -3801,6 +3801,23 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->init_fn = init_with(FloatOrPercentage{15.});
     def->ratio_over = "perimeter_speed";
 
+    def = defs.add("small_external_perimeter_speed", typeid(FloatOrPercentage));
+    def->location = Print;
+    def->overrides_in = Locations{ Tool, Object, Volume };
+    def->label = L("Small external perimeters");
+    def->option_group = ConfigItemDef::OptionGroup::Print_Speed_MainStructure;
+    def->category = ConfigItemDef::Category::Print_Speed;
+    def->order = 3;
+    def->gui_type = ConfigItemDef::GUIType::unit_or_percentage;
+    def->tooltip = L("This setting affects the speed of small external perimeters (having radius "
+                   "<= 6.5mm, usually holes). If expressed as percentage (for example: 80%) it "
+                   "will be calculated on the external perimeter speed setting. Note that 0 means "
+                   "that the \"Small perimeters\" value will be used.");
+    def->units = {L("mm/s"), L("%")};
+    def->min = 0;
+    def->init_fn = init_with(FloatOrPercentage{0.});
+    def->ratio_over = "external_perimeter_speed";
+
     def = defs.add("solid_infill_below_area", typeid(double));
     def->location = Print;
     def->overrides_in = Locations{ Object, Volume, MacroOverrides };
@@ -3865,7 +3882,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Solid infill");
     def->option_group = ConfigItemDef::OptionGroup::Print_Speed_MainStructure;
     def->category = ConfigItemDef::Category::Print_Speed;
-    def->order = 4;
+    def->order = 7;
     def->gui_type = ConfigItemDef::GUIType::unit_or_percentage;
     def->tooltip = L("Speed for printing solid regions (top/bottom/internal horizontal shells). "
                    "This can be expressed as a percentage (for example: 80%) over the default "
@@ -4716,7 +4733,7 @@ void fdm_config_init_fn(ConfigDefinitions& defs)
     def->label = L("Top solid infill");
     def->option_group = ConfigItemDef::OptionGroup::Print_Speed_MainStructure;
     def->category = ConfigItemDef::Category::Print_Speed;
-    def->order = 5;
+    def->order = 8;
     def->gui_type = ConfigItemDef::GUIType::unit_or_percentage;
     def->tooltip = L("Speed for printing top solid layers (it only applies to the uppermost "
                    "external layers and not to their internal solid layers). You may want "

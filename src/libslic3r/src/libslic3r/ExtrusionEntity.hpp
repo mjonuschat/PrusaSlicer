@@ -182,6 +182,18 @@ struct ExtrusionAttributes : ExtrusionFlow
     std::optional<uint16_t> perimeter_index;
     // Set for parts of extrusions printed over specific areas, see split_extrusions_by_speed_limit_region().
     ExtrusionSpeedLimits speed_limits;
+
+    // Speed blend for the small-perimeter-threshold feature. Set once per eligible
+    // perimeter loop in GCodeGenerator::extrude_perimeters() and read per smooth path
+    // element in GCodeGenerator::_extrude(), which skips bridging elements.
+    struct SmallPerimeterSpeedBlend
+    {
+        // 0.0 uses the role's normal speed, 1.0 fully uses target_speed.
+        double ratio{0.0};
+        // Resolved small_perimeter_speed, in mm/s.
+        double target_speed{0.0};
+    };
+    std::optional<SmallPerimeterSpeedBlend> small_perimeter_speed_blend;
 };
 
 inline bool operator==(const ExtrusionAttributes& lhs, const ExtrusionAttributes& rhs)
