@@ -193,7 +193,10 @@ static const t_config_enum_values s_keys_map_SeamPosition {
     { "random",         spRandom },
     { "nearest",        spNearest },
     { "aligned",        spAligned },
-    { "rear",           spRear }
+    { "rear",           spRear },
+    // Upstream never had this; BOSS 2.9.x did. Without it an old profile's
+    // value dies here, before the converter can see it.
+    { "aligned_rear",   spAlignedRear }
 };
 
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(SeamPosition)
@@ -2931,7 +2934,8 @@ void PrintConfigDef::init_fff_params()
         { std::make_pair("random",     L("Random")) },
         { std::make_pair("nearest",    L("Nearest")) },
         { std::make_pair("aligned",    L("Aligned")) },
-        { std::make_pair("rear",       L("Rear")) }
+        { std::make_pair("rear",       L("Rear")) },
+        { std::make_pair("aligned_rear", L("Aligned Rear")) }
     });
     def->mode = comSimple;
     def->set_default_value(new ConfigOptionEnum<SeamPosition>(spAligned));
