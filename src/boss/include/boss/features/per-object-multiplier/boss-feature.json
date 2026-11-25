@@ -1,0 +1,21 @@
+{
+  "name": "per-object-multiplier",
+  "id": 10001,
+  "key": "per-object-multiplier",
+  "trait": "Slic3r::Boss::PerObjectMultiplierFeature",
+  "header": "boss/features/per-object-multiplier/PerObjectMultiplierFeature.hpp",
+  "label": "Per-object extrusion multiplier",
+  "components": {
+    "slic3r-domain": {
+      "capabilities": ["fdm_config"],
+      "sources": ["slic3r-domain/src/Slic3r/Domain/boss/PerObjectMultiplierConfig.cpp"]
+    }
+  },
+  "config_options": [
+    {
+      "key": "print_extrusion_multiplier",
+      "invalidates": ["psGCodeExport"],
+      "store": {"home": "extrude_config", "field": "print_extrusion_multiplier", "kind": "scalar_double"}
+    }
+  ]
+}
