@@ -22,6 +22,12 @@ struct ExportNameData
 };
     
 /**
+ * Replaces the characters that are not allowed in file names with "_".
+ * The replaced characters are / \ : * ? " < > |
+ */
+std::string sanitize_bed_name(const std::string& name);
+
+/**
  * Generates export filename data based on the active printer technology.
  * @throw Slic3r::PlaceholderParserError If the output filename format string is invalid.
  */
