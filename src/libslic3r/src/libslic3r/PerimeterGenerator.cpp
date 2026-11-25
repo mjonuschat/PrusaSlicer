@@ -26,6 +26,7 @@
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Polyline.hpp"
+#include "libslic3r/boss/perimeter/overlap/PreciseWalls.hpp"
 #include "libslic3r/ShortestPath.hpp"
 #include "libslic3r/Surface.hpp"
 #include "libslic3r/Geometry/ConvexHull.hpp"
@@ -1280,16 +1281,29 @@ void PerimeterGenerator::process_classic(
     // Infills without the gap fills
     ExPolygons                 &out_fill_expolygons)
 {
+    const int extruder_id{params.config.get<int>("perimeter_extruder")-1};
+    ASSERT(extruder_id >= 0);
+
     // other perimeters
     coord_t perimeter_width         = params.perimeter_flow.scaled_width();
-    coord_t perimeter_spacing       = params.perimeter_flow.scaled_spacing();
+    // perimeter/perimeter overlap only applies with 3+ perimeters
+    coord_t perimeter_spacing = Slic3r::Boss::PreciseWalls::calculate_perimeter_spacing(
+        params.perimeter_flow,
+        Slic3r::Boss::PreciseWalls::get_effective_perimeter_overlap(
+            params.config.get<Domain::FloatOrPercentage>("perimeter_perimeter_overlap"),
+            params.config.get<std::vector<int>>("perimeters").at(extruder_id)));
     // external perimeters
     coord_t ext_perimeter_width     = params.ext_perimeter_flow.scaled_width();
     coord_t ext_perimeter_spacing   = params.ext_perimeter_flow.scaled_spacing();
-    coord_t ext_perimeter_spacing2  = scaled<coord_t>(0.5f * (params.ext_perimeter_flow.spacing() + params.perimeter_flow.spacing()));
+    // external/perimeter overlap only applies with 2+ perimeters
+    coord_t ext_perimeter_spacing2 = Slic3r::Boss::PreciseWalls::calculate_external_spacing(
+        params.ext_perimeter_flow, params.perimeter_flow,
+        Slic3r::Boss::PreciseWalls::get_effective_external_overlap(
+            params.config.get<Domain::FloatOrPercentage>("external_perimeter_overlap"),
+            params.config.get<std::vector<int>>("perimeters").at(extruder_id)));
     // solid infill
     coord_t solid_infill_spacing    = params.solid_infill_flow.scaled_spacing();
-    
+
     // Calculate the minimum required spacing between two adjacent traces.
     // This should be equal to the nominal flow spacing but we experiment
     // with some tolerance in order to avoid triggering medial axis when
@@ -1298,13 +1312,10 @@ void PerimeterGenerator::process_classic(
     // For ext_min_spacing we use the ext_perimeter_spacing calculated for two adjacent
     // external loops (which is the correct way) instead of using ext_perimeter_spacing2
     // which is the spacing between external and internal, which is not correct
-    // and would make the collapsing (thus the details resolution) dependent on 
+    // and would make the collapsing (thus the details resolution) dependent on
     // internal flow which is unrelated.
     coord_t min_spacing         = coord_t(perimeter_spacing      * (1 - INSET_OVERLAP_TOLERANCE));
     coord_t ext_min_spacing     = coord_t(ext_perimeter_spacing  * (1 - INSET_OVERLAP_TOLERANCE));
-
-    const int extruder_id{params.config.get<int>("perimeter_extruder")-1};
-    ASSERT(extruder_id >= 0);
 
     bool has_gap_fill = params.config.get<std::vector<bool>>("gap_fill_enabled").at(extruder_id)
         && params.config.get<std::vector<double>>("gap_fill_speed").at(extruder_id) > 0;
