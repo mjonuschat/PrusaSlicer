@@ -461,6 +461,17 @@ void PlaterRenderModule::register_commands()
                 }
             )
         )
+        .register_command(
+            std::make_unique<UIItemCommand>(
+                CommandName::RenameBed,
+                [this]() { m_object_list->start_renaming_selected_bed(); },
+                UIItemCommandExtraOpts{
+                    .enabled =
+                        [this]()
+                    { return !m_project_interactor.scene_interactor().bed_selection().empty(); }
+                }
+            )
+        )
         // Command for renaming the selected object/volume in the object list
         .register_command(
             std::make_unique<UIItemCommand>(

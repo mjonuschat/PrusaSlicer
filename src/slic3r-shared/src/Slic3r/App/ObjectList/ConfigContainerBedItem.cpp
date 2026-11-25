@@ -1,6 +1,7 @@
 #include "Slic3r/App/ObjectList/ConfigContainerBedItem.hpp"
 
 #include "Slic3r/App/Yoga/Icon.hpp"
+#include "Slic3r/App/Yoga/InputTextField.hpp"
 #include "Slic3r/App/Yoga/Text.hpp"
 
 #include "Slic3r/App/ContextMenu.hpp"
@@ -58,6 +59,18 @@ CCBedButton::CCBedButton(CollapsibleArea* collapsible_item, std::function<void()
     m_name->set_flex_grow(1.f);
     m_name->set_wrap_mode(Text::WrapMode::WrapElide);
 
+    m_name_editing = emplace_back<InputTextField>("Bed name");
+    m_name_editing->set_flex_grow(1.f);
+    m_name_editing->set_color(Platform::Color::Transparent);
+    m_name_editing->set_visible(false);
+    m_name_editing->callbacks().text_edited = [this]()
+    {
+        if (m_rename_fn && m_name_editing->text() != m_name->text()) {
+            m_rename_fn(m_name_editing->text());
+        }
+    };
+    m_name_editing->callbacks().focus_lost = [this]() { finish_renaming(); };
+
     m_remove_button =
         emplace_back<ActionButton>(Render::Icon::DelBedIcon, Biz::_u8L("Remove this bed"));
     m_remove_button->callbacks().action          = m_remove_bed_fn;
@@ -72,6 +85,25 @@ CCBedButton::CCBedButton(CollapsibleArea* collapsible_item, std::function<void()
 void CCBedButton::set_name(const std::string& name)
 {
     m_name->set_text(name);
+}
+
+void CCBedButton::set_rename_callback(std::function<void(const std::string&)> rename_fn)
+{
+    m_rename_fn = std::move(rename_fn);
+}
+
+void CCBedButton::start_renaming()
+{
+    m_name_editing->set_text(m_name->text());
+    m_name->set_visible(false);
+    m_name_editing->set_visible(true);
+    m_name_editing->request_focus();
+}
+
+void CCBedButton::finish_renaming()
+{
+    m_name_editing->set_visible(false);
+    m_name->set_visible(true);
 }
 
 void CCBedButton::set_remove_button_visible(bool visible)
@@ -283,6 +315,15 @@ ConfigContainerBedItem::ConfigContainerBedItem(
         }
     );
     m_cc_bed_button->set_name(state.name);
+    m_cc_bed_button->set_rename_callback(
+        [this, &project_interactor](const std::string& name)
+        {
+            project_interactor.scene_interactor().set_bed_name(
+                Domain::BedRef{this->state()->config_container_id, this->state()->id},
+                name
+            );
+        }
+    );
     m_cc_bed_button->set_selection_callbacks(
         project_interactor,
         context_menu_requester,
@@ -335,6 +376,15 @@ bool ConfigContainerBedItem::start_renaming(const Domain::ElementRef& element)
         }
     }
     return false;
+}
+
+bool ConfigContainerBedItem::start_renaming_bed(const Domain::BedRef& bed)
+{
+    if (bed.config_container_id != state()->config_container_id || bed.instance_id != state()->id) {
+        return false;
+    }
+    m_cc_bed_button->start_renaming();
+    return true;
 }
 
 } // namespace Slic3r::App::ObjectList

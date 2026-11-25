@@ -95,6 +95,7 @@ enum class MenuItemName
     ArrangeSelectionBed,
     SelectAllOnBed,
     DeleteBed,
+    RenameBed,
 
     ObjectContextMenu,
     CopyObject,

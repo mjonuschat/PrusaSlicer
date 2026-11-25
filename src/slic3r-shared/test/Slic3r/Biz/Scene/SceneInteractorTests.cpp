@@ -8,6 +8,8 @@
 #include "Slic3r/TestUtils/JobManagerScope.hpp"
 #include "Slic3r/TestUtils/ScopedThreadDispatcher.hpp"
 #include "Slic3r/TestUtils/TestData.hpp"
+#include "Slic3r/Biz/Format/3mf.hpp"
+#include "Slic3r/Biz/ObjectList/ConfigContainerBedObservableList.hpp"
 #include "Slic3r/Biz/ProjectInteractor.hpp"
 #include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/Arrange/Arrange.hpp"
@@ -848,4 +850,155 @@ TEST_CASE_METHOD(SlaPointsOnSecondPartFixture, "Replacing the mesh of a part mov
     const Domain::ModelVolume& volume = *object().volumes.back();
     REQUIRE(volume.sla_support_points.size() == 1);
     CHECK(volume.sla_support_points.front().pos.isApprox(Domain::Vec3f{22.f, 10.f, 10.f}, 1e-5f));
+}
+
+namespace {
+
+Loaded3MF store_and_load_3mf(const Domain::Project& project)
+{
+    const fs::path temp_dir =
+        fs::temp_directory_path() / fs::unique_path("slic3r-bed-name-test-%%%%-%%%%");
+    fs::create_directories(temp_dir);
+    const fs::path file_path = temp_dir / "beds.3mf";
+    store_3mf(file_path.string(), project);
+
+    Loaded3MF loaded = load_3mf(file_path.string());
+    boost::system::error_code cleanup_error;
+    fs::remove_all(temp_dir, cleanup_error);
+    return loaded;
+}
+
+}
+
+TEST_CASE_METHOD(SceneInteractorFixture, "Bed custom name survives a 3MF round trip", "[SceneInteractor]")
+{
+    ALLOW_CALL(slicing_input_changed_listener, on_slicing_input_changed(_));
+    const Domain::Project& project = project_interactor.selected_project();
+    const auto& cc                 = project.config_containers().front();
+    scene_interactor.add_bed_instance(cc->id().id);
+    REQUIRE(cc->bed_instances().size() == 2);
+
+    cc->bed_instances().front()->set_custom_name("Hinges");
+
+    const Loaded3MF loaded = store_and_load_3mf(project);
+    REQUIRE(loaded.config_containers_data.size() == 1);
+    const std::map<int, std::string>& bed_names = loaded.config_containers_data.front().bed_names;
+    REQUIRE(bed_names.size() == 1);
+    CHECK(bed_names.at(0) == "Hinges");
+}
+
+TEST_CASE_METHOD(
+    SceneInteractorFixture,
+    "3MF bed entry without a name key loads with default names",
+    "[SceneInteractor]"
+)
+{
+    ALLOW_CALL(slicing_input_changed_listener, on_slicing_input_changed(_));
+    const Domain::Project& project = project_interactor.selected_project();
+    scene_interactor.add_bed_instance(project.config_containers().front()->id().id);
+
+    const Loaded3MF loaded = store_and_load_3mf(project);
+    REQUIRE(loaded.config_containers_data.size() == 1);
+    CHECK(loaded.config_containers_data.front().bed_names.empty());
+}
+
+namespace {
+
+struct BedRenamedRecorder : Scene::ISceneChangedListener
+{
+    void on_bed_renamed(Domain::SelectionId project_id, const Domain::BedRef& bed) override
+    {
+        calls.emplace_back(project_id, bed);
+    }
+
+    std::vector<std::pair<Domain::SelectionId, Domain::BedRef>> calls;
+};
+
+}
+
+TEST_CASE_METHOD(SceneInteractorFixture, "set_bed_name changes the bed name", "[SceneInteractor]")
+{
+    const Domain::Project& project = project_interactor.selected_project();
+    const auto& cc                 = project.config_containers().front();
+    const Domain::BedRef ref{cc->id().id, cc->bed_instances().front()->id().id};
+
+    scene_interactor.set_bed_name(ref, "Hinges");
+    CHECK(cc->bed_instances().front()->name() == "Hinges");
+
+    scene_interactor.set_bed_name(ref, "");
+    CHECK(cc->bed_instances().front()->name() == "Bed 1");
+}
+
+TEST_CASE_METHOD(SceneInteractorFixture, "set_bed_name notifies listeners", "[SceneInteractor]")
+{
+    BedRenamedRecorder recorder;
+    scene_interactor.add_listener<Scene::ISceneChangedListener>(&recorder);
+
+    const Domain::Project& project = project_interactor.selected_project();
+    const auto& cc                 = project.config_containers().front();
+    const Domain::BedRef ref{cc->id().id, cc->bed_instances().front()->id().id};
+    scene_interactor.set_bed_name(ref, "Hinges");
+    scene_interactor.remove_listener<Scene::ISceneChangedListener>(&recorder);
+
+    REQUIRE(recorder.calls.size() == 1);
+    CHECK(recorder.calls.front().first == project_interactor.selected_project_id());
+    CHECK(recorder.calls.front().second == ref);
+}
+
+TEST_CASE_METHOD(SceneInteractorFixture, "set_bed_name ignores an unknown bed", "[SceneInteractor]")
+{
+    BedRenamedRecorder recorder;
+    scene_interactor.add_listener<Scene::ISceneChangedListener>(&recorder);
+
+    scene_interactor.set_bed_name(Domain::BedRef{12345, 67890}, "Hinges");
+    scene_interactor.remove_listener<Scene::ISceneChangedListener>(&recorder);
+
+    CHECK(recorder.calls.empty());
+}
+
+TEST_CASE_METHOD(
+    SceneInteractorFixture,
+    "Deleting an earlier bed keeps custom names",
+    "[SceneInteractor]"
+)
+{
+    ALLOW_CALL(slicing_input_changed_listener, on_slicing_input_changed(_));
+    ALLOW_CALL(slicing_input_changed_listener, on_slicing_input_removed(_));
+    const Domain::Project& project = project_interactor.selected_project();
+    const auto& cc                 = project.config_containers().front();
+    scene_interactor.add_bed_instance(cc->id().id);
+    scene_interactor.add_bed_instance(cc->id().id);
+    REQUIRE(cc->bed_instances().size() == 3);
+
+    const Domain::BedRef first{cc->id().id, cc->bed_instances()[0]->id().id};
+    const Domain::BedRef second{cc->id().id, cc->bed_instances()[1]->id().id};
+    scene_interactor.set_bed_name(second, "Hinges");
+    scene_interactor.remove_bed_instance(first);
+
+    REQUIRE(cc->bed_instances().size() == 2);
+    CHECK(cc->bed_instances()[0]->name() == "Hinges");
+    CHECK(cc->bed_instances()[1]->name() == "Bed 2");
+}
+
+TEST_CASE_METHOD(
+    SceneInteractorFixture,
+    "ConfigContainerBedObservableList shows the custom name",
+    "[SceneInteractor]"
+)
+{
+    const Domain::Project& project = project_interactor.selected_project();
+    const auto& cc                 = project.config_containers().front();
+    Biz::ObjectList::ConfigContainerBedObservableList list{
+        project_interactor,
+        project_interactor.selected_project_id(),
+        cc->id().id
+    };
+    REQUIRE(list.size() == 1);
+    CHECK(list.at(0).name == "Bed 1");
+
+    scene_interactor.set_bed_name({cc->id().id, cc->bed_instances().front()->id().id}, "Hinges");
+
+    CHECK(list.at(0).name == "Hinges");
+
+    list.remove_from_listeners();
 }

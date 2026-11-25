@@ -1,5 +1,8 @@
 #include "Slic3r/Domain/BedInstance.hpp"
 
+#include <algorithm>
+#include <cctype>
+
 namespace Slic3r::Domain {
 
 BedInstance::BedInstance(const Bed& bed) : bed(bed) {}
@@ -34,6 +37,7 @@ std::unique_ptr<BedInstance> BedInstance::copy(
     bed_instance->custom_gcode          = custom_gcode;
     bed_instance->wipe_tower_is_outside = wipe_tower_is_outside;
 
+    bed_instance->set_custom_name(m_custom_name);
     bed_instance->set_index(index());
 
     return bed_instance;
@@ -60,7 +64,21 @@ const std::string& BedInstance::label() const
 
 const std::string& BedInstance::name() const
 {
-    return m_name;
+    return m_custom_name.empty() ? m_name : m_custom_name;
+}
+
+const std::string& BedInstance::custom_name() const
+{
+    return m_custom_name;
+}
+
+void BedInstance::set_custom_name(std::string name)
+{
+    std::erase_if(name, [](unsigned char c) { return std::iscntrl(c) != 0; });
+    const auto is_space = [](unsigned char c) { return std::isspace(c) != 0; };
+    name.erase(name.begin(), std::ranges::find_if_not(name, is_space));
+    name.erase(std::ranges::find_if_not(name.rbegin(), name.rend(), is_space).base(), name.end());
+    m_custom_name = std::move(name);
 }
 
 } // namespace Slic3r::Domain

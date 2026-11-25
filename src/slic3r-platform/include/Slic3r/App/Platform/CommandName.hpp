@@ -118,6 +118,7 @@ struct CommandName
     static constexpr const char* ArrangeSelectionBed = "arrange-selection-bed";
     static constexpr const char* SelectAllOnBed      = "select-all-on-bed";
     static constexpr const char* DeleteBed           = "delete-bed";
+    static constexpr const char* RenameBed           = "rename-bed";
 
     static constexpr const char* SetNumberOfInstances   = "set-number-of-instances";
     static constexpr const char* FixWithRepairAlgorithm = "fix-with-repair-algorithm";

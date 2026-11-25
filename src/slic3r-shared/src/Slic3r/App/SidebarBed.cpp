@@ -261,6 +261,7 @@ SidebarBed::SidebarBed(Biz::ProjectInteractor& project_interactor, Navigator& na
     m_project_interactor.scene_interactor().add_listener<Biz::ISelectedBedInstancesChangedListener>(
         this
     );
+    m_project_interactor.scene_interactor().add_listener<Biz::Scene::ISceneChangedListener>(this);
     on_selected_bed_instances_changed(
         m_project_interactor.selected_project_id(),
         m_project_interactor.scene_interactor().bed_selection()
@@ -298,6 +299,20 @@ void SidebarBed::on_selected_bed_instances_changed(
     ASSERT(bed_instance);
 
     m_bed_name->set_text(bed_instance->name());
+}
+
+void SidebarBed::on_bed_renamed(Domain::SelectionId project_id, const Domain::BedRef& bed)
+{
+    if (m_project_interactor.selected_project_id() != project_id) {
+        return;
+    }
+
+    const Biz::Scene::BedSelection& selection = m_project_interactor.scene_interactor().bed_selection();
+    if (selection.empty() || !(selection.last_selected_bed() == bed)) {
+        return;
+    }
+
+    on_selected_bed_instances_changed(project_id, selection);
 }
 
 void SidebarBed::refresh_preset_combobox_label_color()

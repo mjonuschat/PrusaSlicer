@@ -80,6 +80,12 @@ public:
      */
     bool start_renaming(const Domain::ElementRef& element);
 
+    /**
+     * @brief Shows the name editor on the row of the bed @p bed.
+     * @return true if a row of this group took it.
+     */
+    bool start_renaming_bed(const Domain::BedRef& bed);
+
 private:
     void on_data_update() override;
     void remove_config_container();

@@ -76,4 +76,10 @@ void ObjectListWindow::start_renaming_selected()
     m_object_list->start_renaming_selected();
 }
 
+void ObjectListWindow::start_renaming_selected_bed()
+{
+    set_collapsed(false);
+    m_object_list->start_renaming_selected_bed();
+}
+
 } // namespace Slic3r::App

@@ -9,6 +9,7 @@
 
 #include "Slic3r/Biz/ObservableListWithSelection.hpp"
 #include "Slic3r/Biz/ISelectedBedInstanceChangedListener.hpp"
+#include "Slic3r/Biz/Scene/SceneInteractor.hpp"
 #include "Slic3r/Biz/Preset/PresetInteractor.hpp"
 #include "Slic3r/Biz/PhysicalPrinter/PhysicalPrinterInteractor.hpp"
 
@@ -41,6 +42,7 @@ class SidebarBed :
     public Yoga::Window,
     public Biz::IListSelectionChangedListener,
     public Biz::ISelectedBedInstancesChangedListener,
+    public Biz::Scene::ISceneChangedListener,
     public Biz::Preset::IPresetChangedListener,
     public Biz::PhysicalPrinter::IPhysicalPrinterChangedListener
 {
@@ -56,6 +58,8 @@ public:
         Domain::SelectionId project_id,
         const Biz::Scene::BedSelection& bed_selection
     ) override;
+
+    void on_bed_renamed(Domain::SelectionId project_id, const Domain::BedRef& bed) override;
 
     void on_preset_value_changed(
         Domain::SelectionId project_id,

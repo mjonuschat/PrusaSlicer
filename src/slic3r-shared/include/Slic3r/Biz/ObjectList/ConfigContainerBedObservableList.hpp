@@ -66,6 +66,7 @@ public:
     ) override;
     void on_wipe_tower_moved(Domain::SlicingId slicing_id) override;
     void on_wipe_tower_removed(Domain::SlicingId slicing_id) override;
+    void on_bed_renamed(Domain::SelectionId project_id, const Domain::BedRef& bed) override;
 
     // ISelectedBedInstancesChangedListener
     void on_selected_bed_instances_changed(
