@@ -1433,12 +1433,19 @@ void ProjectInteractor::load_models_to_project(
         const Domain::BedInstance& bed_instance{
             config_container->find_bed_instance(bed.instance_id)
         };
+        const auto init_z_rotate_item{
+            config_container->selected_preset().printer.config_box().find("init_z_rotate")
+        };
+        const double init_z_rotate_degrees{
+            init_z_rotate_item.item ? init_z_rotate_item.item->value().get<double>() : 0.
+        };
         const FileLoadingLogic::ImportToSceneResult import_result{
             FileLoadingLogic::add_imported_files_to_scene(
                 std::move(data),
                 scene_interactor(),
                 config_container->bed().center()
                     + Biz::Algorithms::Point::to_2d(bed_instance.transformation.get_offset()),
+                init_z_rotate_degrees,
                 FileLoadingLogic::ImportOptions{.temporary_sources = temporary_sources}
             )
         };

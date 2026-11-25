@@ -1790,6 +1790,7 @@ if(SLIC3R_BUILD_TESTS)
             test/Slic3r/App/Yoga/TreeDumpTests.cpp
 
             test/Slic3r/Biz/ProjectInteractorTests.cpp
+            test/Slic3r/Biz/FileLoadingLogicTests.cpp
             test/Slic3r/Biz/ExportGcodeTests.cpp
             test/Slic3r/Biz/PrintHost/PrintHostPrusaConnectTests.cpp
             test/Slic3r/Biz/PrintHost/PrintHostPrusaConnectLocalTests.cpp

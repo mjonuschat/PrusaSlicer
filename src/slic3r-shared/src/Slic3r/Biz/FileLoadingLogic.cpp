@@ -23,6 +23,7 @@
 
 #include "Slic3r/Biz/Utils/Transformation.hpp"
 #include "Slic3r/Directories.hpp"
+#include "Slic3r/Math.hpp"
 
 #include "tl/expected.hpp"
 
@@ -1214,6 +1215,7 @@ ImportToSceneResult add_imported_files_to_scene(
     std::vector<ImportedFileData> data,
     Scene::SceneInteractor& scene_interactor,
     const Domain::Vec2d& bed_center,
+    double init_z_rotate_degrees,
     const ImportOptions& options
 )
 {
@@ -1229,6 +1231,11 @@ ImportToSceneResult add_imported_files_to_scene(
         ElementRefs new_instances;
         using namespace Biz::Algorithms;
         if (file_data.mesh) {
+            if (init_z_rotate_degrees != 0.) {
+                file_data.mesh->rotate(
+                    static_cast<float>(Slic3r::deg2rad(init_z_rotate_degrees)), Domain::Z
+                );
+            }
             bbox          = file_data.mesh->bounding_box();
             new_instances = scene_interactor.new_object_from_mesh(
                 std::move(file_data.mesh.value()),
@@ -1237,13 +1244,28 @@ ImportToSceneResult add_imported_files_to_scene(
             );
         } else if (file_data.model) {
             Domain::Model& model = file_data.model.value();
+            auto rotate_instances_about_z = [init_z_rotate_degrees](Domain::ModelObject& object) {
+                if (init_z_rotate_degrees == 0.) {
+                    return;
+                }
+                for (Domain::ModelInstance* instance : object.instances) {
+                    instance->set_rotation(
+                        Domain::Z,
+                        instance->get_rotation(Domain::Z) + Slic3r::deg2rad(init_z_rotate_degrees)
+                    );
+                }
+            };
             if (model.objects.size() == 1 && model.objects.front()->instances.empty()) {
                 Domain::ModelObject* multi_part_object = model.objects.front();
                 // add a default instance and center object around origin
                 Biz::Algorithms::ModelObject::center_around_origin(*multi_part_object);
                 multi_part_object->add_instance();
+                rotate_instances_about_z(*multi_part_object);
                 bbox = ModelObject::raw_bounding_box(*multi_part_object);
             } else {
+                for (Domain::ModelObject* object : model.objects) {
+                    rotate_instances_about_z(*object);
+                }
                 for (const Domain::ModelObject* object : model.objects) {
                     Domain::BoundingBox3d bb = ModelObject::bounding_box_exact(*object);
                     bbox                     = BoundingBox::merge(bbox, bb);
