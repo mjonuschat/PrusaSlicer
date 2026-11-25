@@ -118,7 +118,21 @@ std::string WipeTowerIntegration::append_tcr(
     };
 
     // Set before the travels inside the wipe tower, the writer would skip it after they restore it.
-    gcode += gcodegen.writer().set_print_acceleration(tower_print_acceleration);
+    if (tower_print_acceleration > 0) {
+        // The wipe tower applies a fixed role, not the extrusion-role priority cascade, so this
+        // reads jerk-scv-mcr's config directly rather than going through
+        // BossExtrusionFeatures::before_extrusion().
+        const double wipe_tower_mcr =
+            config.get<std::vector<double>>("wipe_tower_minimum_cruise_ratio").at(tower_extruder);
+        const int wipe_tower_jerk = config.get<std::vector<int>>("wipe_tower_jerk").at(tower_extruder);
+        gcode += gcodegen.writer().set_print_acceleration(
+            tower_print_acceleration, wipe_tower_mcr, "Wipe Tower"
+        );
+        if (wipe_tower_jerk > 0)
+            gcode += gcodegen.writer().set_jerk(static_cast<unsigned int>(wipe_tower_jerk), "Wipe Tower");
+    } else {
+        gcode += gcodegen.writer().set_print_acceleration(tower_print_acceleration);
+    }
 
     const size_t toolchange_position{
         tcr_rotated_gcode.find("[toolchange_gcode_from_wipe_tower_generator]")
@@ -245,11 +259,18 @@ std::string WipeTowerIntegration::append_tcr(
 
     const int acceleation_extruder{new_extruder_id > -1 ? new_extruder_id : tcr.initial_tool};
     gcode += tcr_gcode;
+    const double default_mcr =
+        config.get<std::vector<double>>("default_minimum_cruise_ratio").at(acceleation_extruder);
+    const int default_jerk = config.get<std::vector<int>>("default_jerk").at(acceleation_extruder);
     gcode += gcodegen.writer().set_print_acceleration(
         fast_round_up<unsigned int>(
             config.get<std::vector<double>>("default_acceleration").at(acceleation_extruder)
-        )
+        ),
+        default_mcr,
+        "Default"
     );
+    if (default_jerk > 0)
+        gcode += gcodegen.writer().set_jerk(static_cast<unsigned int>(default_jerk), "Default");
 
     // A phony move to the end position at the wipe tower.
     gcodegen.writer().travel_to_xy(end_pos.cast<double>());
