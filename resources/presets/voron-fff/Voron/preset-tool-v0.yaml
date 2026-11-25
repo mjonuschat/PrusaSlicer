@@ -1,0 +1,6 @@
+kind: tool_print
+id: v0
+variants:
+- id: v0-no-tool
+  condition: printer.model=="v0"
+  name: no tool

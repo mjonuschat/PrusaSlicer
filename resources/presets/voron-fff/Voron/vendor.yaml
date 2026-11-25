@@ -1,0 +1,329 @@
+kind: vendor
+id: Voron
+name: Voron
+version: 1.0.0
+features:
+  printer:
+    supports_025_nozzle:
+      default: true
+    supports_03_nozzle:
+      default: true
+    supports_04_nozzle:
+      default: true
+    supports_05_nozzle:
+      default: true
+    supports_06_nozzle:
+      default: true
+    supports_08_nozzle:
+      default: true
+  tool:
+    nozzle_diameter:
+      default: 0.4
+    nozzle_flow_class:
+      default: HF
+---
+kind: printer
+technology: FFF
+name: VORON Switchwire
+id: switchwire
+model:
+  base_model: VORON Switchwire
+  model: switchwire
+tool_count: 1
+visual:
+  bed_model: bedmodel_252x241.stl
+  bed_texture: bedtexture_252x241-dark.png
+  thumbnail: thumbnail_vs.png
+---
+kind: printer
+technology: FFF
+name: VORON Trident 250mm
+id: trident-250
+model:
+  base_model: VORON Trident
+  model: trident-250
+tool_count: 1
+visual:
+  bed_model: bedmodel_250x250.stl
+  bed_texture: bedtexture_250x250-dark.png
+  thumbnail: thumbnail_vt.png
+---
+kind: printer
+technology: FFF
+name: VORON Trident 300mm
+id: trident-300
+model:
+  base_model: VORON Trident
+  model: trident-300
+tool_count: 1
+visual:
+  bed_model: bedmodel_300x300.stl
+  bed_texture: bedtexture_300x300-dark.png
+  thumbnail: thumbnail_vt.png
+---
+kind: printer
+technology: FFF
+name: VORON Trident 350mm
+id: trident-350
+model:
+  base_model: VORON Trident
+  model: trident-350
+tool_count: 1
+visual:
+  bed_model: bedmodel_350x350.stl
+  bed_texture: bedtexture_350x350-dark.png
+  thumbnail: thumbnail_vt.png
+---
+kind: printer
+technology: FFF
+name: VORON Zero
+id: v0
+model:
+  base_model: VORON Zero
+  model: v0
+tool_count: 1
+visual:
+  bed_model: bedmodel_120x120.stl
+  bed_texture: bedtexture_120x120-dark.png
+  thumbnail: thumbnail_v0.png
+---
+kind: printer
+technology: FFF
+name: VORON2 250mm
+id: v2-250
+model:
+  base_model: VORON2
+  model: v2-250
+tool_count: 1
+visual:
+  bed_model: bedmodel_250x250.stl
+  bed_texture: bedtexture_250x250-dark.png
+  thumbnail: thumbnail_v2.png
+---
+kind: printer
+technology: FFF
+name: VORON2 300mm
+id: v2-300
+model:
+  base_model: VORON2
+  model: v2-300
+tool_count: 1
+visual:
+  bed_model: bedmodel_300x300.stl
+  bed_texture: bedtexture_300x300-dark.png
+  thumbnail: thumbnail_v2.png
+---
+kind: printer
+technology: FFF
+name: VORON2 350mm
+id: v2-350
+model:
+  base_model: VORON2
+  model: v2-350
+tool_count: 1
+visual:
+  bed_model: bedmodel_350x350.stl
+  bed_texture: bedtexture_350x350-dark.png
+  thumbnail: thumbnail_v2.png
+---
+kind: tool
+technology: FFF
+id: '0.25'
+name: '0.25'
+features:
+  nozzle_diameter:
+    default: 0.25
+  nozzle_flow_class:
+    default: SF
+---
+kind: tool
+technology: FFF
+id: '0.3'
+name: '0.3'
+features:
+  nozzle_diameter:
+    default: 0.3
+  nozzle_flow_class:
+    default: SF
+---
+kind: tool
+technology: FFF
+id: 0.4-hf
+name: 0.4-hf
+features:
+  nozzle_diameter:
+    default: 0.4
+  nozzle_flow_class:
+    default: HF
+---
+kind: tool
+technology: FFF
+id: '0.4'
+name: '0.4'
+features:
+  nozzle_diameter:
+    default: 0.4
+  nozzle_flow_class:
+    default: SF
+---
+kind: tool
+technology: FFF
+id: 0.5-hf
+name: 0.5-hf
+features:
+  nozzle_diameter:
+    default: 0.5
+  nozzle_flow_class:
+    default: HF
+---
+kind: tool
+technology: FFF
+id: '0.5'
+name: '0.5'
+features:
+  nozzle_diameter:
+    default: 0.5
+  nozzle_flow_class:
+    default: SF
+---
+kind: tool
+technology: FFF
+id: 0.6-hf
+name: 0.6-hf
+features:
+  nozzle_diameter:
+    default: 0.6
+  nozzle_flow_class:
+    default: HF
+---
+kind: tool
+technology: FFF
+id: '0.6'
+name: '0.6'
+features:
+  nozzle_diameter:
+    default: 0.6
+  nozzle_flow_class:
+    default: SF
+---
+kind: tool
+technology: FFF
+id: 0.8-hf
+name: 0.8-hf
+features:
+  nozzle_diameter:
+    default: 0.8
+  nozzle_flow_class:
+    default: HF
+---
+kind: tool
+technology: FFF
+id: '0.8'
+name: '0.8'
+features:
+  nozzle_diameter:
+    default: 0.8
+  nozzle_flow_class:
+    default: SF
+---
+kind: sheet
+id: bare_steel
+name: Bare Steel
+type: bare_steel
+---
+kind: sheet
+id: cool_plate
+name: Cool Plate
+type: cool_plate
+---
+kind: sheet
+id: garolite
+name: Garolite
+type: garolite
+---
+kind: sheet
+id: pei_smooth
+name: PEI Smooth
+type: pei_smooth
+---
+kind: sheet
+id: pei_textured
+name: PEI Textured
+type: pei_textured
+---
+kind: sheet
+id: satin
+name: Satin
+type: satin
+---
+kind: printer_config
+id: switchwire
+name: VORON Switchwire
+printer: switchwire
+tool_count: 1
+tools:
+- tool: '0.4'
+sheet: pei_textured
+---
+kind: printer_config
+id: trident-250
+name: VORON Trident 250mm
+printer: trident-250
+tool_count: 1
+tools:
+- tool: '0.4'
+sheet: pei_textured
+---
+kind: printer_config
+id: trident-300
+name: VORON Trident 300mm
+printer: trident-300
+tool_count: 1
+tools:
+- tool: '0.4'
+sheet: pei_textured
+---
+kind: printer_config
+id: trident-350
+name: VORON Trident 350mm
+printer: trident-350
+tool_count: 1
+tools:
+- tool: '0.4'
+sheet: pei_textured
+---
+kind: printer_config
+id: v0
+name: VORON Zero
+printer: v0
+tool_count: 1
+tools:
+- tool: '0.4'
+sheet: pei_textured
+---
+kind: printer_config
+id: v2-250
+name: VORON2 250mm
+printer: v2-250
+tool_count: 1
+tools:
+- tool: '0.4'
+sheet: pei_textured
+---
+kind: printer_config
+id: v2-300
+name: VORON2 300mm
+printer: v2-300
+tool_count: 1
+tools:
+- tool: '0.4'
+sheet: pei_textured
+---
+kind: printer_config
+id: v2-350
+name: VORON2 350mm
+printer: v2-350
+tool_count: 1
+tools:
+- tool: '0.4'
+sheet: pei_textured
