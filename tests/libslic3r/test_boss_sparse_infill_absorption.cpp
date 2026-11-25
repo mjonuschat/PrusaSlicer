@@ -84,59 +84,6 @@ TEST_CASE("A hole extending past the fill boundary is kept as a real model featu
     REQUIRE(surface_fills[1].expolygons.front().holes.size() == 1);
 }
 
-TEST_CASE("A small sparse pocket sitting in a stSolidOverBridge notch is absorbed via closing_ex",
-          "[boss][surface]")
-{
-    // A single stSolidOverBridge fragment shaped like a "C": a 20x20 square with a
-    // 2mm-deep, 4mm-tall notch bitten out of the right edge. Because this is one
-    // expolygon (not several disjoint fragments), the grow/union/shrink merge step
-    // that closes gaps between fragments never runs (it needs more than one
-    // expolygon) -- so absorb_small_sparse_pockets()'s own closing_ex() call is the
-    // only mechanism in absorb() that can recognize the notch pocket as covered.
-    SurfaceFill bridge = make_fill(stSolidOverBridge, 100.f, 0.45);
-    ExPolygon   notched{
-        Point{scaled(0.0), scaled(0.0)},
-        Point{scaled(0.0), scaled(20.0)},
-        Point{scaled(20.0), scaled(20.0)},
-        Point{scaled(20.0), scaled(12.0)},
-        Point{scaled(18.0), scaled(12.0)},
-        Point{scaled(18.0), scaled(8.0)},
-        Point{scaled(20.0), scaled(8.0)},
-        Point{scaled(20.0), scaled(0.0)},
-    };
-    bridge.expolygons = {notched};
-
-    SurfaceFill sparse = make_fill(stInternal, 15.f, 0.45);
-    sparse.expolygons  = {rectangle({scaled(18.0), scaled(8.0)}, scaled(2.0), scaled(4.0))};
-
-    const ExPolygons total_fill_boundary{rectangle({-scaled(1.0), -scaled(1.0)}, scaled(23.0), scaled(23.0))};
-
-    std::vector<SurfaceFill> surface_fills{bridge, sparse};
-    Boss::SparseInfillAbsorption::absorb(surface_fills, total_fill_boundary);
-
-    REQUIRE(surface_fills[1].expolygons.empty());
-}
-
-TEST_CASE("Two stSolidOverBridge fragments split by bridge angle consolidate into one entry", "[boss][surface]")
-{
-    SurfaceFill sob_a      = make_fill(stSolidOverBridge, 100.f, 0.45);
-    sob_a.params.bridge_angle = 0.f;
-    sob_a.expolygons          = {rectangle({0, 0}, scaled(5.0), scaled(5.0))};
-
-    SurfaceFill sob_b         = make_fill(stSolidOverBridge, 100.f, 0.45);
-    sob_b.params.bridge_angle = 1.57f;
-    sob_b.expolygons          = {rectangle({scaled(10.0), 0}, scaled(5.0), scaled(5.0))};
-
-    const ExPolygons total_fill_boundary{rectangle({-scaled(1.0), -scaled(1.0)}, scaled(20.0), scaled(20.0))};
-
-    std::vector<SurfaceFill> surface_fills{sob_a, sob_b};
-    Boss::SparseInfillAbsorption::absorb(surface_fills, total_fill_boundary);
-
-    const auto non_empty =
-        std::count_if(surface_fills.begin(), surface_fills.end(), [](const SurfaceFill &sf) { return !sf.expolygons.empty(); });
-    REQUIRE(non_empty == 1);
-}
-
 TEST_CASE("A hole split across two pattern-differentiated stInternalSolid entries survives",
           "[boss][surface]")
 {
